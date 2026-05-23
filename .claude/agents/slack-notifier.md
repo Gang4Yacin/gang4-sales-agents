@@ -62,9 +62,15 @@ Dans ce cas : ne fais **rien**. Retourne juste à l'orchestrateur : `"skipped: n
 
 Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Actions effectuées` et `Actions à valider` sont l'élément le plus visible.
 
+**Règle d'or anti-hallucination** : chaque bullet doit correspondre **LITTÉRALEMENT** à une action listée dans le rapport `crm-sync`. Tu reformules pour la lisibilité, mais tu n'inventes JAMAIS une action qui n'est pas dans le rapport (ex. ne dis pas "création company" si crm-sync n'a proposé que des `create_person` + `create_note`).
+
 ```
 :bar_chart: *Head of Sales — Run <label> (<window_start_date> → <window_end_date>)*
 > run_id: `<uuid>`
+
+*🔁 Résumé précédentes demandes*   ← OPTIONNEL : présent uniquement si le rapport crm-sync contient une section "Suite aux demandes précédentes"
+• <demande user> → <action prise> ✓
+• ...
 
 *✅ Actions effectuées*
 • *<Entreprise>*
@@ -89,7 +95,7 @@ Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Ac
 
 ```
 • *Insentials*
-   ◦ création deal → stage "Proposal sent" lié à Justine De Paepe (CEO)
+   ◦ création deal → stage "Meta Connected" lié à Justine De Paepe (CEO)
    ◦ création 2 notes → cycle commercial complet + closing call 08/05 : 400€/mois + 9% whitelisting, GLH-2 via Shopify
    ◦ changement company_status → Customer (contrat signé 19/05)
    _(sources: gmail + gcal)_

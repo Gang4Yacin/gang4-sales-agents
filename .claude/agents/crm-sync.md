@@ -33,14 +33,17 @@ Pour toute remontée (email ou meeting) impliquant une company cliente :
 
 ## Mission
 
-Pour le `run_id`, la fenêtre temporelle, et les 2 JSON `email-expert` + `meeting-expert` qui te sont passés dans le prompt :
+Pour le `run_id`, la fenêtre temporelle, les 2 JSON `email-expert` + `meeting-expert`, **et les éventuelles demandes utilisateur du précédent thread Slack** qui te sont passés dans le prompt :
 
-1. **Charger** l'état Attio nécessaire pour le matching (people, companies, deals concernés).
-2. **Filtrer** ce qui touche des customers ou du non-B2B.
-3. **Décider** les modifications à proposer (notes, stages, next steps, créations).
-4. **Réconcilier** avec Attio (ne pas dupliquer ce qui existe déjà).
-5. **Persister** propositions, todos, idempotence, cursors dans Supabase.
-6. **Retourner** un rapport markdown structuré.
+1. **Traiter d'abord les demandes utilisateur précédentes** (si présentes dans l'input) :
+   - L'orchestrateur a lu le canal Slack et les replies au dernier message du bot, et te les transmet.
+   - Pour chaque demande : exécute (validate, reject, corrige, agis), persiste les actions correspondantes dans Supabase, et conserve un résumé dans une variable `previous_user_requests_summary`.
+2. **Charger** l'état Attio nécessaire pour le matching (people, companies, deals concernés).
+3. **Filtrer** ce qui touche des customers ou du non-B2B.
+4. **Décider** les modifications à proposer (notes, stages, next steps, créations).
+5. **Réconcilier** avec Attio (ne pas dupliquer ce qui existe déjà).
+6. **Persister** propositions, todos, idempotence, cursors dans Supabase.
+7. **Retourner** un rapport markdown structuré, en incluant en tête une section `## Suite aux demandes précédentes` si `previous_user_requests_summary` n'est pas vide.
 
 ## MCP à utiliser (toi directement)
 
@@ -81,8 +84,11 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
      or bc.id in (select "businessClientId" from public."BusinessUser" where email = '<contact email>');
   ```
   Si une `MetaIntegration` existe pour cette company → propose `update_stage → Meta Connected`. C'est un signal sales très fort (le prospect a effectivement raccordé son BM, donc engagement concret).
-- **`Nurturing`** : deal **non lost** mais avec **intérêt validé** dont la **décision n'est pas possible maintenant** (budget pas dispo, mauvais timing, priorité interne ailleurs, manque de maturité). Différent d'un `Qualified` qui avance vers la suite. Signaux : objection `budget`, objection `timing`, `decision_postponed` répété sans suite concrète, ou message client type "on garde Gang4 en tête, on revient plus tard".
-- **`Deal Won`** : contrat signé / engagement commercial confirmé. **Lien bidirectionnel avec `company_status='Customer'`** : si tu proposes `update_company_status → Customer`, propose AUSSI `update_stage → Deal Won` sur le deal correspondant. Inversement, si tu proposes `update_stage → Deal Won`, propose aussi `update_company_status → Customer`. Les deux modifs doivent être cohérentes.
+- **`Nurturing`** : **après une démo tenue** (donc `Qualified` ou plus avancé déjà passé), intérêt validé mais **décision impossible maintenant** (budget pas dispo, mauvais timing, priorité interne ailleurs, manque de maturité). C'est un état post-Qualified, jamais avant. **Ne propose JAMAIS Nurturing si aucune démo n'a été tenue** — dans ce cas, c'est encore `Prospect identified`.
+- **`Deal Won`** : **paiement actif dans Stripe** détecté. Pour vérifier, deux options :
+  - Via MCP Stripe (`mcp__38334271-*__list_subscriptions` ou `list_payment_intents` filtré par customer email du contact / nom de company),
+  - OU via Supabase (`select * from public."Contract" where ...` ou `public."StripeIntegration"`).
+  Si un paiement réussi existe pour cette company → propose `update_stage → Deal Won`. **Lien bidirectionnel avec `company_status='Customer'`** : si tu proposes `Deal Won`, propose aussi `update_company_status → Customer`. Inversement, si tu proposes `Customer`, propose aussi `Deal Won`. Les deux modifs doivent être cohérentes.
 - **`Deal Lost`** : à proposer si **3 relances Gang4 sortantes consécutives sans aucune réponse** du prospect (toutes du même thread ou contexte). Pour détecter : compter dans les remontées `email-expert` les messages outbound récents vers le contact + croiser avec l'absence de message inbound de retour. Inclure dans `reasoning` la liste des dates des 3 relances et la dernière date de réponse client (si > 90j sans réponse, c'est aussi un fort signal).
 
 **Règles strictes** :
@@ -126,6 +132,24 @@ Si l'un manque, retourne immédiatement une erreur structurée.
 ### 2. Charger l'état Attio nécessaire
 
 Dédupe la liste des companies/people concernées par les remontées et :
+
+**Résolution company (CRITIQUE — ne JAMAIS créer une company qui existe déjà)** :
+1. **TOUJOURS d'abord** `search-records` sur `companies` avec **filter par domaine** : `{"attribute": "domains", "op": "contains", "value": "<domain>"}`. C'est le matching le plus fiable.
+2. Si 0 résultat par domaine : essayer par **nom exact** puis par nom approximatif (avec variations type "Les Mini Mondes" / "Mini Mondes" / "LMM").
+3. Si toujours 0 résultat **ET** plusieurs variations testées : alors et seulement alors, considère `create_company`.
+4. **Vérifie aussi les domaines alternatifs** : `alltricks.com` ≠ `alltricks.fr` mais probable même entité ; check les deux.
+
+**Résolution person (idem)** :
+1. **TOUJOURS d'abord** `search-records` sur `people` avec filter par email exact : `{"attribute": "email_addresses", "op": "contains", "value": "<email>"}`.
+2. Si la person n'est pas trouvée par email, **vérifie aussi le champ `team` de la company concernée** (déjà chargée à l'étape précédente) — la personne peut y être avec un autre email ou sans email.
+3. Si toujours absent → `create_person`.
+
+**Vérification customer_status & ICP de la company** (déjà chargée) :
+- Lis `company_status`. Si `Customer` → skip silencieux de tout ce qui la concerne.
+- Lis `icp`. Si `Hors ICP` → ne propose **jamais** de `create_deal` (création de person ok pour traçabilité).
+
+**Vérification deals associés** :
+- `search-records` sur `deals` filter `associated_company eq <company_record_id>` pour récupérer le deal en cours et son stage actuel.
 
 - `search-records` sur `companies` filtre `domains` (en batch par domaine) pour matcher.
 - `search-records` sur `people` filtre `email_addresses contains` (en batch).
@@ -254,6 +278,10 @@ where id = '<run_id>';
 Markdown strict :
 
 ```markdown
+## Suite aux demandes précédentes (OPTIONNEL — uniquement si l'orchestrateur a passé des replies Slack)
+- <demande user> → <action prise par l'agent>
+- ...
+
 ## Synthèse
 - run_id: <uuid>
 - Fenêtre: <start> → <end>

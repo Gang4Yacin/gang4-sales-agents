@@ -41,6 +41,16 @@ returning id;
 
 Garde le `run_id` pour le passer aux sous-agents.
 
+### Étape 2bis — Récupérer les éventuelles réponses utilisateur du précédent thread Slack
+
+Via `mcp__7af8b801-*__slack_read_channel` sur `C0B5B8H5VFH` :
+1. Récupère le **dernier message bot** posté dans le canal (celui du run précédent).
+2. Si ce message a un `thread_ts`, récupère **les replies** via `slack_read_thread` sur ce ts.
+3. Collecte aussi les **réactions** sur le message (✅ = validé, ❌ = rejeté, 👀 = vu sans décision).
+4. Compile un objet `previous_user_requests` (liste des messages texte + réactions) à passer dans le brief de `crm-sync` ci-dessous.
+
+Si aucun message bot précédent, ou aucune reply / réaction → `previous_user_requests = []`.
+
 ### Étape 3 — Appeler les 2 experts d'ingestion EN PARALLÈLE
 
 Dans **un seul message**, fais 2 appels Agent en parallèle :
@@ -55,9 +65,10 @@ Chacun retourne un bloc JSON normalisé.
 Avec `subagent_type='crm-sync'`, en lui passant :
 - le `run_id`,
 - la fenêtre temporelle,
-- les **2 JSON complets** des experts (collés dans le prompt).
+- les **2 JSON complets** des experts (collés dans le prompt),
+- l'objet `previous_user_requests` (replies + réactions sur le dernier message Slack) — vide si rien.
 
-`crm-sync` ne ré-ingère rien : il croise les remontées avec Attio (lecture seule), décide les modifs, persiste dans Supabase, et retourne le rapport markdown.
+`crm-sync` ne ré-ingère rien : il traite d'abord les demandes utilisateur précédentes (si présentes), puis croise les remontées avec Attio (lecture seule), décide les modifs, persiste dans Supabase, et retourne le rapport markdown.
 
 ### Étape 5 — Clôturer le run
 
