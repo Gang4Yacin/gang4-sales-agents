@@ -43,7 +43,6 @@ Récupère les **10 derniers messages** du canal `C0B5B8H5VFH` via `slack_read_c
 
 - **`new_actions`** : actions effectuées **non visibles** dans les messages Slack récents (par nom de company/deal).
 - **`new_todos`** : todos à arbitrer non visibles dans le canal récemment.
-- **`new_skipped_patterns`** : items que `crm-sync` a skippés pour une raison NON-customer (vendor pitch entrant, research interview, ambassadeur, etc.) et dont la justification n'apparaît pas dans le canal. À remonter en *Patterns écartés (à challenger)* pour transparence.
 - **`recurring_todos`** : todos déjà mentionnés dans les **2 derniers messages** du canal.
 - **`new_warnings`** : infos importantes (permissions, MCP manquants) non encore remontées dans le canal.
 - **`active_warnings`** : warnings déjà visibles dans les 2 derniers messages ET toujours valides.
@@ -51,8 +50,8 @@ Récupère les **10 derniers messages** du canal `C0B5B8H5VFH` via `slack_read_c
 ### 3. Décider : POSTER OU NE PAS POSTER
 
 **NE PAS POSTER** (return silencieux) si :
-- `new_actions` est vide ET `new_todos` est vide ET `new_skipped_patterns` est vide ET `new_warnings` est vide.
-- OU le rapport ne contient strictement rien d'actionnable (0 propositions, 0 todos, 0 warnings) ET aucun pattern skippé à justifier.
+- `new_actions` est vide ET `new_todos` est vide ET `new_warnings` est vide.
+- OU le rapport ne contient strictement rien d'actionnable (0 propositions, 0 todos, 0 warnings).
 - OU un message **strictement identique** est visible dans les 10 derniers messages du canal (timestamp < 6h).
 
 Dans ce cas : ne fais **rien**. Retourne juste à l'orchestrateur : `"skipped: nothing new since last notification (last post at <ts>)"`.
@@ -75,10 +74,6 @@ Format Slack markdown, scannable, concis :
 • *<objet>* — contexte 1 ligne. Question explicite ?
 • ...
 
-*🤔 Patterns écartés (à challenger)*  ← OPTIONNEL : items que `crm-sync` a skippés non-customer, jamais justifiés dans le canal Slack
-• *<objet>* — raison du skip en 1 ligne. (Tu peux challenger si tu n'es pas d'accord.)
-• ...
-
 *🔁 Rappels*                       ← OPTIONNEL : recurring_todos, formulation TRÈS condensée, max 3 items
 • *<objet>* — en attente depuis <date>. <Question minimale>.
 • ...
@@ -92,10 +87,10 @@ Format Slack markdown, scannable, concis :
 - **Pas de sections vides** : omets toute section sans contenu.
 - **Actions effectuées** : une ligne par cible (entreprise/deal). Pas de duplication d'une cible présente dans une notification antérieure **visible dans le canal**.
 - **Actions à valider** : pour chaque item, **objet en gras → contexte 1 ligne → question explicite**.
-- **Patterns écartés (à challenger)** : pour chaque skip non-customer non encore expliqué dans le canal, **objet en gras → raison courte → invitation à challenger**. Ex. *DNG (Digital Native Group)* — research interview, pas un cycle de vente. *Antaris* — vendor pitch entrant à Gang4 (Gang4 = vendeur). L'objectif est la **transparence** : l'humain doit pouvoir dire "non, tu te trompes, c'est bien sales". Une fois qu'un pattern est expliqué dans le canal, ne le redonne pas aux runs suivants.
 - **Rappels** : si `recurring_todos` non vide, regroupe-les ici en mode "tickle", PAS dans "Actions à valider" (évite de re-spammer la même chose comme si c'était neuf). Inclus la date du 1er flag. Max 3 lignes.
 - **Infos importantes** : ne remonte un warning **qu'une fois**. S'il est déjà visible dans une notification récente, ne le remets pas. Si un warning passé est désormais résolu, ne le mentionne pas non plus (pas de "good news" inutile).
 - Aucune mention de **customers** (sales-only).
+- Aucune mention de **patterns/items écartés** (skips silencieux uniquement — l'utilisateur ne veut pas être pollué par ce que l'agent a décidé d'ignorer ; il fait confiance aux règles sales-only).
 - Aucune mention de **stats techniques** (nb emails scannés, threads exclus…).
 - Aucun "voici", "voilà", "merci", pas de blabla.
 - 1 message par run max.
