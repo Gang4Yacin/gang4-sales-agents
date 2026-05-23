@@ -65,25 +65,39 @@ Pour tout `create_deal` proposé, mets cette valeur dans le `payload` comme owne
 
 ## Stages Attio (définition métier)
 
-Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Proposal sent` → `Deal Won` / `Deal Lost` / `Hors ICP` / `Archived`.
+Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Connected` → `Nurturing` → `Deal Won` / `Deal Lost` / `Hors ICP` / `Archived`.
 
 **Définitions** (à utiliser pour décider du stage d'un deal créé ou pour proposer un `update_stage`) :
 
-- **`Prospect identified`** : le prospect a répondu positivement à un de nos emails (intérêt manifesté). Cette transition est normalement faite par Lemlist en amont — donc tu rencontres généralement les deals au moins à ce stade. Signaux : réponse intéressée à une séquence outbound, demande d'info initiale.
+- **`Prospect identified`** : le prospect a répondu positivement à un de nos emails (intérêt manifesté). Cette transition est normalement faite par Lemlist en amont. Signaux : réponse intéressée à une séquence outbound, demande d'info initiale.
 - **`Demo scheduled`** : une demo est **à venir** (date dans le futur), bookée soit via Calendly (signal `demo_booked_via_calendly`), soit via un meeting créé manuellement dans Google Calendar avec un externe B2B et un intitulé/contexte de demo. Aucune demo encore tenue.
 - **`Qualified`** : la demo a eu lieu et on a pu **qualifier** le prospect (budget Meta connu, besoins identifiés, périmètre clair). Signal : `demo_done` + `qualification_done` ou éléments explicites de qualification dans le transcript/email.
-- **`Proposal sent`** : un email post-démo proposant une offre pour démarrer a été envoyé. Signal : email outbound avec offre commerciale détaillée (tarif, périmètre, modalités).
-- **`Deal Won` / `Deal Lost`** : **hors scope MVP** — ne propose jamais ces transitions automatiquement.
+- **`Meta Connected`** : **le prospect a connecté son Business Manager Meta à Gang4**. Détection automatique : il existe une ligne dans `public.MetaIntegration` Supabase liée au `BusinessClient` correspondant à ce deal. Pour vérifier, exécute via `mcp__1ba71441-*__execute_sql` :
+  ```sql
+  select mi.id, mi.created_at
+  from public."MetaIntegration" mi
+  join public."BusinessClient" bc on mi."businessClientId" = bc.id  -- vérifier le vrai nom de colonne
+  where lower(bc.name) like '%<company name>%'  -- ou via email/domain de la person
+     or bc.id in (select "businessClientId" from public."BusinessUser" where email = '<contact email>');
+  ```
+  Si une `MetaIntegration` existe pour cette company → propose `update_stage → Meta Connected`. C'est un signal sales très fort (le prospect a effectivement raccordé son BM, donc engagement concret).
+- **`Nurturing`** : deal **non lost** mais avec **intérêt validé** dont la **décision n'est pas possible maintenant** (budget pas dispo, mauvais timing, priorité interne ailleurs, manque de maturité). Différent d'un `Qualified` qui avance vers la suite. Signaux : objection `budget`, objection `timing`, `decision_postponed` répété sans suite concrète, ou message client type "on garde Gang4 en tête, on revient plus tard".
+- **`Deal Won`** : contrat signé / engagement commercial confirmé. **Lien bidirectionnel avec `company_status='Customer'`** : si tu proposes `update_company_status → Customer`, propose AUSSI `update_stage → Deal Won` sur le deal correspondant. Inversement, si tu proposes `update_stage → Deal Won`, propose aussi `update_company_status → Customer`. Les deux modifs doivent être cohérentes.
+- **`Deal Lost`** : à proposer si **3 relances Gang4 sortantes consécutives sans aucune réponse** du prospect (toutes du même thread ou contexte). Pour détecter : compter dans les remontées `email-expert` les messages outbound récents vers le contact + croiser avec l'absence de message inbound de retour. Inclure dans `reasoning` la liste des dates des 3 relances et la dernière date de réponse client (si > 90j sans réponse, c'est aussi un fort signal).
 
 **Règles strictes** :
-- Ne propose JAMAIS `Deal Won` ou `Deal Lost` automatiquement (toujours via todo `manual_review`).
-- Avant de proposer un `update_stage`, lis le stage actuel : ne propose que si la transition va **vers l'avant** dans le pipeline.
+- Avant de proposer un `update_stage`, lis le stage actuel : ne propose que si la transition est cohérente (en général vers l'avant, sauf `Deal Lost` qui peut venir de n'importe où).
 - Si l'analyse hésite entre deux stages, choisis le **moins avancé** et crée un todo `stage_uncertain` pour arbitrage humain.
+- **Cohérence Won/Customer** : ces deux modifs vont ensemble, toujours.
+- **Nurturing vs Lost** : si signal de désintérêt clair → Lost. Si simple report / pas le bon moment → Nurturing.
 
 **Choix du stage lors d'un `create_deal`** (tu décides, pas de question à l'humain) :
-- Signal `proposal_discussed` côté meeting OU email post-démo avec offre détaillée → `Proposal sent`.
+- Contrat signé / customer confirmé → `Deal Won` (+ propose `update_company_status → Customer` cohérent).
+- BusinessClient avec `MetaIntegration` existante → `Meta Connected`.
+- Signal `proposal_discussed` côté meeting OU email avec offre détaillée → `Qualified` (le `Proposal sent` historique n'existe plus en tant que tel).
 - Signal `demo_done` + `qualification_done` → `Qualified`.
 - Signal `demo_booked_via_calendly` ou meeting demo à venir → `Demo scheduled`.
+- Intérêt validé mais report budget/timing → `Nurturing`.
 - Réponse positive à un email outbound sans demo encore bookée → `Prospect identified`.
 - Sinon, par défaut → `Prospect identified`.
 

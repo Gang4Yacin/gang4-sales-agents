@@ -60,37 +60,51 @@ Dans ce cas : ne fais **rien**. Retourne juste à l'orchestrateur : `"skipped: n
 
 ### 4. Composer le message
 
-Format Slack markdown, scannable, concis :
+Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Actions effectuées` et `Actions à valider` sont l'élément le plus visible.
 
 ```
 :bar_chart: *Head of Sales — Run <label> (<window_start_date> → <window_end_date>)*
 > run_id: `<uuid>`
 
-*✅ Actions effectuées*           ← inclure uniquement les new_actions
-• <cible> — <action courte> (source: …)
-• ...
+*✅ Actions effectuées*
+• *<Entreprise>*
+   ◦ <action courte> → <détail concis>
+   ◦ <action courte> → <détail concis>
+   _(sources: gmail + gcal + web)_
+• *<Entreprise 2>*
+   ◦ ...
 
-*🚨 Actions à valider*             ← inclure uniquement les new_todos
-• *<objet>* — contexte 1 ligne. Question explicite ?
-• ...
+*🚨 Actions à valider*
+• *<Entreprise>*
+   ◦ <ce qu'il faut valider> — <pourquoi tu hésites>. <Question explicite> ?
 
-*🔁 Rappels*                       ← OPTIONNEL : recurring_todos, formulation TRÈS condensée, max 3 items
-• *<objet>* — en attente depuis <date>. <Question minimale>.
-• ...
+*🔁 Rappels*                       ← OPTIONNEL : recurring_todos, max 3 items
+• *<objet>* — en attente depuis <date>.
 
-*⚠️ Infos importantes*             ← OPTIONNEL : new_warnings UNIQUEMENT (pas les active_warnings déjà remontés)
+*⚠️ Infos importantes*             ← OPTIONNEL : new_warnings UNIQUEMENT
 • ...
+```
+
+**Exemple de groupage** (modèle de référence — c'est exactement le style attendu) :
+
+```
+• *Insentials*
+   ◦ création deal → stage "Proposal sent" lié à Justine De Paepe (CEO)
+   ◦ création 2 notes → cycle commercial complet + closing call 08/05 : 400€/mois + 9% whitelisting, GLH-2 via Shopify
+   ◦ changement company_status → Customer (contrat signé 19/05)
+   _(sources: gmail + gcal)_
 ```
 
 ### Règles de format strictes
 
 - **Pas de sections vides** : omets toute section sans contenu.
-- **Actions effectuées** : une ligne par cible (entreprise/deal). Pas de duplication d'une cible présente dans une notification antérieure **visible dans le canal**.
-- **Actions à valider** : pour chaque item, **objet en gras → contexte 1 ligne → question explicite**.
-- **Rappels** : si `recurring_todos` non vide, regroupe-les ici en mode "tickle", PAS dans "Actions à valider" (évite de re-spammer la même chose comme si c'était neuf). Inclus la date du 1er flag. Max 3 lignes.
-- **Infos importantes** : ne remonte un warning **qu'une fois**. S'il est déjà visible dans une notification récente, ne le remets pas. Si un warning passé est désormais résolu, ne le mentionne pas non plus (pas de "good news" inutile).
+- **Groupage par entreprise** : dans `Actions effectuées` ET `Actions à valider`, regroupe tous les items concernant la même entreprise sous un seul bullet avec nom en gras, et liste les sous-actions en sous-bullets (`   ◦ `). Les sources arrivent en italique en dernière ligne du bloc.
+- **Concis** : `<action courte> → <détail concis>` — une demi-phrase max. Pas de paragraphes.
+- **Actions à valider** : même groupage par entreprise. Pour chaque item à valider : action proposée → raison de l'hésitation → **question explicite**.
+- **Rappels** : si `recurring_todos` non vide, regroupe-les ici en mode "tickle". Inclus la date du 1er flag. Max 3 lignes.
+- **Infos importantes** : ne remonte un warning **qu'une fois**. Si déjà visible dans une notification récente du canal, ne le remets pas. Si un warning passé est résolu, ne le mentionne pas non plus.
 - Aucune mention de **customers** (sales-only).
-- Aucune mention de **patterns/items écartés** (skips silencieux uniquement — l'utilisateur ne veut pas être pollué par ce que l'agent a décidé d'ignorer ; il fait confiance aux règles sales-only).
+- Aucune mention de **patterns/items écartés** (skips silencieux uniquement).
 - Aucune mention de **stats techniques** (nb emails scannés, threads exclus…).
 - Aucun "voici", "voilà", "merci", pas de blabla.
 - 1 message par run max.
