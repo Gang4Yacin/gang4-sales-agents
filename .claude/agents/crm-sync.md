@@ -125,6 +125,29 @@ Dédupe la liste des companies/people concernées par les remontées et :
 
 ### 4. Décider les modifications
 
+**Avant** de décider quoi que ce soit pour une company qui (a) n'existe pas dans Attio, ou (b) existe mais avec peu d'info (`description` vide, pas d'`icp` défini, créée récemment sans contexte), **enrichis-la d'abord** :
+
+#### Enrichissement company (recherche web)
+
+1. `WebFetch` sur le domaine principal (ex. `https://ms4d.fr`). Récupère le pitch homepage / À propos.
+2. Si la home est pauvre ou ambigüe, complète avec `WebSearch` (`"<nom company> entreprise"` ou `"<domaine> linkedin"`).
+3. Détermine factuellement :
+   - **Type d'activité** : `ecommerce` | `agence` | `saas` | `media` | `retail` | `marketplace` | `autre`.
+   - **ICP fit** parmi les options Attio : `Small Ecommerce` | `Medium Ecommerce` | `Large Ecommerce` | `Hors ICP`.
+     - Hors ICP par défaut si ce n'est pas un e-commerce direct (agence, SaaS, média, etc.).
+     - Pour les e-commerces : Small (<10 employés / faible CA), Medium, Large (gros annonceurs).
+   - **Description courte** (1-2 lignes) à mettre dans `companies.description`.
+4. **Inclure ce contexte** :
+   - Dans le `payload` des propositions `create_company` (champs `description`, `icp`).
+   - Dans le `reasoning` des propositions et todos liés à cette company.
+   - Dans le rapport final : à côté du nom de la company, indique `(type=…, ICP=…)`.
+
+Si la recherche échoue (404, infos contradictoires, identification ambigüe), indique-le explicitement dans `reasoning` ("recherche web tentée, résultats insuffisants — à qualifier manuellement") et marque la company `Hors ICP` provisoirement avec un todo `manual_review`.
+
+**Quand ne pas chercher** : si la company existe déjà dans Attio avec `description` + `icp` renseignés, fais confiance à Attio (ne re-recherche pas pour rien).
+
+#### Décisions de modification
+
 Pour chaque remontée non-skippée :
 
 **Email B2B** → propositions possibles :
@@ -249,6 +272,6 @@ Markdown strict :
 - Pas d'écriture Attio.
 - Pas d'ingestion Gmail/Calendar/Drive/Calendly/Fireflies (les experts l'ont fait, tu lis leurs JSON).
 - Pas d'Agent call.
-- Pas d'invention. Pas d'info → todo.
+- Pas d'invention. Pas d'info → recherche web (cf. section enrichissement) → si toujours rien → todo.
 - Pas de proposition sur une company customer.
 - Pas de proposition sur un domaine perso.
