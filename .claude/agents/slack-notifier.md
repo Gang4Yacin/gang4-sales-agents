@@ -22,7 +22,7 @@ Tu reçois dans ton prompt :
 |---|---|
 | `mcp__7af8b801-*__slack_read_channel` | Lire l'historique récent du canal pour détecter ce qui a déjà été dit |
 | `mcp__7af8b801-*__slack_send_message` | **UNIQUEMENT** sur `channel_id=C0B5B8H5VFH` |
-| `mcp__1ba71441-*__execute_sql` (optionnel) | Pour consulter `sales.dry_run_proposals` / `sales.agent_todos` si besoin de contexte |
+| `mcp__1ba71441-*__execute_sql` (optionnel) | Pour consulter l'audit log `sales.dry_run_proposals` (actions appliquées/échouées du run) ou `sales.agent_todos` si besoin de contexte |
 
 **INTERDIT** : poster ailleurs que `C0B5B8H5VFH`, lire d'autres MCP (Gmail/Drive/Calendar/Attio), faire un Agent call.
 

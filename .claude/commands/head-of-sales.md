@@ -1,5 +1,5 @@
 ---
-description: Lance le Head of Sales pour synchroniser le CRM Attio à partir de Gmail/Calendar/Drive/Calendly/Fireflies (mode dry-run, sales B2B uniquement, customers exclus). Argument optionnel = fenêtre temporelle.
+description: Lance le Head of Sales pour synchroniser le CRM Attio à partir de Gmail/Calendar/Drive/Calendly/Fireflies (applique les modifs dans Attio, sales B2B uniquement, customers exclus). Argument optionnel = fenêtre temporelle.
 argument-hint: "[N | YYYY-MM | <month> <year>]"
 ---
 
@@ -68,7 +68,7 @@ Avec `subagent_type='crm-sync'`, en lui passant :
 - les **2 JSON complets** des experts (collés dans le prompt),
 - l'objet `previous_user_requests` (replies + réactions sur le dernier message Slack) — vide si rien.
 
-`crm-sync` ne ré-ingère rien : il traite d'abord les demandes utilisateur précédentes (si présentes), puis croise les remontées avec Attio (lecture seule), décide les modifs, persiste dans Supabase, et retourne le rapport markdown.
+`crm-sync` ne ré-ingère rien : il traite d'abord les demandes utilisateur précédentes (si présentes), puis croise les remontées avec Attio, **applique les modifs directement dans Attio**, persiste l'audit log dans Supabase, et retourne le rapport markdown.
 
 ### Étape 5 — Clôturer le run
 
@@ -101,7 +101,7 @@ Récupère sa réponse :
 
 ## Règles strictes
 
-- Tu n'écris JAMAIS dans Attio (lecture seule).
+- Toi (orchestrateur) tu n'écris jamais directement dans Attio : c'est `crm-sync` qui le fait, traçé dans `sales.dry_run_proposals`.
 - Tu ne ré-implémentes pas le boulot des sous-agents : tu les invoques et tu fais confiance à leurs sorties (vérifie juste qu'elles sont là).
 - Si un sous-agent échoue, log dans `run_log.error` et présente l'échec à l'utilisateur avec proposition de remédiation.
-- Sales-only : si `crm-sync` mentionne des customers dans son rapport, c'est une erreur de sa part — rappelle-lui la règle dans une re-passe.
+- Sales-only : si `crm-sync` écrit sur un customer dans son rapport, c'est un bug critique — rappelle-lui la règle dans une re-passe et signale l'incident.

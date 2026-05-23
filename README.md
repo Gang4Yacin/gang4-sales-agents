@@ -25,7 +25,7 @@ Dans Claude Code, sur ce repo :
   ├─ Agent(email-expert)    en parallèle  → JSON threads Gmail B2B
   ├─ Agent(meeting-expert)  en parallèle  → JSON meetings B2B (+ transcripts)
   └─ Agent(crm-sync)         (reçoit les 2 JSON dans le prompt)
-       → cross-ref Attio (lecture seule) + persiste propositions Supabase + rapport
+       → cross-ref Attio + **applique les modifs dans Attio** + audit log Supabase + rapport
 ```
 
 > Note : on a flatten la délégation (slash command → 3 agents peers) plutôt que 3 niveaux nested, car Claude Code ne propage pas le tool Agent en cascade. La séparation logique des rôles est préservée.
@@ -49,7 +49,7 @@ L'agent ne traite **jamais** :
 - Google Calendar : 3 comptes via partage à samuel@gang4.io.
 - Google Drive : dossiers "Meet Recordings" partagés à samuel@gang4.io.
 - Fireflies : fallback transcripts.
-- Attio : **lecture seule** dans ce MVP.
+- Attio : **lecture + écriture** (apply mode). Audit log dans `sales.dry_run_proposals`.
 
 ## Plomberie Supabase
 
@@ -60,9 +60,9 @@ Projet `Gang4_MVP` (`bksiaeiqzmoaxvkdtspn`), schéma `sales`.
 - `processed_items` — idempotence par (source, external_id) + lien vers l'objet Attio.
 - `run_log` — trace de chaque exécution avec compteurs.
 - `agent_todos` — choses ambiguës à arbitrer humainement.
-- `dry_run_proposals` — chaque modif qu'on aurait faite dans Attio, avec justification et sources.
+- `dry_run_proposals` — **audit log des modifs appliquées dans Attio** (nom historique conservé). Chaque ligne : payload, reasoning, sources, status (`pending|applied|failed|skipped`), `applied_at`, `attio_response`, `error_message`.
 
-Migration : `supabase/migrations/0001_sales_agent_init_schema.sql` (déjà appliquée).
+Migrations : `supabase/migrations/0001_sales_agent_init_schema.sql` + `0002_apply_mode.sql` (apply mode + audit columns).
 
 ## Inspecter un run
 
@@ -72,11 +72,12 @@ Via le MCP Supabase ou directement en SQL :
 -- dernier run
 select * from sales.run_log order by started_at desc limit 1;
 
--- propositions du dernier run, groupées par cible
-select target_object_type, target_record_id, action_type, reasoning, source_refs
+-- actions du dernier run, groupées par cible
+select status, target_object_type, target_record_id, action_type,
+       reasoning, source_refs, error_message, applied_at
 from sales.dry_run_proposals
 where run_id = (select id from sales.run_log order by started_at desc limit 1)
-order by target_record_id;
+order by status, target_record_id;
 
 -- todos ouverts
 select * from sales.agent_todos where state = 'open' order by created_at desc;
@@ -84,8 +85,8 @@ select * from sales.agent_todos where state = 'open' order by created_at desc;
 
 ## Roadmap
 
-- ✅ MVP `crm-sync` (dry-run) avec sous-sous-agents `email-expert` + `meeting-expert`
-- ⏳ Validation du dry-run, puis activation écriture Attio
+- ✅ MVP `crm-sync` avec sous-sous-agents `email-expert` + `meeting-expert`
+- ✅ Activation écriture Attio (apply mode + audit log dans `sales.dry_run_proposals`)
 - ⏳ Sous-agent `meeting-companion` (briefing avant meeting + résumé après)
 - ⏳ Gmail Lucie/Yacin via n8n
 - ⏳ Sous-agents `pipeline-analyst`, `outreach-drafter`, `weekly-reporter`
