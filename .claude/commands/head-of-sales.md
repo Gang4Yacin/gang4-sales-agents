@@ -75,38 +75,18 @@ where id = '<run_id>';
 
 Affiche le rapport markdown de `crm-sync` tel quel, précédé d'une ligne `> run_id: <uuid>` pour traçabilité.
 
-### Étape 7 — Envoyer le résumé sur Slack #head-of-sales
+### Étape 7 — Déléguer la notification Slack au sous-agent `slack-notifier`
 
-À la fin de chaque run, envoie un résumé structuré dans le canal Slack **#head-of-sales** (`channel_id=C0B5B8H5VFH`) via `mcp__7af8b801-*__slack_send_message`.
+À la fin de chaque run, **n'envoie pas toi-même** sur Slack. Délègue au sous-agent `slack-notifier` via le tool Agent :
 
-**Format strict** (Slack markdown, scannable) :
+- `subagent_type='slack-notifier'`
+- Brief : le `run_id`, la fenêtre, et le **rapport markdown complet** produit par `crm-sync`.
 
-```
-:bar_chart: *Head of Sales — Run <label> (<window_start_date> → <window_end_date>)*
-> run_id: `<uuid>`
+Le sous-agent décidera s'il faut notifier ou pas (anti-répétition), et formatera le message au mieux. Il poste uniquement sur `C0B5B8H5VFH` (#head-of-sales).
 
-*✅ Actions effectuées*
-• <cible> — <action courte> (<source: gmail|gcal|web…>)
-• ...
-
-*🚨 Actions à valider*
-• *<objet en gras>* — pourquoi tu hésites en 1 ligne. Question explicite ?
-• ...
-
-*💡 Suggestions*           ← OPTIONNEL, n'inclure que s'il y a du contenu
-• ...
-
-*⚠️ Infos importantes*     ← OPTIONNEL, n'inclure que s'il y a du contenu
-• ...
-```
-
-**Règles strictes** :
-- **NE PAS** inclure le compteur de customers skippés ni aucune mention de customers. Sales only.
-- **NE PAS** inclure les filtres techniques (nombre d'emails scannés, threads exclus…). Ça reste dans Supabase si besoin.
-- **Concis et scannable**. Une ligne par item. Pas de paragraphes, pas de blabla, pas de "voici le résumé".
-- Pour chaque "Action à valider", **toujours** : objet en gras → contexte 1 ligne → question explicite.
-- Si **Suggestions** ou **Infos importantes** sont vides, **omettre la section complète** (pas de "néant").
-- Aujourd'hui, en mode dry-run, les "Actions effectuées" sont en fait des propositions persistées dans Supabase. À terme (après bascule en mode écriture Attio), ce seront les actions auto-exécutées. Le format reste le même.
+Récupère sa réponse :
+- Soit un `message_link` Slack → mentionne-le brièvement à l'utilisateur.
+- Soit `"skipped: <raison>"` → mentionne-le aussi (« notification Slack skippée : rien de nouveau depuis le dernier post »).
 
 ## Règles strictes
 
