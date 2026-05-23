@@ -9,17 +9,38 @@ Conçu pour tourner **dans Claude Code** en utilisant les MCP connectés à la s
 Dans Claude Code, sur ce repo :
 
 ```
-/head-of-sales            # depuis le dernier cursor Supabase
-/head-of-sales 90         # backfill 90 jours
-/head-of-sales 7          # 7 derniers jours
+/head-of-sales                   # depuis le dernier cursor Supabase
+/head-of-sales 7                 # 7 derniers jours
+/head-of-sales 90                # 90 derniers jours
+/head-of-sales 2026-09           # mois entier (septembre 2026)
+/head-of-sales september 2026    # idem (FR : septembre 2026 fonctionne aussi)
 ```
+
+> Sur Claude Code **web**, les slash commands custom ne sont pas affichées. Tape simplement « lance head-of-sales sur 7 jours » ou « lance head-of-sales pour septembre 2026 » — l'agent est invoqué de la même façon.
 
 ## Architecture
 
+```
+/head-of-sales (slash command)
+  └─ head-of-sales (orchestrateur — coordonne, ne touche à rien)
+       └─ crm-sync (synthétiseur — croise les remontées et décide les modifs Attio)
+            ├─ email-expert    (lit Gmail Samuel, remonte threads sales B2B)
+            └─ meeting-expert  (lit Calendar + Drive + Fireflies, remonte meetings sales B2B)
+```
+
 - **`/head-of-sales`** (slash command, `.claude/commands/head-of-sales.md`) — point d'entrée utilisateur.
 - **Orchestrateur** (`.claude/agents/head-of-sales.md`) — coordonne, ne touche à aucun outil métier.
-- **Sous-agents** (1 pour le MVP, d'autres à venir) :
-  - **`crm-sync`** (`.claude/agents/crm-sync.md`) — ingère Gmail/Calendar/Drive/Fireflies, résout les entités Attio, propose les modifs (dry-run), persiste dans Supabase.
+- **Synthétiseur `crm-sync`** (`.claude/agents/crm-sync.md`) — délègue l'ingestion, croise avec Attio, persiste les propositions.
+- **Experts d'ingestion** :
+  - **`email-expert`** (`.claude/agents/email-expert.md`) — Gmail. Exclut `label:lemwarmup`, notifications SaaS, threads internes, non-B2B.
+  - **`meeting-expert`** (`.claude/agents/meeting-expert.md`) — Google Calendar + Drive (Meet Recordings) + Fireflies (fallback).
+
+## Périmètre : sales B2B uniquement
+
+L'agent ne traite **jamais** :
+- les **companies clientes** (`company_status='Customer'` dans Attio) — c'est le périmètre du futur `head-of-customer-success`.
+- les **contacts non-B2B** (emails persos : gmail.com, orange.fr, free.fr, etc. — ambassadeurs, particuliers, candidatures).
+- le **bruit Gmail** (warm-up `label:lemwarmup`, notifications SaaS, threads internes).
 
 ## Sources de données
 
@@ -62,9 +83,10 @@ select * from sales.agent_todos where state = 'open' order by created_at desc;
 
 ## Roadmap
 
-- ✅ MVP `crm-sync` (dry-run)
-- ⏳ Validation 2 semaines de dry-run, puis activation écriture Attio
+- ✅ MVP `crm-sync` (dry-run) avec sous-sous-agents `email-expert` + `meeting-expert`
+- ⏳ Validation du dry-run, puis activation écriture Attio
 - ⏳ Sous-agent `meeting-companion` (briefing avant meeting + résumé après)
 - ⏳ Gmail Lucie/Yacin via n8n
 - ⏳ Sous-agents `pipeline-analyst`, `outreach-drafter`, `weekly-reporter`
 - ⏳ Cron / déclenchement automatique
+- ⏳ `head-of-customer-success` (périmètre customer, distinct du sales)
