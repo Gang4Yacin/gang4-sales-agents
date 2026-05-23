@@ -21,19 +21,20 @@ Dans Claude Code, sur ce repo :
 ## Architecture
 
 ```
-/head-of-sales (slash command)
-  └─ head-of-sales (orchestrateur — coordonne, ne touche à rien)
-       └─ crm-sync (synthétiseur — croise les remontées et décide les modifs Attio)
-            ├─ email-expert    (lit Gmail Samuel, remonte threads sales B2B)
-            └─ meeting-expert  (lit Calendar + Drive + Fireflies, remonte meetings sales B2B)
+/head-of-sales (slash command = head-of-sales orchestrateur, top-level Claude)
+  ├─ Agent(email-expert)    en parallèle  → JSON threads Gmail B2B
+  ├─ Agent(meeting-expert)  en parallèle  → JSON meetings B2B (+ transcripts)
+  └─ Agent(crm-sync)         (reçoit les 2 JSON dans le prompt)
+       → cross-ref Attio (lecture seule) + persiste propositions Supabase + rapport
 ```
 
-- **`/head-of-sales`** (slash command, `.claude/commands/head-of-sales.md`) — point d'entrée utilisateur.
-- **Orchestrateur** (`.claude/agents/head-of-sales.md`) — coordonne, ne touche à aucun outil métier.
-- **Synthétiseur `crm-sync`** (`.claude/agents/crm-sync.md`) — délègue l'ingestion, croise avec Attio, persiste les propositions.
-- **Experts d'ingestion** :
+> Note : on a flatten la délégation (slash command → 3 agents peers) plutôt que 3 niveaux nested, car Claude Code ne propage pas le tool Agent en cascade. La séparation logique des rôles est préservée.
+
+- **`/head-of-sales`** (slash command, `.claude/commands/head-of-sales.md`) — c'est **le head-of-sales lui-même**. Il interprète l'argument, démarre le run dans Supabase, orchestre les 3 sous-agents.
+- **Experts d'ingestion** (parallèles, sources factuelles) :
   - **`email-expert`** (`.claude/agents/email-expert.md`) — Gmail. Exclut `label:lemwarmup`, notifications SaaS, threads internes, non-B2B.
-  - **`meeting-expert`** (`.claude/agents/meeting-expert.md`) — Google Calendar + Drive (Meet Recordings) + Fireflies (fallback).
+  - **`meeting-expert`** (`.claude/agents/meeting-expert.md`) — Google Calendar + Drive (Meet Recordings) + Calendly (si MCP connecté) + Fireflies (fallback).
+- **Synthétiseur `crm-sync`** (`.claude/agents/crm-sync.md`) — reçoit les 2 JSON des experts dans son prompt, croise avec Attio, décide les modifs, persiste dans Supabase, retourne le rapport.
 
 ## Périmètre : sales B2B uniquement
 
