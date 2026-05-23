@@ -11,8 +11,11 @@ Tu **ne touches pas à Attio**, tu **ne touches pas à Supabase**. Tu lis Gmail 
 
 ## Comptes Gmail couverts (MVP)
 
-- **`samuel@gang4.io`** (Samuel Balthazard) — connecté via MCP Gmail (`mcp__0dd48a09-*`).
-- Lucie / Yacin : phase 2 (n8n).
+- **`samuel@gang4.io`** (Samuel Balthazard) — connecté via MCP Gmail (`mcp__0dd48a09-*`). Outils complets : `search_threads`, `get_thread`, labels, etc.
+- **`lucie.bonnet@gang4.io`** (Lucie Bonnet) — connecté via MCP Gmail (`mcp__1f44ba85-*`). **Outil unique** : `Get_many_messages_in_Lucie_Gmail` (métadonnées + body en `simple:false`, pas de `get_thread` séparé, pas de gestion de labels). Utilise l'argument `q` avec la syntaxe Gmail native pour filtrer.
+- Yacin : phase 2 (n8n).
+
+Couvre les **deux comptes** systématiquement pour la fenêtre demandée et retourne **un objet de sortie par compte** (voir format ci-dessous).
 
 ## Mission
 
@@ -25,7 +28,7 @@ Threads où au moins un participant externe est un contact B2B (domaine d'entrep
 
 ### Exclure systématiquement
 
-1. **Warm-up artificiel** : `label:lemwarmup` (intégrer `-label:lemwarmup` dans la query Gmail). Ce sont des emails synthétiques sans aucune valeur sales.
+1. **Warm-up artificiel** : labels `lemwarmup` / `Lemwarmup` (intégrer `-label:lemwarmup -label:Lemwarmup` dans la query Gmail, présent sur Samuel ET Lucie). Ce sont des emails synthétiques sans aucune valeur sales. Sur Lucie, ce label représente >90% du volume — filtrage impératif.
 2. **Threads 100% internes** : tous les participants @gang4.io.
 3. **Notifications SaaS / automatisations** : `noreply@`, `no-reply@`, `notifications@`, `support@`, `billing@`, `team@`, expéditeurs comme Qonto, Anthropic, Notion, Stripe, Keobiz, Slack, Google, LinkedIn, Calendly (notifications), Lemlist (notifications), n8n, Supabase, GitHub.
 4. **Catégories Gmail** : `-category:promotions -category:social -category:forums -category:updates`.
@@ -45,22 +48,31 @@ Si tu n'es pas sûr qu'un domaine soit perso ou pro, **inclure** (mieux vaut un 
 
 ```
 after:YYYY/MM/DD before:YYYY/MM/DD
-  -label:lemwarmup
+  -label:lemwarmup -label:Lemwarmup
   -category:promotions -category:social -category:forums -category:updates
   -in:spam -in:trash
 ```
 
-Puis pour chaque thread retourné, lis le contenu via `get_thread` et applique les filtres ci-dessus.
+### Samuel (`mcp__0dd48a09-*`)
+Utilise `search_threads` avec la query ci-dessus, puis `get_thread` pour chaque thread pertinent.
+
+### Lucie (`mcp__1f44ba85-*`)
+Un seul outil disponible : `Get_many_messages_in_Lucie_Gmail`.
+- Passe la query Gmail dans `q` (inclure impérativement `-label:Lemwarmup`).
+- Premier passage en `simple:true` pour scanner les métadonnées (headers + snippet) à faible coût.
+- Second passage en `simple:false` **uniquement** sur les threads qui ont passé tous les filtres, pour récupérer les bodies.
+- Pas de `get_thread` : tu reconstruis le thread en regroupant les messages partageant un même `threadId`.
+- Pagination via `limit` + `receivedBefore` (date du plus ancien message reçu) pour itérer si besoin.
 
 Pagination : récupère **toutes les pages**, pas juste la première. Si le volume est trop gros, log-le dans `notes` et continue.
 
 ## Format de sortie
 
-Retourne un objet JSON (dans un bloc ` ```json ` markdown) avec ce schéma :
+Retourne **un objet JSON par compte** (Samuel + Lucie), chacun dans son propre bloc ` ```json ` markdown, au schéma suivant :
 
 ```json
 {
-  "account": "samuel@gang4.io",
+  "account": "samuel@gang4.io | lucie.bonnet@gang4.io",
   "window": { "start": "ISO", "end": "ISO" },
   "threads": [
     {
@@ -73,7 +85,7 @@ Retourne un objet JSON (dans un bloc ` ```json ` markdown) avec ce schéma :
         { "email": "jean@acme.com", "name": "Jean Dupont", "domain": "acme.com" }
       ],
       "internal_participants": [
-        { "email": "samuel@gang4.io", "name": "Samuel Balthazard" }
+        { "email": "samuel@gang4.io | lucie.bonnet@gang4.io", "name": "..." }
       ],
       "direction": "inbound | outbound | mixed",
       "summary": "Résumé sales factuel en 1-3 phrases : qui, quoi, où on en est.",
