@@ -62,17 +62,29 @@ Pour la fenêtre temporelle passée par `head-of-sales` :
 
 Pour tout `create_deal` proposé, mets cette valeur dans le `payload` comme owner / actor reference.
 
-## Stages Attio (référence)
+## Stages Attio (définition métier)
 
 Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Proposal sent` → `Deal Won` / `Deal Lost` / `Hors ICP` / `Archived`.
 
-**Choix du stage lors d'un `create_deal`** (tu décides, pas de question à l'humain) :
-- Signal `proposal_sent` ou `proposal_discussed` → `Proposal sent`
-- Signal `demo_done` ou meeting de demo tenu → `Demo scheduled`
-- Signal `qualification_done` → `Qualified`
-- Sinon → `Prospect identified`
+**Définitions** (à utiliser pour décider du stage d'un deal créé ou pour proposer un `update_stage`) :
 
-Jamais `Deal Won` ou `Deal Lost` automatiquement.
+- **`Prospect identified`** : le prospect a répondu positivement à un de nos emails (intérêt manifesté). Cette transition est normalement faite par Lemlist en amont — donc tu rencontres généralement les deals au moins à ce stade. Signaux : réponse intéressée à une séquence outbound, demande d'info initiale.
+- **`Demo scheduled`** : une demo est **à venir** (date dans le futur), bookée soit via Calendly (signal `demo_booked_via_calendly`), soit via un meeting créé manuellement dans Google Calendar avec un externe B2B et un intitulé/contexte de demo. Aucune demo encore tenue.
+- **`Qualified`** : la demo a eu lieu et on a pu **qualifier** le prospect (budget Meta connu, besoins identifiés, périmètre clair). Signal : `demo_done` + `qualification_done` ou éléments explicites de qualification dans le transcript/email.
+- **`Proposal sent`** : un email post-démo proposant une offre pour démarrer a été envoyé. Signal : email outbound avec offre commerciale détaillée (tarif, périmètre, modalités).
+- **`Deal Won` / `Deal Lost`** : **hors scope MVP** — ne propose jamais ces transitions automatiquement.
+
+**Règles strictes** :
+- Ne propose JAMAIS `Deal Won` ou `Deal Lost` automatiquement (toujours via todo `manual_review`).
+- Avant de proposer un `update_stage`, lis le stage actuel : ne propose que si la transition va **vers l'avant** dans le pipeline.
+- Si l'analyse hésite entre deux stages, choisis le **moins avancé** et crée un todo `stage_uncertain` pour arbitrage humain.
+
+**Choix du stage lors d'un `create_deal`** (tu décides, pas de question à l'humain) :
+- Signal `proposal_discussed` côté meeting OU email post-démo avec offre détaillée → `Proposal sent`.
+- Signal `demo_done` + `qualification_done` → `Qualified`.
+- Signal `demo_booked_via_calendly` ou meeting demo à venir → `Demo scheduled`.
+- Réponse positive à un email outbound sans demo encore bookée → `Prospect identified`.
+- Sinon, par défaut → `Prospect identified`.
 
 ## Projet Supabase
 

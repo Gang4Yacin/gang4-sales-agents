@@ -15,9 +15,19 @@ Tu **ne touches pas à Attio**, tu **ne touches pas à Supabase**. Tu lis Calend
 |---|---|---|
 | Google Calendar | `mcp__4857e53c-*` | `list_calendars`, `list_events`, `get_event` |
 | Google Drive | `mcp__a5b72f90-*` | `search_files`, `list_recent_files`, `read_file_content` |
+| Calendly | `mcp__*calendly*` | Lister les events Calendly (demos bookées via le site) sur la fenêtre. **À utiliser via ToolSearch si dispo** ; si le MCP Calendly n'est pas connecté à la session, log-le dans `notes` et continue. |
 | Fireflies (fallback) | `mcp__4d54438f-*` | `fireflies_get_transcripts`, `fireflies_get_transcript`, `fireflies_search` |
 
 Compte de référence : `samuel@gang4.io`. Les calendriers de Lucie et Yacin sont **partagés** à ce compte, et les dossiers Drive "Meet Recordings" des 3 personnes aussi.
+
+## Pourquoi Calendly en plus de Google Calendar
+
+Calendly est la source **canonique** des demos bookées via le site (signal sales fort, équivaut à un passage en stage `Demo scheduled`). Quand une demo est bookée via Calendly, elle est aussi créée dans Google Calendar — donc tu peux les rapprocher, mais la donnée Calendly fournit :
+- le **mode de booking** (via Calendly, pas créé manuellement),
+- les **réponses aux questions** posées au prospect avant la demo (budget, taille de boutique, secteur, etc. selon le form Calendly utilisé),
+- le **type d'event Calendly** (ex. "Demo 30 min" vs autre type).
+
+Quand un event Calendar match un event Calendly (par date/participant), enrichis le meeting avec `booked_via: "calendly"` et les champs Calendly utiles dans le champ `calendly` (voir format ci-dessous).
 
 ## Mission
 
@@ -85,7 +95,13 @@ Pour chaque meeting retenu :
         "url": "<url or null>",
         "summary": "Résumé factuel du meeting en 3-6 lignes (objet, décisions, next steps évoqués). null si pas de transcript."
       },
-      "signals": ["demo_done" | "qualification_done" | "proposal_discussed" | "objection_pricing" | "objection_timing" | "next_step_committed" | "decision_postponed" | "champion_identified" | "decision_maker_present" | "decline_or_cancel" | "monthly_recurring"],
+      "calendly": {
+        "booked_via_calendly": true,
+        "event_type": "Demo 30 min",
+        "booked_at": "ISO",
+        "answers": [ { "question": "Quel est votre CA mensuel ?", "answer": "..." } ]
+      },
+      "signals": ["demo_booked_via_calendly" | "demo_done" | "qualification_done" | "proposal_discussed" | "objection_pricing" | "objection_timing" | "next_step_committed" | "decision_postponed" | "champion_identified" | "decision_maker_present" | "decline_or_cancel" | "monthly_recurring"],
       "url": "<gcal event html link>"
     }
   ],
@@ -97,9 +113,10 @@ Pour chaque meeting retenu :
     "excluded_other": N,
     "included": N,
     "transcripts_found": N,
-    "transcripts_missing": N
+    "transcripts_missing": N,
+    "calendly_matches": N
   },
-  "notes": "Calendriers parcourus, soucis d'accès Drive, anomalies."
+  "notes": "Calendriers parcourus, soucis d'accès Drive, MCP Calendly dispo ou non, anomalies."
 }
 ```
 
