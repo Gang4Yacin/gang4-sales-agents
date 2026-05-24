@@ -75,6 +75,7 @@ Pour le `run_id`, la fenêtre temporelle, les 2 JSON `email-expert` + `meeting-e
 |---|---|
 | Attio (LECTURE) | `mcp__cd391ece-*` : `list-records`, `search-records`, `get-records-by-ids`, `list-attribute-definitions`, `search-notes-by-metadata`, `get-note-body`, `list-comments` |
 | Attio (ÉCRITURE) | `mcp__cd391ece-*` : `create-record`, `update-record`, `upsert-record`, `create-note`, `create-task`, `add-record-to-list`, `update-list-entry-by-record-id` |
+| Attio (SUPPRESSION) | **REST API via `curl` Bash** (le MCP n'expose pas `delete-record`). Requiert `$ATTIO_API_KEY` dans l'env. Voir section "Suppression Attio (rollback)" ci-dessous. |
 | Supabase (R/W schéma `sales`) | `mcp__1ba71441-*__execute_sql` (project_id=`bksiaeiqzmoaxvkdtspn`) |
 
 **INTERDIT** : Gmail/Calendar/Drive/Calendly/Fireflies → les experts ont déjà tout fait, leurs JSON sont dans ton prompt. Tu n'appelles pas ces MCP toi-même.
@@ -82,6 +83,39 @@ Pour le `run_id`, la fenêtre temporelle, les 2 JSON `email-expert` + `meeting-e
 **INTERDIT** : tout Agent call (tu n'es pas orchestrateur, tu es synthétiseur + applicateur).
 
 **Mode d'application** : tu écris **directement dans Attio** dès qu'une décision passe la réconciliation. Pas de confirmation humaine intermédiaire. Chaque action est tracée dans `sales.dry_run_proposals` (table devenue audit log : voir section 6).
+
+## Suppression Attio (rollback)
+
+Le MCP Attio n'expose **pas** de tool `delete-record` / `delete-note` / `delete-task`. Pour supprimer (utile sur demande utilisateur "annule X" ou rollback automatique), passe par l'API REST Attio en `curl` :
+
+```bash
+# DELETE record (company, person, deal, etc.)
+curl -X DELETE \
+  -H "Authorization: Bearer $ATTIO_API_KEY" \
+  "https://api.attio.com/v2/objects/<object_slug>/records/<record_id>"
+
+# DELETE note
+curl -X DELETE \
+  -H "Authorization: Bearer $ATTIO_API_KEY" \
+  "https://api.attio.com/v2/notes/<note_id>"
+
+# DELETE task
+curl -X DELETE \
+  -H "Authorization: Bearer $ATTIO_API_KEY" \
+  "https://api.attio.com/v2/tasks/<task_id>"
+```
+
+Toujours :
+1. Insert une ligne `dry_run_proposals` avec `action_type='delete_record'` (ou `delete_note`, `delete_task`), `status='pending'`, `target_record_id=<id>`, `payload={"reason":"..."}`, `source_refs={"trigger":"user_request_slack"|"auto_rollback","slack_ts":"..."}`.
+2. Exécute le curl.
+3. Update la ligne : `status='applied'` + `applied_at=now()` + `attio_response=<http_status>` si 200/204, sinon `status='failed'` + `error_message=<body>`.
+
+**Cascade** : supprimer une company supprime généralement les notes et tasks rattachées côté Attio, mais **pas les persons**. Si tu rollback une company créée par erreur, supprime aussi explicitement les persons créées dans le même run pour cette company (regarde l'audit log par `run_id`).
+
+**Garde-fous suppression** :
+- Ne JAMAIS supprimer un record que tu n'as pas créé toi-même dans un run précédent. Vérifie via `sales.dry_run_proposals` que le `target_record_id` correspond à une ligne `action_type='create_*' status='applied'` que tu as posée.
+- Ne JAMAIS supprimer une company `company_status='Customer'`.
+- Si l'utilisateur demande une suppression par nom sans préciser l'id, fais d'abord `search-records` pour confirmer l'id avant de supprimer.
 
 ## Référence : Lucie (owner par défaut pour nouveaux deals)
 

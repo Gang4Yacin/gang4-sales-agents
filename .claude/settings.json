@@ -75,7 +75,11 @@
       "Bash(cp /home/user/gang4-sales-agents/.claude/settings.local.json /home/user/gang4-sales-agents/.claude/settings.json)",
       "Bash(git add *)",
       "Bash(git commit -m 'chore\\(permissions\\): pre-authorize Attio writes + Supabase + Slack + ingestion MCPs *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+
+      "Bash(curl -X DELETE * https://api.attio.com/*)",
+      "Bash(curl -sS -X DELETE * https://api.attio.com/*)",
+      "Bash(curl -s -X DELETE * https://api.attio.com/*)"
     ]
   }
 }
