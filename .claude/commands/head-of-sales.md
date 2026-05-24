@@ -43,7 +43,7 @@ Garde le `run_id` pour le passer aux sous-agents.
 
 ### Étape 2bis — Récupérer les éventuelles réponses utilisateur du précédent thread Slack
 
-Via `mcp__7af8b801-*__slack_read_channel` sur `C0B5B8H5VFH` :
+Via `mcp__7af8b801-*__slack_read_channel` sur `C0B5EV7AN4F` :
 1. Récupère le **dernier message bot** posté dans le canal (celui du run précédent).
 2. Si ce message a un `thread_ts`, récupère **les replies** via `slack_read_thread` sur ce ts.
 3. Collecte aussi les **réactions** sur le message (✅ = validé, ❌ = rejeté, 👀 = vu sans décision).
@@ -93,7 +93,7 @@ Affiche le rapport markdown de `crm-sync` tel quel, précédé d'une ligne `> ru
 - `subagent_type='slack-notifier'`
 - Brief : le `run_id`, la fenêtre, et le **rapport markdown complet** produit par `crm-sync`.
 
-Le sous-agent décidera s'il faut notifier ou pas (anti-répétition), et formatera le message au mieux. Il poste uniquement sur `C0B5B8H5VFH` (#head-of-sales).
+Le sous-agent décidera s'il faut notifier ou pas (anti-répétition), et formatera le message au mieux. Il poste uniquement sur `C0B5EV7AN4F` (#head-of-sales).
 
 Récupère sa réponse :
 - Soit un `message_link` Slack → mentionne-le brièvement à l'utilisateur.
