@@ -64,6 +64,17 @@ Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Ac
 
 **Règle d'or anti-hallucination** : chaque bullet doit correspondre **LITTÉRALEMENT** à une action listée dans le rapport `crm-sync`. Tu reformules pour la lisibilité, mais tu n'inventes JAMAIS une action qui n'est pas dans le rapport (ex. ne dis pas "création company" si crm-sync n'a proposé que des `create_person` + `create_note`).
 
+**Règle hyperlien Attio (OBLIGATOIRE)** : chaque fois que tu mentionnes le **nom d'une entreprise** dans `Actions effectuées` ou `Actions à valider`, tu dois le wrapper en lien Slack cliquable vers sa fiche Attio. Le rapport `crm-sync` fournit le `record_id` de chaque company (format `Attio: <uuid>` ou `(Attio company <uuid>, …)`).
+
+- Format Slack : `<URL|texte>` (chevrons, pipe, pas de markdown `[texte](url)`).
+- URL company : `https://app.attio.com/gang4/company/<record_id>/activity`
+- URL deal (optionnel, si tu mentionnes un deal nommément) : `https://app.attio.com/gang4/deal/<record_id>/activity`
+- URL person (optionnel) : `https://app.attio.com/gang4/person/<record_id>/activity`
+
+Exemple : au lieu de `• *Insentials*`, écris `• *<https://app.attio.com/gang4/company/0a0d62cc-b7ac-4a07-ad0b-2d5bc871c540/activity|Insentials>*`.
+
+Si le rapport ne donne PAS de `record_id` pour une company mentionnée (cas rare : enrichissement échoué, ou skip avant création), laisse le nom en gras sans lien — n'invente jamais un id.
+
 ```
 :bar_chart: *Head of Sales — Run <label> (<window_start_date> → <window_end_date>)*
 > run_id: `<uuid>`
@@ -73,15 +84,15 @@ Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Ac
 • ...
 
 *✅ Actions effectuées*
-• *<Entreprise>*
+• *<https://app.attio.com/gang4/company/<record_id>/activity|Entreprise>*
    ◦ <action courte> → <détail concis>
    ◦ <action courte> → <détail concis>
    _(sources: gmail + gcal + web)_
-• *<Entreprise 2>*
+• *<https://app.attio.com/gang4/company/<record_id_2>/activity|Entreprise 2>*
    ◦ ...
 
 *🚨 Actions à valider*
-• *<Entreprise>*
+• *<https://app.attio.com/gang4/company/<record_id>/activity|Entreprise>*
    ◦ <ce qu'il faut valider> — <pourquoi tu hésites>. <Question explicite> ?
 
 *🔁 Rappels*                       ← OPTIONNEL : recurring_todos, max 3 items
@@ -94,7 +105,7 @@ Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Ac
 **Exemple de groupage** (modèle de référence — c'est exactement le style attendu) :
 
 ```
-• *Insentials*
+• *<https://app.attio.com/gang4/company/0a0d62cc-b7ac-4a07-ad0b-2d5bc871c540/activity|Insentials>*
    ◦ création deal → stage "Meta Connected" lié à Justine De Paepe (CEO)
    ◦ création 2 notes → cycle commercial complet + closing call 08/05 : 400€/mois + 9% whitelisting, GLH-2 via Shopify
    ◦ changement company_status → Customer (contrat signé 19/05)
