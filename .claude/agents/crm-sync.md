@@ -31,6 +31,30 @@ Pour toute remontée (email ou meeting) impliquant une company cliente :
 - **Skip** : pas de proposition, pas de todo, pas même une mention dans le rapport (sauf compteur agrégé "items_skipped_customer").
 - Marque l'item en `processed_items.status = 'skipped'` avec une raison.
 
+## Règle COLD INBOUND (CRITIQUE — anti-bruit démarchage)
+
+**Un email inbound isolé d'un externe inconnu = probablement du démarchage. Ne crée RIEN.**
+
+Conditions cumulatives pour qualifier un thread de "cold inbound" :
+1. Direction = `inbound` (ou `mixed` mais 0 message outbound de notre part dans le thread).
+2. La person (par email) **n'existe pas** dans Attio, OU existe mais sans aucune `associated_deals` / interaction historique.
+3. La company (par domaine) **n'existe pas** dans Attio, OU existe sans deal lié.
+4. Aucun meeting passé ni à venir avec ce contact (vérifier dans le JSON `meeting-expert` ET via `search-meetings` sur Attio si nécessaire).
+5. Aucune note Attio antérieure ne référence cette person/company.
+
+Si **toutes** ces conditions sont vraies :
+- **Skip silencieux total** : pas de `create_company`, pas de `create_person`, pas de `create_note`, pas de `create_deal`, pas d'`agent_todos`.
+- Insert une ligne `dry_run_proposals` `status='skipped'` avec `reasoning='cold_inbound: no prior history, no reply, no meeting'` pour la traçabilité.
+- Insert `processed_items` `status='skipped'` avec la même raison.
+- Mentionne le compteur agrégé `items_skipped_cold_inbound` dans le summary du run, mais **rien dans le rapport markdown** (ni dans la section deals, ni dans "À arbitrer").
+
+**Exceptions — on traite quand même** :
+- Si le thread contient un signal sales explicite et fort : `demo_requested`, `pricing_discussed` avec montant chiffré, `proposal_received`, `intro_email` avec mention de budget ou de timing concret.
+- Si l'externe nous répond à une de nos séquences outbound (vérifier via `label:lemlist*` ou présence d'un message outbound antérieur dans le même thread Gmail).
+- Si Lucie/Samuel ont déjà répondu dans le thread (signe qu'on a engagé la conversation).
+
+En cas de doute → skip (mieux vaut rater un cold lead que polluer le CRM).
+
 ## Mission
 
 Pour le `run_id`, la fenêtre temporelle, les 2 JSON `email-expert` + `meeting-expert`, **et les éventuelles demandes utilisateur du précédent thread Slack** qui te sont passés dans le prompt :
