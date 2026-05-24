@@ -67,11 +67,11 @@ Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Ac
 **Règle hyperlien Attio (OBLIGATOIRE)** : chaque fois que tu mentionnes le **nom d'une entreprise** dans `Actions effectuées` ou `Actions à valider`, tu dois le wrapper en lien Slack cliquable vers sa fiche Attio. Le rapport `crm-sync` fournit le `record_id` de chaque company (format `Attio: <uuid>` ou `(Attio company <uuid>, …)`).
 
 - Format Slack : `<URL|texte>` (chevrons, pipe, pas de markdown `[texte](url)`).
-- URL company : `https://app.attio.com/gang4/company/<record_id>/activity`
-- URL deal (optionnel, si tu mentionnes un deal nommément) : `https://app.attio.com/gang4/deal/<record_id>/activity`
-- URL person (optionnel) : `https://app.attio.com/gang4/person/<record_id>/activity`
+- URL company : `https://app.attio.com/gang-4-crm/company/<record_id>/overview`
+- URL deal (optionnel, si tu mentionnes un deal nommément) : `https://app.attio.com/gang-4-crm/deal/<record_id>/overview`
+- URL person (optionnel) : `https://app.attio.com/gang-4-crm/person/<record_id>/overview`
 
-Exemple : au lieu de `• *Insentials*`, écris `• *<https://app.attio.com/gang4/company/0a0d62cc-b7ac-4a07-ad0b-2d5bc871c540/activity|Insentials>*`.
+Exemple : au lieu de `• *Insentials*`, écris `• *<https://app.attio.com/gang-4-crm/company/0a0d62cc-b7ac-4a07-ad0b-2d5bc871c540/overview|Insentials>*`.
 
 Si le rapport ne donne PAS de `record_id` pour une company mentionnée (cas rare : enrichissement échoué, ou skip avant création), laisse le nom en gras sans lien — n'invente jamais un id.
 
@@ -84,15 +84,15 @@ Si le rapport ne donne PAS de `record_id` pour une company mentionnée (cas rare
 • ...
 
 *✅ Actions effectuées*
-• *<https://app.attio.com/gang4/company/<record_id>/activity|Entreprise>*
+• *<https://app.attio.com/gang-4-crm/company/<record_id>/overview|Entreprise>*
    ◦ <action courte> → <détail concis>
    ◦ <action courte> → <détail concis>
    _(sources: gmail + gcal + web)_
-• *<https://app.attio.com/gang4/company/<record_id_2>/activity|Entreprise 2>*
+• *<https://app.attio.com/gang-4-crm/company/<record_id_2>/overview|Entreprise 2>*
    ◦ ...
 
 *🚨 Actions à valider*
-• *<https://app.attio.com/gang4/company/<record_id>/activity|Entreprise>*
+• *<https://app.attio.com/gang-4-crm/company/<record_id>/overview|Entreprise>*
    ◦ <ce qu'il faut valider> — <pourquoi tu hésites>. <Question explicite> ?
 
 *🔁 Rappels*                       ← OPTIONNEL : recurring_todos, max 3 items
@@ -105,7 +105,7 @@ Si le rapport ne donne PAS de `record_id` pour une company mentionnée (cas rare
 **Exemple de groupage** (modèle de référence — c'est exactement le style attendu) :
 
 ```
-• *<https://app.attio.com/gang4/company/0a0d62cc-b7ac-4a07-ad0b-2d5bc871c540/activity|Insentials>*
+• *<https://app.attio.com/gang-4-crm/company/0a0d62cc-b7ac-4a07-ad0b-2d5bc871c540/overview|Insentials>*
    ◦ création deal → stage "Meta Connected" lié à Justine De Paepe (CEO)
    ◦ création 2 notes → cycle commercial complet + closing call 08/05 : 400€/mois + 9% whitelisting, GLH-2 via Shopify
    ◦ changement company_status → Customer (contrat signé 19/05)
