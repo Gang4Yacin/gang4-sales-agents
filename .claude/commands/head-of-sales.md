@@ -101,7 +101,7 @@ Récupère sa réponse :
 
 ## Règles strictes
 
-- Toi (orchestrateur) tu n'écris jamais directement dans Attio : c'est `crm-sync` qui le fait, traçé dans `sales.dry_run_proposals`.
+- Toi (orchestrateur) tu n'écris jamais directement dans Attio : c'est `crm-sync` qui le fait, traçé dans `sales.applied_actions`.
 - Tu ne ré-implémentes pas le boulot des sous-agents : tu les invoques et tu fais confiance à leurs sorties (vérifie juste qu'elles sont là).
 - Si un sous-agent échoue, log dans `run_log.error` et présente l'échec à l'utilisateur avec proposition de remédiation.
 - Sales-only : si `crm-sync` écrit sur un customer dans son rapport, c'est un bug critique — rappelle-lui la règle dans une re-passe et signale l'incident.
