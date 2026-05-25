@@ -41,17 +41,17 @@ Récupère les **10 derniers messages** du canal `C0B5EV7AN4F` via `slack_read_c
 
 À partir du rapport `crm-sync` et de l'historique Slack que tu viens de lire, identifie :
 
-- **`new_actions`** : actions effectuées **non visibles** dans les messages Slack récents (par nom de company/deal).
-- **`new_todos`** : todos à arbitrer non visibles dans le canal récemment.
-- **`recurring_todos`** : todos déjà mentionnés dans les **2 derniers messages** du canal.
+- **`auto_resolved`** : follow-ups que l'agent a auto-fermés ce run (avec ce qui a été détecté).
+- **`new_actions`** : actions effectuées dans Attio **non visibles** dans les messages Slack récents.
+- **`new_todos`** : nouveaux follow-ups créés ce run à arbitrer.
+- **`nudged_todos`** : follow-ups existants à rappeler (créés lors d'un run précédent, due_at passé, non résolus).
 - **`new_warnings`** : infos importantes (permissions, MCP manquants) non encore remontées dans le canal.
 - **`active_warnings`** : warnings déjà visibles dans les 2 derniers messages ET toujours valides.
 
 ### 3. Décider : POSTER OU NE PAS POSTER
 
 **NE PAS POSTER** (return silencieux) si :
-- `new_actions` est vide ET `new_todos` est vide ET `new_warnings` est vide.
-- OU le rapport ne contient strictement rien d'actionnable (0 propositions, 0 todos, 0 warnings).
+- `auto_resolved`, `new_actions`, `new_todos`, `nudged_todos`, `new_warnings` sont **tous vides**.
 - OU un message **strictement identique** est visible dans les 10 derniers messages du canal (timestamp < 6h).
 
 Dans ce cas : ne fais **rien**. Retourne juste à l'orchestrateur : `"skipped: nothing new since last notification (last post at <ts>)"`.
@@ -88,32 +88,41 @@ Si le rapport `crm-sync` ne donne PAS de `record_id` pour une entreprise mention
 
 **"(hors deal)" interdit** : ne jamais accoler `(hors deal)` à un nom d'entreprise. Si tu veux distinguer les entreprises sans deal, c'est dans le drilldown du lien que ça se voit. Le nom doit rester propre.
 
+**Noms complets obligatoires** : utilise le **nom officiel complet** de chaque entreprise — jamais d'acronyme ou d'abréviation. "Too Good To Go" pas "TGTG". "Les Petits Culottés" pas "Petits Culottés". "What Matters" pas "WM". Le rapport `crm-sync` fournit le nom complet ; ne le raccourcis pas.
+
 ```
 :bar_chart: *Head of Sales — Run <label> (<window_start_date> → <window_end_date>)*
 > run_id: `<uuid>`
 
-*🔁 Résumé précédentes demandes*   ← OPTIONNEL : présent uniquement si le rapport crm-sync contient une section "Suite aux demandes précédentes"
+*🤖 Résumé précédentes demandes*   ← OPTIONNEL : présent si crm-sync contient "Suite aux demandes précédentes"
 • <demande user> → <action prise> ✓
 • ...
 
-*✅ Actions effectuées*
-• *<https://app.attio.com/gang-4-crm/companies/record/<record_id>/overview|Entreprise>*
+*🟢 Follow-ups auto-résolus*        ← OPTIONNEL : auto_resolved
+• *<lien Attio|Nom complet entreprise>* — <ce que l'agent a détecté> → <action en cascade si applicable>
+
+*✅ Actions effectuées*             ← OPTIONNEL : new_actions
+• *<lien Attio|Nom complet entreprise>*
    ◦ <action courte> → <détail concis>
    ◦ <action courte> → <détail concis>
    _(sources: gmail + gcal + web)_
-• *<https://app.attio.com/gang-4-crm/companies/record/<record_id_2>/overview|Entreprise 2>*
+• *<lien Attio|Nom complet entreprise 2>*
    ◦ ...
 
-*🚨 Actions à valider*
-• *<https://app.attio.com/gang-4-crm/companies/record/<record_id>/overview|Entreprise>*
-   ◦ <ce qu'il faut valider> — <pourquoi tu hésites>. <Question explicite> ?
+*🚨 Actions à valider*              ← OPTIONNEL : new_todos avec kind∈{stage_uncertain, reopen_lost_review, manual_review, …}
+• *<lien Attio|Nom complet entreprise>*
+   ◦ <ce qu'il faut valider> — <pourquoi> ?
+   ↳ Réponds en thread : *done* | *snooze 7j* | *skip*
 
-*🔁 Rappels*                       ← OPTIONNEL : recurring_todos, max 3 items
-• *<objet>* — en attente depuis <date>.
+*🔁 Rappels & follow-ups*           ← OPTIONNEL : nudged_todos
+• *<lien Attio|Nom complet entreprise>* — <résumé du todo> (en attente depuis Nj)
+   ↳ Réponds en thread : *done* | *snooze 7j* | *skip*
 
-*⚠️ Infos importantes*             ← OPTIONNEL : new_warnings UNIQUEMENT
+*⚠️ Infos importantes*              ← OPTIONNEL : new_warnings UNIQUEMENT
 • ...
 ```
+
+**Règle des CTA "Réponds en thread"** : présent sous chaque item des sections `Actions à valider` et `Rappels & follow-ups` (jamais sous `Actions effectuées` ni `Follow-ups auto-résolus`, qui n'attendent rien). Les commandes acceptées sont **`done`, `snooze Nj`, `skip`** + texte libre pour custom action — c'est documenté dans `head-of-sales.md` étape 2bis pour le parsing au run suivant.
 
 **Exemple de groupage** (modèle de référence — c'est exactement le style attendu) :
 

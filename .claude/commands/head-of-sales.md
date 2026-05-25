@@ -41,15 +41,39 @@ returning id;
 
 Garde le `run_id` pour le passer aux sous-agents.
 
-### Étape 2bis — Récupérer les éventuelles réponses utilisateur du précédent thread Slack
+### Étape 2bis — Récupérer les réponses utilisateur sur le précédent Slack + parser les commandes follow-up
 
 Via `mcp__7af8b801-*__slack_read_channel` sur `C0B5EV7AN4F` :
 1. Récupère le **dernier message bot** posté dans le canal (celui du run précédent).
 2. Si ce message a un `thread_ts`, récupère **les replies** via `slack_read_thread` sur ce ts.
-3. Collecte aussi les **réactions** sur le message (✅ = validé, ❌ = rejeté, 👀 = vu sans décision).
-4. Compile un objet `previous_user_requests` (liste des messages texte + réactions) à passer dans le brief de `crm-sync` ci-dessous.
+3. Collecte aussi les **réactions** sur le message (✅ = validé global, ❌ = rejeté global, 👀 = vu sans décision).
 
-Si aucun message bot précédent, ou aucune reply / réaction → `previous_user_requests = []`.
+**Parsing intelligent des replies** : chaque reply peut adresser un ou plusieurs follow-ups listés dans le précédent post du bot. Tu identifies (via le nom d'entreprise mentionné ou par position) à quel todo la reply se rapporte, et tu traduis en commande standard :
+
+| Texte du user | Commande | Effet attendu |
+|---|---|---|
+| `"done"`, `"fait"`, `"ok"`, `"✓"`, `"✅"` | `done` | state='done', resolved_by='user_slack' |
+| `"snooze 7j"`, `"snooze 7"`, `"+7j"`, `"plus tard"` | `snooze N` | state='snoozed', due_at=now+Nj |
+| `"skip"`, `"annule"`, `"laisse tomber"`, `"❌"` | `cancel` | state='cancelled' |
+| `"crée un deal pour X"`, `"rouvre le deal Y"`, `"change le stage Z"` | `custom_action` | exécution Attio normale au prochain step |
+| autre texte libre sans commande claire | `note` | log dans `previous_user_requests_summary` pour le rapport |
+
+Compile un objet `previous_user_requests` :
+```json
+{
+  "thread_ts": "...",
+  "replies": [
+    { "ts": "...", "user": "yacin", "text": "Insentials done", "parsed": {"command": "done", "target_todo_hint": "Insentials"} },
+    { "ts": "...", "user": "yacin", "text": "Alltricks snooze 7j", "parsed": {"command": "snooze", "days": 7, "target_todo_hint": "Alltricks"} },
+    { "ts": "...", "user": "yacin", "text": "Crée un deal pour TGTG", "parsed": {"command": "custom_action", "raw": "Crée un deal pour TGTG"} }
+  ],
+  "reactions": ["✅"]
+}
+```
+
+Si aucun message bot précédent, ou aucune reply / réaction → `previous_user_requests = { "thread_ts": null, "replies": [], "reactions": [] }`.
+
+`crm-sync` recevra cet objet et l'utilisera à son étape 0d pour mettre à jour les `agent_todos` correspondants.
 
 ### Étape 3 — Appeler les 2 experts d'ingestion EN PARALLÈLE
 
