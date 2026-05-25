@@ -270,6 +270,23 @@ Dédupe la liste des companies/people concernées par les remontées et :
 **Vérification customer_status & ICP de la company** (déjà chargée) :
 - Lis `company_status`. Si `Customer` → skip silencieux de tout ce qui la concerne.
 - Lis `icp`. Si `Hors ICP` → n'applique **jamais** de `create_deal` (création de person ok pour traçabilité).
+- Si `icp` est **null/vide** : ne traite **PAS** comme Hors ICP. Lance d'abord l'enrichissement web (cf. section 4 "Enrichissement company"), écris l'ICP déterminé dans Attio via `update_record` sur la company, puis applique les règles normales. Si l'enrichissement échoue (404, infos contradictoires), crée un `agent_todo` `kind='qualify_icp'` avec `verification_hint='vérifier ICP manuellement et marquer dans Attio'` au lieu de créer un deal.
+
+## Règle "FENÊTRE DU RUN" (CRITIQUE — anti-bruit historique)
+
+Tu ne traites une company **QUE SI** elle apparaît dans les JSON des experts pour la fenêtre courante avec un **signal réellement nouveau** dans cette fenêtre :
+- Un email envoyé/reçu (inbound ou outbound) entre `window_start` et `window_end`.
+- Un meeting tenu (ou booké via Calendly) dans la fenêtre.
+- Un transcript Fireflies/Drive daté de la fenêtre.
+
+**Si tu ne vois aucun de ces signaux frais** sur une company (même si elle a un historique commercial passé visible dans les notes Attio), **ne fais RIEN sur elle** :
+- Pas de note (la conversation passée est déjà dans Attio).
+- Pas de deal créé rétroactivement.
+- Pas d'agent_todo.
+
+L'historique passé sert **uniquement de contexte** pour décider quoi faire sur les signaux frais, jamais comme déclencheur d'une nouvelle action.
+
+**Test mental** : si la company n'apparaît dans aucun thread/meeting/transcript de la fenêtre, et que la dernière interaction Attio remonte à >30j → ne la touche pas. Point.
 
 **Vérification deals associés** :
 - `search-records` sur `deals` filter `associated_company eq <company_record_id>` pour récupérer le deal en cours et son stage actuel.
