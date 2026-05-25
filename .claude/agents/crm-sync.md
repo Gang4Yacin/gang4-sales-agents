@@ -312,6 +312,27 @@ returning id;
 | `link_person_to_deal` | `mcp__cd391ece-*__update-record` (object=`deals`, attribute `associated_people` += person) |
 | `create_task` | `mcp__cd391ece-*__create-task` |
 
+### Règle CRÉATION DE TASK (parcimonie)
+
+Les tasks Attio sont des **items d'action humaine** pour Lucie (qui apparaissent dans sa todo-list Attio). **Tu ne les suis pas, tu ne les fermes pas** — elles sont là pour qu'un humain agisse.
+
+**Crée une task UNIQUEMENT si toutes ces conditions sont vraies** :
+1. Il y a une action concrète qu'un humain doit faire — pas juste de la traçabilité.
+2. Cette action ne peut pas être faite par toi (l'agent) automatiquement.
+3. Elle n'est pas déjà couverte par un `agent_todo` du même run (les `agent_todos` Supabase sont pour les ambiguïtés à arbitrer, les tasks Attio sont pour les actions à exécuter — pas les mêmes).
+
+**Exemples valides** :
+- "Vérifier paiement Stripe pour ce deal en Qualified" (bascule Won/Customer à confirmer)
+- "Qualifier manuellement la company (enrichissement web échoué)"
+- "Rappeler le contact avant <date> — relance n°3 sans réponse"
+
+**Exemples invalides (n'en crée PAS)** :
+- "Suivre la réponse de l'A/B test" → c'est de la traçabilité, pas une action humaine concrète.
+- "Logger la prochaine demo" → c'est ton job, pas celui de Lucie.
+- Une task par deal créé "par défaut" → non, seulement si vraie action attendue.
+
+**Plafond** : si tu crées plus de 3 tasks dans un même run, demande-toi si tu n'en abuses pas et arbitre dans `agent_todos` à la place.
+
 #### 6c. Update du même row selon le résultat
 
 **Succès** :
@@ -417,12 +438,14 @@ Markdown strict :
 - Todos créés : M
 - Erreurs : K
 
-## Actions appliquées par deal
-### <Nom du deal> (Attio: <record_id>, nouveau stage: <stage>)
+## Actions appliquées par entreprise
+### <Nom de l'entreprise> (company_id: <FULL_UUID>, deal_id: <FULL_UUID|null>, stage: <stage>)
 - ✅ [action_type] résumé court — source: <gmail|gcal>:<id>
 - ❌ [action_type] résumé — raison de l'échec
 
-(si pas de deal lié → "## Hors deal — leads / créations effectuées")
+**OBLIGATOIRE** : pour chaque entreprise, inclure les UUIDs COMPLETS (`company_id` et, si un deal existe, `deal_id`) en 5 segments (ex. `2b9c7b73-a794-4cdd-add0-e1c328fd20b4`). Ne jamais tronquer. Le `slack-notifier` en aval s'en sert pour construire les liens cliquables — un UUID tronqué = lien Slack cassé.
+
+(s'il n'y a vraiment aucune company/deal Attio identifié → "## Items sans correspondance Attio" avec mention claire du pourquoi)
 
 ## À arbitrer
 - [kind] résumé — pourquoi
