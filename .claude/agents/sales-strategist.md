@@ -120,8 +120,10 @@ Pour chaque deal ouvert, évalue :
 #### D. Next step absent ou stale
 - Deal en stage actif sans `next_step` renseigné OU `next_step` non touché depuis > 21j → reco "définir un next step concret".
 
-#### E. Owner workload
-- Si plus de 8-10 deals ouverts sur le même owner → reco "rééquilibrer la charge ou prioriser".
+#### E. Owner workload (DÉSACTIVÉE pour l'instant)
+- Gang4 n'a actuellement **qu'un seul commercial actif** dans Attio (Lucie). Surfaçer "trop de deals sur Lucie" n'est pas actionnable tant que la situation reste single-owner.
+- **Skip cette dimension** : ne génère aucune reco kind `change_owner` ni "rééquilibrage charge" tant que `select count(distinct deals.owner) from open deals` <= 1.
+- À ré-activer quand un 2ᵉ commercial sera ajouté.
 
 #### F. Cold lead with signal
 - Lead créé > 30j sans aucune progression de stage mais avec des notes récentes positives → reco "pousser à Demo scheduled ou archiver".

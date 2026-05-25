@@ -96,6 +96,27 @@ UUID **complet** (5 segments), jamais tronqué. Si manquant pour une reco (cas p
 
 **Noms complets obligatoires** : "Too Good To Go" pas "TGTG", "Les Petits Culottés" pas "Petits Culottés". Identique au sales-ops-notifier.
 
+**Lexique humain — pas de jargon brut** : remplace les termes techniques par leur intention sales :
+- `multi_threading` / `multi-thread` → "ajouter un 2ᵉ contact chez le prospect" (= identifier un second stakeholder, ex: boss, technique, finance, en plus du contact principal). Ne dis JAMAIS "multi-threading" ni "multi-thread" tels quels dans le brief.
+- `pricing_review` → "trancher question pricing en suspens"
+- `tactical_outreach` → "relance ciblée"
+- `change_owner` / `change_strategy` → ne pas surfacer aujourd'hui (single-owner contexte, voir sales-strategist.md dim E désactivée).
+- `escalate` → "remontée management" + précise pourquoi
+- `kill_deal` → "fermer le deal en Deal Lost"
+- `upsell` → "explorer expansion sur la company"
+- `demo_prep` → "préparer demo prévue"
+- `reopen_deal` → "rouvrir deal Lost"
+
+L'idée : le brief doit être lisible par un humain non-technique sans dictionnaire.
+
+**Format Backlog (DÉTAILLÉ, pas agrégé)** : ne te contente PAS d'écrire `"3 décisions pricing/scope"`. Liste les **noms d'entreprises concernés** avec un résumé court pour chacune. Exemple correct :
+```
+◦ Trancher pricing/scope (3) : *<lien|Alltricks>* (modération auto incluse ?), *<lien|Insentials>* (volume Shopify), *<lien|Mercanis>* (% whitelisting)
+◦ Ajouter un 2ᵉ contact prospect (5) : *<lien|NV Gallery>*, *<lien|Lunii>*, *<lien|Aurora>*, *<lien|Quitoque>*, *<lien|Fizimed>*
+◦ Relance ciblée (4) : *<lien|Morphée>* (suivi A/B test), *<lien|Aussitôt Bon>* (déprio), …
+```
+Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N autres". Pas plus de 5 groupes au total dans la section Backlog (les autres recos sont ignorées du brief — toujours consultables en SQL).
+
 **Template du brief** :
 
 ```
@@ -123,8 +144,10 @@ UUID **complet** (5 segments), jamais tronqué. Si manquant pour une reco (cas p
 - *<lien|Nom>* — <titre reco> — surfaçée il y a Nj
    ↳ Réponds en thread : *valide* | *reject* | *snooze*
 
-:bookmark: *Backlog* : N recos en attente, pas surfaçées ce run.
-   Pour voir le détail, demande dans le canal "/sales-strategist backlog" (à venir) ou consulte `sales.strategic_recommendations`.
+:bookmark: *Backlog* (N recos non surfaçées ce run, groupées par kind)
+   ◦ <kind humain au pluriel> (M) : *<lien|Nom1>* (<résumé court>), *<lien|Nom2>* (<résumé court>), *<lien|Nom3>* (<résumé court>)
+   ◦ <autre kind> (M) : *<lien|Nom1>* (<résumé>), ...
+   _(consulte `sales.strategic_recommendations` pour le détail complet)_
 
 :warning: *Notes & data gaps*    ← OPTIONNEL si rapport en contient
 - ...
