@@ -1,27 +1,27 @@
 # Gang4 — Sales Agents
 
-Agent **Head of Sales** + sous-agents spécialisés pour maintenir Attio à jour, suivre le pipe, proposer des actions, et résumer la semaine.
+Agent **Sales Ops** + sous-agents spécialisés pour maintenir Attio à jour, suivre le pipe, proposer des actions, et résumer la semaine.
 
 Conçu pour tourner **dans Claude Code** en utilisant les MCP connectés à la session (Attio, Supabase, Gmail/Calendar/Drive, Fireflies).
 
-## Lancer le Head of Sales
+## Lancer le Sales Ops
 
 Dans Claude Code, sur ce repo :
 
 ```
-/head-of-sales                   # depuis le dernier cursor Supabase
-/head-of-sales 7                 # 7 derniers jours
-/head-of-sales 90                # 90 derniers jours
-/head-of-sales 2026-09           # mois entier (septembre 2026)
-/head-of-sales september 2026    # idem (FR : septembre 2026 fonctionne aussi)
+/sales-ops                   # depuis le dernier cursor Supabase
+/sales-ops 7                 # 7 derniers jours
+/sales-ops 90                # 90 derniers jours
+/sales-ops 2026-09           # mois entier (septembre 2026)
+/sales-ops september 2026    # idem (FR : septembre 2026 fonctionne aussi)
 ```
 
-> Sur Claude Code **web**, les slash commands custom ne sont pas affichées. Tape simplement « lance head-of-sales sur 7 jours » ou « lance head-of-sales pour septembre 2026 » — l'agent est invoqué de la même façon.
+> Sur Claude Code **web**, les slash commands custom ne sont pas affichées. Tape simplement « lance sales-ops sur 7 jours » ou « lance sales-ops pour septembre 2026 » — l'agent est invoqué de la même façon.
 
 ## Architecture
 
 ```
-/head-of-sales (slash command = head-of-sales orchestrateur, top-level Claude)
+/sales-ops (slash command = sales-ops orchestrateur, top-level Claude)
   ├─ Agent(email-expert)    en parallèle  → JSON threads Gmail B2B
   ├─ Agent(meeting-expert)  en parallèle  → JSON meetings B2B (+ transcripts)
   └─ Agent(crm-sync)         (reçoit les 2 JSON dans le prompt)
@@ -30,7 +30,7 @@ Dans Claude Code, sur ce repo :
 
 > Note : on a flatten la délégation (slash command → 3 agents peers) plutôt que 3 niveaux nested, car Claude Code ne propage pas le tool Agent en cascade. La séparation logique des rôles est préservée.
 
-- **`/head-of-sales`** (slash command, `.claude/commands/head-of-sales.md`) — c'est **le head-of-sales lui-même**. Il interprète l'argument, démarre le run dans Supabase, orchestre les 3 sous-agents.
+- **`/sales-ops`** (slash command, `.claude/commands/sales-ops.md`) — c'est **le sales-ops lui-même**. Il interprète l'argument, démarre le run dans Supabase, orchestre les 3 sous-agents.
 - **Experts d'ingestion** (parallèles, sources factuelles) :
   - **`email-expert`** (`.claude/agents/email-expert.md`) — Gmail. Exclut `label:lemwarmup`, notifications SaaS, threads internes, non-B2B.
   - **`meeting-expert`** (`.claude/agents/meeting-expert.md`) — Google Calendar + Drive (Meet Recordings) + Calendly (si MCP connecté) + Fireflies (fallback).
@@ -39,7 +39,7 @@ Dans Claude Code, sur ce repo :
 ## Périmètre : sales B2B uniquement
 
 L'agent ne traite **jamais** :
-- les **companies clientes** (`company_status='Customer'` dans Attio) — c'est le périmètre du futur `head-of-customer-success`.
+- les **companies clientes** (`company_status='Customer'` dans Attio) — c'est le périmètre du futur `customer-success`.
 - les **contacts non-B2B** (emails persos : gmail.com, orange.fr, free.fr, etc. — ambassadeurs, particuliers, candidatures).
 - le **bruit Gmail** (warm-up `label:lemwarmup`, notifications SaaS, threads internes).
 
@@ -91,4 +91,4 @@ select * from sales.agent_todos where state = 'open' order by created_at desc;
 - ⏳ Gmail Lucie/Yacin via n8n
 - ⏳ Sous-agents `pipeline-analyst`, `outreach-drafter`, `weekly-reporter`
 - ⏳ Cron / déclenchement automatique
-- ⏳ `head-of-customer-success` (périmètre customer, distinct du sales)
+- ⏳ `customer-success` (périmètre customer, distinct du sales)

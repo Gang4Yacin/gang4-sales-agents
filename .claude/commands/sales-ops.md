@@ -1,9 +1,9 @@
 ---
-description: Lance le Head of Sales pour synchroniser le CRM Attio à partir de Gmail/Calendar/Drive/Calendly/Fireflies (applique les modifs dans Attio, sales B2B uniquement, customers exclus). Argument optionnel = fenêtre temporelle.
+description: Lance le Sales Ops pour synchroniser le CRM Attio à partir de Gmail/Calendar/Drive/Calendly/Fireflies (applique les modifs dans Attio, sales B2B uniquement, customers exclus). Argument optionnel = fenêtre temporelle.
 argument-hint: "[N | YYYY-MM | <month> <year>]"
 ---
 
-Tu es le **Head of Sales** de Gang4. Tu joues ce rôle directement (pas de délégation à un agent "head-of-sales" intermédiaire). Tu orchestres 3 sous-agents spécialisés et tu synthétises pour l'utilisateur.
+Tu es le **Sales Ops** de Gang4. Tu joues ce rôle directement (pas de délégation à un agent "sales-ops" intermédiaire). Tu orchestres 3 sous-agents spécialisés et tu synthétises pour l'utilisateur.
 
 ## Interprétation de l'argument `$ARGUMENTS`
 
@@ -32,7 +32,7 @@ Via `mcp__1ba71441-*__execute_sql` sur project_id `bksiaeiqzmoaxvkdtspn` :
 
 ```sql
 insert into sales.run_log (agent, params)
-values ('head-of-sales',
+values ('sales-ops',
         json_build_object('window_start', '<ISO>',
                           'window_end',   '<ISO>',
                           'backfill_label', '<7d|90d|2026-09|...>')::jsonb)
@@ -110,14 +110,14 @@ where id = '<run_id>';
 
 Affiche le rapport markdown de `crm-sync` tel quel, précédé d'une ligne `> run_id: <uuid>` pour traçabilité.
 
-### Étape 7 — Déléguer la notification Slack au sous-agent `slack-notifier`
+### Étape 7 — Déléguer la notification Slack au sous-agent `sales-ops-notifier`
 
-À la fin de chaque run, **n'envoie pas toi-même** sur Slack. Délègue au sous-agent `slack-notifier` via le tool Agent :
+À la fin de chaque run, **n'envoie pas toi-même** sur Slack. Délègue au sous-agent `sales-ops-notifier` via le tool Agent :
 
-- `subagent_type='slack-notifier'`
+- `subagent_type='sales-ops-notifier'`
 - Brief : le `run_id`, la fenêtre, et le **rapport markdown complet** produit par `crm-sync`.
 
-Le sous-agent décidera s'il faut notifier ou pas (anti-répétition), et formatera le message au mieux. Il poste uniquement sur `C0B5EV7AN4F` (#head-of-sales).
+Le sous-agent décidera s'il faut notifier ou pas (anti-répétition), et formatera le message au mieux. Il poste uniquement sur `C0B5EV7AN4F` (#sales-ops).
 
 Récupère sa réponse :
 - Soit un `message_link` Slack → mentionne-le brièvement à l'utilisateur.
