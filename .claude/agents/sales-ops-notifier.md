@@ -154,7 +154,18 @@ Si plusieurs `upsert_monthly_note` ont eu lieu pour la même entreprise dans le 
 
 **"(hors deal)" interdit** : ne jamais accoler `(hors deal)` à un nom d'entreprise. Si tu veux distinguer les entreprises sans deal, c'est dans le drilldown du lien que ça se voit. Le nom doit rester propre.
 
-**Noms complets obligatoires** : utilise le **nom officiel complet** de chaque entreprise — jamais d'acronyme ou d'abréviation. "Too Good To Go" pas "TGTG". "Les Petits Culottés" pas "Petits Culottés". "What Matters" pas "WM". Le rapport `crm-sync` fournit le nom complet ; ne le raccourcis pas.
+**Noms complets obligatoires — ZÉRO acronyme, ZÉRO diminutif** :
+
+Utilise **toujours** le nom officiel complet tel qu'il apparaît dans Attio. Aucune abréviation maison, aucun trigramme, aucun raccourci :
+
+- ✅ "Too Good To Go" — ❌ "TGTG"
+- ✅ "Les Petits Culottés" — ❌ "Petits Culottés" ni "LPC"
+- ✅ "What Matters" — ❌ "WM"
+- ✅ "Unique Heritage Editions" — ❌ "UHE" ni "UPD"
+- ✅ "Aussitôt Bon" — ❌ "AB"
+- ✅ Tout autre acronyme 2-4 lettres → **interdit**.
+
+Le rapport `crm-sync` fournit le nom complet ; ne le raccourcis JAMAIS pour "faire concis". La lisibilité humaine prime.
 
 ```
 :bar_chart: *Sales Ops — Run <label> (<window_start_date> → <window_end_date>)*

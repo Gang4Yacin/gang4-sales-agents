@@ -286,4 +286,5 @@ where id = '<run_id>';
 - Pas plus de 3 threads Gmail / 2 transcripts Fireflies / 5 events Calendar lus par run. Hard caps.
 - Pas de mention de **customers** (skip silencieux).
 - Pas de mention de **contacts non-B2B**.
+- **Pas d'acronyme ni de diminutif** pour les noms d'entreprise. Toujours le nom officiel complet du champ `name` Attio. "Too Good To Go" pas "TGTG", "Unique Heritage Editions" pas "UHE/UPD", etc. Ton output (`title`, `rationale`, `target_name`, rapport markdown) doit utiliser le nom complet — sinon le notifier propagera l'abréviation, c'est trop tard à corriger en aval.
 - Pas plus de 20 recos par run. Si tu en vois plus, c'est que tu satures — choisis les 20 plus importantes. (Le but est qualitatif, pas exhaustif.)

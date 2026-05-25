@@ -94,7 +94,20 @@ UUID **complet** (5 segments), jamais tronqué. Si manquant pour une reco (cas p
 
 **Règle hyperlien** : si une reco cible un deal/company, le nom de l'entreprise dans le brief DOIT être un lien Slack `<URL|nom complet>`. Format gras + lien : `*<URL|Nom>*`.
 
-**Noms complets obligatoires** : "Too Good To Go" pas "TGTG", "Les Petits Culottés" pas "Petits Culottés". Identique au sales-ops-notifier.
+**Noms complets obligatoires — ZÉRO acronyme, ZÉRO diminutif** :
+
+Utilise **toujours** le nom officiel complet de l'entreprise tel qu'il apparaît dans le champ `name` Attio. Aucune abréviation maison, aucun trigramme, aucun raccourci :
+
+- ✅ "Too Good To Go" — ❌ "TGTG"
+- ✅ "Les Petits Culottés" — ❌ "Petits Culottés" ni "LPC"
+- ✅ "What Matters" — ❌ "WM"
+- ✅ "Unique Heritage Editions" — ❌ "UHE" ni "UPD"
+- ✅ "Aussitôt Bon" — ❌ "AB"
+- ✅ Tout autre acronyme 2-4 lettres → **interdit**.
+
+Si tu te surprends à utiliser un trigramme/sigle pour une entreprise, relis le `target_name` de la ligne `strategic_recommendations` correspondante — c'est lui qui contient le nom officiel. N'invente jamais une abréviation pour "faire concis" : la lisibilité prime sur la concision.
+
+(Identique au `sales-ops-notifier`, propagé ici pour rappel.)
 
 **Lexique humain — pas de jargon brut** : remplace les termes techniques par leur intention sales :
 - `multi_threading` / `multi-thread` → "ajouter un 2ᵉ contact chez le prospect" (= identifier un second stakeholder, ex: boss, technique, finance, en plus du contact principal). Ne dis JAMAIS "multi-threading" ni "multi-thread" tels quels dans le brief.
