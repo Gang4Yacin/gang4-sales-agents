@@ -33,6 +33,16 @@ Threads où au moins un participant externe est un contact B2B (domaine d'entrep
 3. **Notifications SaaS / automatisations** : `noreply@`, `no-reply@`, `notifications@`, `support@`, `billing@`, `team@`, expéditeurs comme Qonto, Anthropic, Notion, Stripe, Keobiz, Slack, Google, LinkedIn, Calendly (notifications), Lemlist (notifications), n8n, Supabase, GitHub.
 4. **Catégories Gmail** : `-category:promotions -category:social -category:forums -category:updates`.
 5. **Non-B2B (emails persos)** : si l'unique contact externe utilise un domaine perso (voir blocklist ci-dessous), **exclure**. Pas de prospection particulier, pas d'ambassadeurs, pas de candidatures.
+6. **Unsubscribes / opt-out** : threads qui ne contiennent que des messages courts de désinscription. Patterns à détecter dans le sujet OU le body :
+   - "unsubscribe", "désabonner", "désabonnement", "désinscrire", "stop", "no thanks", "remove me", "leave me alone"
+   - Sujet `Re: ...` avec body < 50 mots contenant un de ces patterns.
+   - Auto-réponses Lemlist (`opted_out`, etc.).
+   → Pas de remontée. Ces signaux ne méritent ni note, ni todo, ni mise à jour de stage. Marquer en stats `excluded_unsubscribe`.
+7. **Out Of Office / absence automatique** : auto-réponses générées par le client mail. Patterns :
+   - Sujet contenant "Out of office", "OOO", "Absent", "Auto-reply", "Automatic reply", "Réponse automatique", "Je suis absent(e)"
+   - Headers techniques `Auto-Submitted: auto-replied`, `X-Autoreply: yes`, `Precedence: auto_reply` quand exposés
+   - Body court mentionnant une date de retour et un contact alternatif sans contenu sales
+   → Pas de remontée. Marquer en stats `excluded_ooo`.
 
 ### Blocklist domaines persos (non-B2B)
 

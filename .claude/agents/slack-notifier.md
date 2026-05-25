@@ -66,25 +66,40 @@ Format Slack markdown, **scannable et groupé par entreprise**. Les sections `Ac
 
 **Règle hyperlien Attio (OBLIGATOIRE — chaque entreprise mentionnée doit avoir un lien)** :
 
-Chaque fois que tu mentionnes le **nom d'une entreprise** dans `Actions effectuées` ou `Actions à valider`, tu DOIS le wrapper en lien Slack cliquable vers la page Attio la plus pertinente. **Aucune exception silencieuse** — si tu écris un nom d'entreprise sans lien, c'est un bug.
+Chaque fois que tu mentionnes le **nom d'une entreprise** dans `Actions effectuées`, `Actions à valider`, `Follow-ups auto-résolus` ou `Rappels & follow-ups`, tu DOIS le wrapper en lien Slack cliquable vers la page Attio la plus pertinente. **Aucune exception** — si tu écris un nom d'entreprise sans lien, c'est un bug.
+
+**Source de vérité pour les UUIDs** : NE TE FIE PAS au rapport markdown `crm-sync` pour les record_ids (il oublie souvent de les inclure). À la place, **interroge directement Supabase** au début de la composition :
+
+```sql
+-- Récupère tous les record_ids touchés par le run
+select target_object_type, target_record_id, action_type, reasoning
+from sales.applied_actions
+where run_id = '<run_id passé dans ton prompt>'
+  and status = 'applied'
+order by created_at;
+```
+
+Pour chaque entreprise mentionnée dans le rapport crm-sync, tu retrouves ses `target_record_id` via les `reasoning` (qui contiennent le nom de l'entreprise) ou via les calls Attio précédents. Choisis le record_id approprié :
+- Si actions sur des `deals` pour cette entreprise → prends le `target_record_id` du deal le plus récent
+- Sinon → prends le `target_record_id` de la company
+
+Si vraiment aucun `target_record_id` trouvé pour une entreprise mentionnée → lance `mcp__cd391ece-*__search-records` (objects=companies, query=<nom>) pour récupérer le company_id en dernier recours. **N'écris jamais le nom sans lien.**
 
 **Format URL Attio (CRITIQUE)** :
 ```
 https://app.attio.com/gang-4-crm/<object_plural>/record/<full_uuid>/overview
 ```
 - `<object_plural>` ∈ `companies` | `deals` | `people` (PLURIEL + slash + `record` + slash + UUID)
-- `<full_uuid>` = **UUID complet en 5 segments** (ex: `2b9c7b73-a794-4cdd-add0-e1c328fd20b4`), JAMAIS tronqué aux 8 premiers caractères. Si tu n'as que 8 caractères, c'est que tu as tronqué — relis le rapport `crm-sync` qui te donne l'UUID complet.
+- `<full_uuid>` = **UUID complet en 5 segments** (ex: `2b9c7b73-a794-4cdd-add0-e1c328fd20b4`), JAMAIS tronqué aux 8 premiers caractères.
 
 **Quel record_id choisir pour le lien de l'entreprise** :
 1. Si l'entreprise a un **deal créé ou modifié dans ce run** → lien vers le **deal** (URL `deals/record/<deal_id>/overview`). C'est l'entrée la plus utile pour drilldown.
-2. Sinon, si une **note/task a été posée sur la company** → lien vers la **company** (URL `companies/record/<company_id>/overview`).
+2. Sinon, si une **note a été posée sur la company** → lien vers la **company** (URL `companies/record/<company_id>/overview`).
 3. Sinon, fallback : lien vers la company (URL `companies/record/<company_id>/overview`).
 
 **Format Slack** : `<URL|texte>` (chevrons, pipe, pas de markdown `[texte](url)`). Et **gras** : `*<URL|Nom>*` (étoiles, pas underscores).
 
 Exemple correct : `• *<https://app.attio.com/gang-4-crm/deals/record/2b9c7b73-a794-4cdd-add0-e1c328fd20b4/overview|Alltricks>*`
-
-Si le rapport `crm-sync` ne donne PAS de `record_id` pour une entreprise mentionnée (cas TRÈS rare : enrichissement échoué) → laisse en gras sans lien (`*Entreprise*`) ET ajoute `(⚠️ id manquant dans le rapport crm-sync)` à la fin de la ligne pour qu'on le voit et qu'on fixe en amont. N'invente JAMAIS un id.
 
 **"(hors deal)" interdit** : ne jamais accoler `(hors deal)` à un nom d'entreprise. Si tu veux distinguer les entreprises sans deal, c'est dans le drilldown du lien que ça se voit. Le nom doit rester propre.
 

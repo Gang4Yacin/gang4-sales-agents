@@ -305,10 +305,12 @@ Pour chaque entreprise touchée par les remontées de ce run :
 - Pour chaque company matchée : lis `company_status`.
 - Pour les deals : `search-records` sur `deals` filtre `associated_company eq <company_record_id>`.
 
-### 3. Filtrer customer + non-B2B
+### 3. Filtrer customer + non-B2B + bruit transactionnel
 
 - Si une company a `company_status = 'Customer'` → tout ce qui la concerne est **skipped** (incrémente compteur).
 - Le non-B2B devrait déjà avoir été filtré par les experts. Refais un check de sécurité sur les domaines persos (voir blocklist dans les prompts des experts).
+- **Unsubscribes / opt-out** : si un thread remonté par l'expert correspond uniquement à une désinscription (patterns "STOP", "unsubscribe", "désabonner", "remove me", body court sans autre contenu sales), **ne fais RIEN** : pas de note, pas de todo, pas de propagation. C'est du bruit transactionnel — l'unsubscribe est géré au niveau Lemlist directement, pas par crm-sync. Skip silencieux avec `processed_items.status='skipped'` reason `unsubscribe_noise`.
+- **Out Of Office / absence auto** : si l'unique nouveau message dans un thread est une auto-réponse d'absence (OOO, "absent jusqu'au X", "auto-reply"), **ne fais RIEN** : pas de note, pas de todo "relancer le X". Skip silencieux reason `ooo_noise`. Si une vraie relance manuelle est pertinente, elle sera redéclenchée naturellement au prochain run par un email frais.
 
 ### 4. Décider les modifications
 
