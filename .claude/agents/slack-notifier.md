@@ -101,6 +101,25 @@ https://app.attio.com/gang-4-crm/<object_plural>/record/<full_uuid>/overview
 
 Exemple correct : `• *<https://app.attio.com/gang-4-crm/deals/record/2b9c7b73-a794-4cdd-add0-e1c328fd20b4/overview|Alltricks>*`
 
+**Lien direct vers la note mensuelle (si `upsert_monthly_note` dans le run)** :
+
+Quand crm-sync a fait un `upsert_monthly_note` pour une entreprise dans ce run, ajoute un lien **vers la note** sur la ligne d'action "note mise à jour" / "note posée". Le `note_id` se trouve dans `attio_response->>'note_id'` de la ligne `applied_actions` correspondante (que tu as déjà chargée via la query Supabase).
+
+Format URL note :
+```
+https://app.attio.com/gang-4-crm/<object_plural>/record/<parent_record_id>/notes?modal=note&id=<note_id>
+```
+- `<parent_record_id>` = le deal_id ou company_id parent (= `target_record_id` de l'action)
+- `<note_id>` = `attio_response->>'note_id'`
+- `<object_plural>` = `target_object_type` de l'action (`deals` ou `companies`)
+
+Exemple :
+```
+◦ <https://app.attio.com/gang-4-crm/deals/record/91aeab52-4641-4927-951d-e50d4f603a0f/notes?modal=note&id=f7d6d985-726e-4988-bc24-8bf4024e7dd4|note mise à jour> → demo done 26/01 + intro Caats + question pricing
+```
+
+Si plusieurs `upsert_monthly_note` ont eu lieu pour la même entreprise dans le run (ne devrait pas arriver mais possible si bug), liste-les tous en sous-bullets.
+
 **"(hors deal)" interdit** : ne jamais accoler `(hors deal)` à un nom d'entreprise. Si tu veux distinguer les entreprises sans deal, c'est dans le drilldown du lien que ça se voit. Le nom doit rester propre.
 
 **Noms complets obligatoires** : utilise le **nom officiel complet** de chaque entreprise — jamais d'acronyme ou d'abréviation. "Too Good To Go" pas "TGTG". "Les Petits Culottés" pas "Petits Culottés". "What Matters" pas "WM". Le rapport `crm-sync` fournit le nom complet ; ne le raccourcis pas.

@@ -406,7 +406,7 @@ returning id;
 
 ### Notes mensuelles consolidées (upsert_monthly_note)
 
-**Principe** : pour chaque entreprise touchée par un run, **une seule note par mois calendaire**, intitulée selon le mois français de la fenêtre (`Janvier 2026 - auto`, `Février 2026 - auto`, etc.). Le suffixe `- auto` est obligatoire : il évite toute collision avec les notes humaines créées dans Attio par Lucie/Samuel.
+**Principe** : pour chaque entreprise touchée par un run, **une seule note par mois calendaire**, intitulée selon le mois français de la fenêtre (`Sales Janvier 2026 - auto`, `Sales Février 2026 - auto`, etc.). Le suffixe `- auto` est obligatoire : il évite toute collision avec les notes humaines créées dans Attio par Lucie/Samuel.
 
 #### Cible de la note (parent)
 - Si l'entreprise a un **deal** (existant ou créé dans ce run) → la note va sur le **deal**.
@@ -415,14 +415,14 @@ returning id;
 #### Détermination du mois
 Le mois = celui de la fenêtre du run. Si la fenêtre est mensuelle (`2026-01-01` → `2026-01-31`) → "Janvier 2026". Si la fenêtre couvre plusieurs mois (rare, ex: `7d` chevauchant mois) → utilise le mois où la majorité des signaux tombent.
 
-Format du titre : `<Mois Capitalisé> <Année> - auto` (FR). Ex: `Janvier 2026 - auto`.
+Format du titre : `Sales <Mois Capitalisé> <Année> - auto` (FR). Ex: `Sales Janvier 2026 - auto`.
 
 #### Logique upsert (CRITIQUE)
 
 Pour chaque entreprise avec des signaux frais dans la fenêtre :
 
 1. **Cherche la note existante** :
-   - `search-notes-by-metadata` sur la cible (deal ou company) filter `title eq '<Mois> <Année> - auto'`.
+   - `search-notes-by-metadata` sur la cible (deal ou company) filter `title eq 'Sales <Mois> <Année> - auto'`.
    - Si plusieurs résultats (anomalie), prends la plus récente.
 
 2. **Si la note existe** :
@@ -437,13 +437,13 @@ Pour chaque entreprise avec des signaux frais dans la fenêtre :
 
 3. **Si la note n'existe pas** :
    - Construis le body initial (template ci-dessous).
-   - `create-note` avec `title='<Mois> <Année> - auto'`, `parent_object='deals'|'companies'`, `parent_record_id=<id>`, `content_markdown=<body>`.
+   - `create-note` avec `title='Sales <Mois> <Année> - auto'`, `parent_object='deals'|'companies'`, `parent_record_id=<id>`, `content_markdown=<body>`.
    - Trace dans `applied_actions` avec `action_type='upsert_monthly_note'`, `attio_response={"note_id": "...", "mode": "created"}`.
 
 #### Template du body
 
 ```markdown
-# <Mois> <Année> — récap auto
+# Sales <Mois> <Année> — récap auto
 
 ### Demos
 - DD/MM — <description courte> — <personne externe principale> _(source: <gmail|gcal|fireflies>:<external_id>)_
