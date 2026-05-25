@@ -61,11 +61,49 @@ bbox.fr, numericable.fr, aol.com, protonmail.com, proton.me, gmx.fr, gmx.com, he
 Pour chaque meeting retenu :
 
 1. **Récupérer les participants** via `get_event` (attribute `attendees`).
-2. **Chercher le transcript / les notes** dans cet ordre :
-   1. Google Doc rattaché à l'event (champ `attachments` ou lien dans la description ; titre type "Notes by Gemini — <titre du meeting>").
-   2. Sinon : `search_files` Drive avec query sur le titre du meeting + date dans les dossiers Meet Recordings.
-   3. Sinon : `fireflies_search` sur la date/titre.
-   4. Si aucun → meeting retourné sans transcript, flag `transcript_status: 'not_found'`.
+2. **Chercher le transcript / les notes** dans cet ordre — **persistance obligatoire, ne pas abandonner après un seul échec** :
+
+   #### 2.1 Google Doc rattaché à l'event (best signal)
+   - `get_event` retourne le champ `attachments` ou `description` qui peut contenir un lien `docs.google.com/document/d/<id>` (généré automatiquement par Google Meet/Gemini).
+   - Type de fichier attendu : "Notes by Gemini — <titre meeting>" ou "Meeting recording transcript — <titre>" ou simplement le titre du meeting.
+   - Si trouvé → `read_file_content` directement, transcript_status='found', source='drive_doc'.
+
+   #### 2.2 Google Drive — recherche multi-pattern (NE PAS abandonner après 1 query)
+   Si pas d'attachment direct, fais **plusieurs essais** dans cet ordre :
+
+   **a. Par titre exact + date** :
+   - `search_files` query = `"<titre exact du meeting>"` (entre guillemets pour exact match)
+   - Si > 0 résultats, filtre sur la date proche du meeting (±1 jour) via `modifiedTime` ou `name`.
+
+   **b. Par participants externes + date** :
+   - `search_files` query = `"<nom externe>" "<date du meeting au format JJ/MM ou YYYY-MM-DD>"`
+   - Ex: `"Marion Vergnet" "21/01"` ou `"Alltricks" "2026-01-21"`.
+
+   **c. Patterns de naming Gemini Notes** :
+   Les notes Gemini se nomment typiquement :
+   - `Notes by Gemini — <titre meeting>` ou `<titre> — Notes by Gemini`
+   - `<titre> - Recording`
+   - `Meet Recording <date>`
+   - `Transcript - <titre>`
+   - Essaie : `search_files` query = `"<mot clé titre meeting>" "Gemini"` puis `"<mot clé>" "Recording"` puis `"<mot clé>" "Transcript"`.
+
+   **d. Dossiers parents à privilégier** :
+   - Dossier "Meet Recordings" de **Samuel** (partagé)
+   - Dossier "Meet Recordings" de **Lucie** (partagé à samuel@gang4.io)
+   - Dossier "Meet Recordings" de **Yacin** (partagé à samuel@gang4.io)
+   Si tu trouves plusieurs fichiers candidats, prends celui dont la `modifiedTime` est la plus proche du `event.start`.
+
+   **e. Si toujours rien après a + b + c** : lis aussi `list_recent_files` (sans query) limit 50 sur la fenêtre `[event.start - 1j, event.start + 2j]`, parcourt manuellement les titres pour matcher.
+
+   #### 2.3 Fireflies (fallback) — UNIQUEMENT si Drive a vraiment échoué
+   - `fireflies_search` query = titre du meeting OU email d'un participant externe.
+   - Filtre par date proche.
+   - Si trouvé : `fireflies_get_transcript`, transcript_status='found', source='fireflies'.
+
+   #### 2.4 Vraiment introuvable
+   - transcript_status='not_found'.
+   - Dans `notes` du JSON de sortie, **liste les queries tentées** pour ce meeting (pour debug humain).
+   - **Soft cap** : si > 50% des meetings ont transcript_status='not_found' sur un run, c'est qu'il y a probablement un problème d'accès Drive (permissions, dossier non partagé, etc.). Flag clairement dans `notes`.
 3. **Lire le contenu** du transcript si trouvé (`read_file_content` ou `fireflies_get_transcript`).
 4. **Extraire les signaux** factuels (pas d'interprétation).
 
