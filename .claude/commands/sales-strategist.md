@@ -52,7 +52,7 @@ Garde le `run_id` pour le passer aux sous-agents.
 
 ### Étape 2bis — Récupérer les réactions / replies sur le dernier brief stratégique
 
-Via `mcp__7af8b801-*__slack_read_channel` sur `C0B65JCMWLU` (#sales-strategy) :
+Via `mcp__7af8b801-*__slack_read_channel` sur `C0B65JCMWLU` (#sales-strategist) :
 1. Récupère le **dernier message bot** posté dans le canal (run précédent du strategist).
 2. Si ce message a un `thread_ts`, récupère les replies via `slack_read_thread`.
 3. Parse les replies en commandes :
@@ -100,7 +100,7 @@ Affiche le rapport markdown du strategist tel quel, précédé de `> run_id: <uu
 - `subagent_type='sales-strategist-notifier'`
 - Brief : le `run_id`, l'horizon, et le **rapport markdown complet** du strategist.
 
-Le sous-agent poste sous l'identité bot **Sales Strategist** (via `$SLACK_BOT_TOKEN_SALES_STRATEGIST`) dans `C0B65JCMWLU` (#sales-strategy).
+Le sous-agent poste sous l'identité bot **Sales Strategist** (via `$SLACK_BOT_TOKEN_SALES_STRATEGIST`) dans `C0B65JCMWLU` (#sales-strategist).
 
 Récupère sa réponse :
 - `posted: <message_link> ...` → mentionne-le à l'utilisateur.

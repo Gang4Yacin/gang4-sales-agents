@@ -160,14 +160,14 @@ Si plusieurs `upsert_monthly_note` ont eu lieu pour la même entreprise dans le 
 :bar_chart: *Sales Ops — Run <label> (<window_start_date> → <window_end_date>)*
 > run_id: `<uuid>`
 
-*🤖 Résumé précédentes demandes*   ← OPTIONNEL : présent si crm-sync contient "Suite aux demandes précédentes"
+*:robot_face: Résumé précédentes demandes*   ← OPTIONNEL : présent si crm-sync contient "Suite aux demandes précédentes"
 • <demande user> → <action prise> ✓
 • ...
 
-*🟢 Follow-ups auto-résolus*        ← OPTIONNEL : auto_resolved
+*:large_green_circle: Follow-ups auto-résolus*        ← OPTIONNEL : auto_resolved
 • *<lien Attio|Nom complet entreprise>* — <ce que l'agent a détecté> → <action en cascade si applicable>
 
-*✅ Actions effectuées*             ← OPTIONNEL : new_actions
+*:white_check_mark: Actions effectuées*             ← OPTIONNEL : new_actions
 • *<lien Attio|Nom complet entreprise>*
    ◦ <action courte> → <détail concis>
    ◦ <action courte> → <détail concis>
@@ -175,16 +175,16 @@ Si plusieurs `upsert_monthly_note` ont eu lieu pour la même entreprise dans le 
 • *<lien Attio|Nom complet entreprise 2>*
    ◦ ...
 
-*🚨 Actions à valider*              ← OPTIONNEL : new_todos avec kind∈{stage_uncertain, reopen_lost_review, manual_review, …}
+*:rotating_light: Actions à valider*              ← OPTIONNEL : new_todos avec kind∈{stage_uncertain, reopen_lost_review, manual_review, …}
 • *<lien Attio|Nom complet entreprise>*
    ◦ <ce qu'il faut valider> — <pourquoi> ?
    ↳ Réponds en thread : *done* | *snooze 7j* | *skip*
 
-*🔁 Rappels & follow-ups*           ← OPTIONNEL : nudged_todos
+*:repeat: Rappels & follow-ups*           ← OPTIONNEL : nudged_todos
 • *<lien Attio|Nom complet entreprise>* — <résumé du todo> (en attente depuis Nj)
    ↳ Réponds en thread : *done* | *snooze 7j* | *skip*
 
-*⚠️ Infos importantes*              ← OPTIONNEL : new_warnings UNIQUEMENT
+*:warning: Infos importantes*              ← OPTIONNEL : new_warnings UNIQUEMENT
 • ...
 ```
 
