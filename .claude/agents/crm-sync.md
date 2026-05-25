@@ -180,7 +180,9 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
 - Tables : `sync_cursors`, `processed_items`, `run_log`, `agent_todos`, `applied_actions`
 
 Sources autorisées : `'gmail' | 'gcal' | 'drive_doc' | 'fireflies'`.
-Action types : `'create_note' | 'update_stage' | 'update_next_step' | 'create_person' | 'create_company' | 'create_deal' | 'link_person_to_deal' | 'update_company_status'`.
+Action types : `'upsert_monthly_note' | 'update_stage' | 'update_next_step' | 'create_person' | 'create_company' | 'create_deal' | 'link_person_to_deal' | 'update_company_status'`.
+
+⚠️ **`create_note` simple est INTERDIT** : toute information à logger sur un deal/company passe par `upsert_monthly_note` (1 seule note par mois et par cible — voir section "Notes mensuelles consolidées" ci-dessous).
 **`create_task` est INTERDIT** : le HoS gère ses follow-ups via `sales.agent_todos` (voir section "Gestion des follow-ups" ci-dessous), pas via les tasks Attio.
 Status processed_items : `'processed' | 'skipped' | 'error' | 'applied' | 'failed'`.
 Status applied_actions (audit log) : `'pending' | 'applied' | 'failed' | 'skipped'`.
@@ -340,14 +342,14 @@ Si la recherche échoue (404, infos contradictoires, identification ambigüe), i
 Pour chaque remontée non-skippée :
 
 **Email B2B** → propositions possibles :
-- `create_note` sur la personne ET le deal (si deal existe) — résumé factuel court issu du `summary` de l'expert.
+- `upsert_monthly_note` sur le deal (ou la company si pas de deal) — append bullets dans la note mensuelle consolidée. PAS de note séparée par email.
 - `update_next_step` si signal `next_step_committed`.
 - `create_person` si l'externe n'existe pas dans Attio.
 - `create_company` (via `payload`) si le domaine n'a pas de company.
 - `create_deal` si signaux sales évidents (proposal_sent, demo_requested, intro_email avec lead clair) et qu'aucun deal ouvert n'existe pour cette company.
 
 **Meeting B2B** → propositions possibles :
-- `create_note` sur le deal (avec transcript summary si dispo, sinon "Meeting tenu sans transcript").
+- `upsert_monthly_note` sur le deal (append bullet dans section `### Demos` avec transcript summary si dispo, sinon "Meeting tenu sans transcript").
 - `update_stage` si signal explicite (demo_done sur un deal en `Prospect identified` → `Demo scheduled`, etc.).
 - `update_next_step` si décision claire.
 - `link_person_to_deal` si nouveau participant externe non rattaché.
@@ -357,7 +359,7 @@ Pour chaque remontée non-skippée :
 
 **Avant chaque proposition**, vérifie l'état actuel :
 
-- `create_note` : `search-notes-by-metadata` ou `list-comments` sur la cible, vérifie qu'aucune note existante ne référence le même `external_id` (gmail thread id ou gcal event id). Si oui → skip + `processed_items.status='skipped'`.
+- `upsert_monthly_note` : le dédoublonnage est intrinsèque au mécanisme (1 seule note par mois par cible, append-only avec dédup par external_id dans le body). Pas de check supplémentaire requis ici — voir section "Notes mensuelles consolidées" pour la logique complète.
 - `update_stage` : lis le stage actuel. Si déjà au stage cible → skip.
 - `update_next_step` : si même contenu déjà présent → skip.
 - `create_person` / `create_deal` / `create_company` : re-vérifie l'absence avant d'appliquer.
@@ -398,8 +400,77 @@ returning id;
 | `create_company` | `mcp__cd391ece-*__create-record` (object=`companies`) |
 | `create_deal` | `mcp__cd391ece-*__create-record` (object=`deals`, owner=Lucie cf. section dédiée) |
 | `link_person_to_deal` | `mcp__cd391ece-*__update-record` (object=`deals`, attribute `associated_people` += person) |
+| `upsert_monthly_note` | `mcp__cd391ece-*__create-note` OU `update-note` (voir section "Notes mensuelles consolidées") |
 
 ⚠️ **Note** : `create_task` Attio est interdit (voir section "Création de follow-ups" ci-dessous). Pour toute action humaine à suivre, insert dans `sales.agent_todos`, pas dans Attio.
+
+### Notes mensuelles consolidées (upsert_monthly_note)
+
+**Principe** : pour chaque entreprise touchée par un run, **une seule note par mois calendaire**, intitulée selon le mois français de la fenêtre (`Janvier 2026 - auto`, `Février 2026 - auto`, etc.). Le suffixe `- auto` est obligatoire : il évite toute collision avec les notes humaines créées dans Attio par Lucie/Samuel.
+
+#### Cible de la note (parent)
+- Si l'entreprise a un **deal** (existant ou créé dans ce run) → la note va sur le **deal**.
+- Sinon → sur la **company**.
+
+#### Détermination du mois
+Le mois = celui de la fenêtre du run. Si la fenêtre est mensuelle (`2026-01-01` → `2026-01-31`) → "Janvier 2026". Si la fenêtre couvre plusieurs mois (rare, ex: `7d` chevauchant mois) → utilise le mois où la majorité des signaux tombent.
+
+Format du titre : `<Mois Capitalisé> <Année> - auto` (FR). Ex: `Janvier 2026 - auto`.
+
+#### Logique upsert (CRITIQUE)
+
+Pour chaque entreprise avec des signaux frais dans la fenêtre :
+
+1. **Cherche la note existante** :
+   - `search-notes-by-metadata` sur la cible (deal ou company) filter `title eq '<Mois> <Année> - auto'`.
+   - Si plusieurs résultats (anomalie), prends la plus récente.
+
+2. **Si la note existe** :
+   - `get-note-body` pour récupérer le body actuel.
+   - Parse le markdown existant (sections `### Demos`, `### Échanges email`, `### Décisions / next steps`, `### Sources`).
+   - **Append-only merge** :
+     - Ajoute les nouvelles entrées dans chaque section, à la fin.
+     - **Dédoublonne** par `external_id` source (gmail thread id, gcal event id, fireflies transcript id) inscrit en italique à la fin de chaque bullet → si l'external_id est déjà présent dans le body, skip ce bullet.
+     - Ne touche JAMAIS au contenu existant (pas de réécriture, pas de tri, pas de reformulation).
+   - `update-note` avec le body fusionné.
+   - Trace dans `applied_actions` avec `action_type='upsert_monthly_note'` et `attio_response={"note_id": "...", "mode": "updated"}`.
+
+3. **Si la note n'existe pas** :
+   - Construis le body initial (template ci-dessous).
+   - `create-note` avec `title='<Mois> <Année> - auto'`, `parent_object='deals'|'companies'`, `parent_record_id=<id>`, `content_markdown=<body>`.
+   - Trace dans `applied_actions` avec `action_type='upsert_monthly_note'`, `attio_response={"note_id": "...", "mode": "created"}`.
+
+#### Template du body
+
+```markdown
+# <Mois> <Année> — récap auto
+
+### Demos
+- DD/MM — <description courte> — <personne externe principale> _(source: <gmail|gcal|fireflies>:<external_id>)_
+
+### Échanges email
+- DD/MM — <résumé> _(source: gmail:<thread_id>)_
+
+### Décisions / next steps
+- <action prise ou next step engagé>
+
+### Sources
+- gmail: <thread_id_1>, <thread_id_2>
+- gcal: <event_id_1>
+- fireflies: <transcript_id_1>
+```
+
+**Règles de qualité** :
+- Chaque bullet de Demos / Échanges email se termine par `_(source: <type>:<external_id>)_` en italique. Ceci sert pour le dédoublonnage au prochain run.
+- Une section vide est omise (pas de section `### Demos` vide).
+- Les dates sont au format `DD/MM` (mois implicite).
+- Les descriptions sont concises (une demi-phrase). Pas de paragraphes.
+
+#### Garde-fous
+
+- Ne JAMAIS toucher à une note Attio qui n'a pas le suffixe `- auto` dans son titre. Les notes humaines sont sacrées.
+- Si tu détectes une note `<Mois> <Année>` SANS le suffixe `- auto` (créée par Lucie à la main), **ne fusionne pas avec elle**. Crée ou update ta note `- auto` distincte. La règle est : 2 notes pourront coexister, une humaine et une auto.
+- Si tu te trompes de mois (ex: fenêtre 7d chevauche jan/fév) et qu'au run suivant tu te rends compte qu'un bullet aurait dû être ailleurs, **laisse-le où il est**. Ne migre pas le contenu entre notes — c'est trop risqué.
 
 ### Création de follow-ups (= `agent_todos`, JAMAIS des tasks Attio)
 
