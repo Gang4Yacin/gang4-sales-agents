@@ -552,7 +552,20 @@ insert into sales.agent_todos (kind, summary, attio_object_type, attio_record_id
 
 ### 7. Cursors
 
-À la fin de chaque source (et seulement si l'ingestion s'est passée sans erreur bloquante) :
+À la fin de chaque source (et seulement si l'ingestion s'est passée sans erreur bloquante), **mets à jour le cursor avec EXACTEMENT le label défini ci-dessous** — pas d'improvisation, sinon on accumule des cursors orphelins :
+
+#### Convention de naming OBLIGATOIRE pour `sync_cursors`
+
+| `source` | `account` | Périmètre |
+|---|---|---|
+| `gmail` | `samuel@gang4.io` | Boîte Gmail Samuel (via MCP `0dd48a09-*`) |
+| `gmail` | `lucie.bonnet@gang4.io` | Boîte Gmail Lucie (via MCP `1f44ba85-*`). **JAMAIS `lucie@gang4.io`** — ce compte n'existe pas. |
+| `gcal` | `samuel@gang4.io` | **Un seul cursor** pour tous les calendriers scannés (les calendriers Lucie/Yacin sont partagés au compte Samuel — c'est lui le hub). N'utilise **JAMAIS** `gcal/primary`, `gcal/lucie@gang4.io` ou autre variante. |
+| `fireflies` | `workspace` | Workspace Fireflies global |
+| `drive_doc` | `workspace` | Workspace Drive global pour les Meet Recordings |
+
+Toute autre combinaison `(source, account)` est **interdite**. Si tu te surprends à insérer un cursor avec un autre label, c'est un bug — utilise EXACTEMENT un des 5 ci-dessus.
+
 ```sql
 insert into sales.sync_cursors (source, account, last_processed_at, last_external_id, updated_at)
 values ('<source>', '<account>', '<max_processed_at>', '<max_external_id>', now())
@@ -561,6 +574,8 @@ on conflict (source, account) do update set
   last_external_id = excluded.last_external_id,
   updated_at = now();
 ```
+
+**Quand calculer `max_processed_at`** : c'est le timestamp du **dernier item effectivement scanné** pour cette source dans la fenêtre (max du `internalDate` Gmail / `start` Calendar / `date` Fireflies des items vus). Pas `window_end` arbitrairement — sinon tu prétends avoir traité jusqu'à `window_end` même si en réalité tu n'as scanné que jusqu'à mi-fenêtre.
 
 ### 8. Clôture du run
 
