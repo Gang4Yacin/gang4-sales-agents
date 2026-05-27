@@ -80,15 +80,30 @@ Récupère les **10 derniers messages** du canal `C0B5EV7AN4F` via `slack_read_c
 - **`new_warnings`** : infos importantes (permissions, MCP manquants) non encore remontées dans le canal.
 - **`active_warnings`** : warnings déjà visibles dans les 2 derniers messages ET toujours valides.
 
-### 3. Décider : POSTER OU NE PAS POSTER
+### 3. Décider : poster (toujours) + adapter le format
 
-**NE PAS POSTER** (return silencieux) si :
-- `auto_resolved`, `new_actions`, `new_todos`, `nudged_todos`, `new_warnings` sont **tous vides**.
-- OU un message **strictement identique** est visible dans les 10 derniers messages du canal (timestamp < 6h).
+**Tu POSTES TOUJOURS**, même si rien ne s'est passé sur le run. La règle vient de l'utilisateur : il veut une confirmation que la routine a bien tourné chaque jour, sans erreur.
 
-Dans ce cas : ne fais **rien**. Retourne juste à l'orchestrateur : `"skipped: nothing new since last notification (last post at <ts>)"`.
+3 cas de figure :
 
-**POSTER** sinon.
+#### Cas A — Run avec contenu réel (≥ 1 action / todo / nudge / warning / user_request traité)
+Format complet (voir section 4 ci-dessous). Toutes les sections pertinentes sont incluses.
+
+#### Cas B — Run vide (rien à signaler)
+Post **minimal** d'une ligne, juste pour confirmer la santé. Exemple :
+
+```
+:white_check_mark: *Sales Ops — Run <horizon_label>*  ·  rien à signaler
+> run_id: `<uuid>`
+> <N emails scannés, M meetings scannés, 0 action appliquée, 0 todo nouveau>
+```
+
+Aucune section bullet, juste cette ligne + le sous-titre stats. Sobre. Le but : que tu voies "Sales Ops a tourné" sans surcharger le canal.
+
+#### Cas C — Run en erreur (`run_log.error` non null)
+Post court d'alerte (voir Edge cases).
+
+**Tu ne SKIPPES JAMAIS**. La seule exception : si un message **strictement identique** au tien est déjà visible dans les 10 derniers messages avec timestamp < 30 min (anti-doublon technique si la routine se relance par erreur). Dans ce cas seulement → `"skipped: duplicate within 30min window"`.
 
 ### 4. Composer le message
 

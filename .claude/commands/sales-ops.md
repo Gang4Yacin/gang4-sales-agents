@@ -75,6 +75,28 @@ Si aucun message bot précédent, ou aucune reply / réaction → `previous_user
 
 `crm-sync` recevra cet objet et l'utilisera à son étape 0d pour mettre à jour les `agent_todos` correspondants.
 
+#### Acquittement par réaction ✅ (NOUVEAU)
+
+**Pour chaque reply parsée comme commande actionable** (`done`, `snooze`, `cancel`, `custom_action`), tu poses une **réaction ✅ sur le message du user** via curl + le bot token Sales Ops, pour signaler "je l'ai vu et traité". L'utilisateur visualise immédiatement quelles instructions ont été prises en compte.
+
+```bash
+curl -X POST https://slack.com/api/reactions.add \
+  -H "Authorization: Bearer $SLACK_BOT_TOKEN_SALES_OPS" \
+  -H "Content-Type: application/json; charset=utf-8" \
+  -d '{
+    "channel": "C0B5EV7AN4F",
+    "timestamp": "<reply.ts>",
+    "name": "white_check_mark"
+  }'
+```
+
+**Règles** :
+- Une réaction par reply (pas en spam). Idempotent : si Slack répond `already_reacted`, ignore.
+- Ne réagis PAS aux replies parsées comme `note` (texte libre sans commande claire) — ça créerait l'illusion qu'une décision a été prise alors qu'on a juste loggué.
+- Si la réaction échoue (`invalid_auth`, `not_in_channel`, etc.) → log dans `notes` du run summary, n'interrompt pas le run.
+
+**Pré-requis Slack App** : scope `reactions:write` doit être activé sur l'app bot Sales Ops. Si tu vois `missing_scope` → préviens l'utilisateur dans le rapport pour qu'il ajoute le scope dans Slack App config + reinvite le bot.
+
 ### Étape 3 — Appeler les 2 experts d'ingestion EN PARALLÈLE
 
 Dans **un seul message**, fais 2 appels Agent en parallèle :

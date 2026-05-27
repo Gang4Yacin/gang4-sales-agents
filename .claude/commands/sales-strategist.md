@@ -63,6 +63,25 @@ Via `mcp__7af8b801-*__slack_read_channel` sur `C0B65JCMWLU` (#sales-strategist) 
 
 Compile un objet `previous_user_feedback` (replies + parsed commands) à passer dans le brief de `sales-strategist`.
 
+#### Acquittement par réaction ✅ (NOUVEAU)
+
+**Pour chaque reply parsée comme commande actionable** (`go/valide`, `reject`, `snooze`), pose une réaction ✅ sur le message du user via curl + bot token Sales Strategist :
+
+```bash
+curl -X POST https://slack.com/api/reactions.add \
+  -H "Authorization: Bearer $SLACK_BOT_TOKEN_SALES_STRATEGIST" \
+  -H "Content-Type: application/json; charset=utf-8" \
+  -d '{
+    "channel": "C0B65JCMWLU",
+    "timestamp": "<reply.ts>",
+    "name": "white_check_mark"
+  }'
+```
+
+Mêmes règles que sales-ops : 1 réaction par reply actionable, pas sur les `note`/texte libre, idempotent (ignore `already_reacted`), n'interrompt pas le run sur erreur.
+
+Pré-requis Slack App : scope `reactions:write` activé sur l'app bot Sales Strategist.
+
 ### Étape 3 — Appeler le sous-agent `sales-strategist`
 
 Avec `subagent_type='sales-strategist'`, en lui passant :

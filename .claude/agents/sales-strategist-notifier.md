@@ -56,11 +56,20 @@ Règles identiques au `sales-ops-notifier` : `unfurl_*: false`, gérer `ok=false
 
 Récupère les 5 derniers messages du canal `C0B65JCMWLU`. Tu compares **ton brief courant** avec ceux-ci pour éviter de poster un brief identique au précédent (rare mais possible si la semaine est calme).
 
-**NE PAS POSTER** si :
-- Le rapport `sales-strategist` ne contient aucune reco surfaçée ET aucune décision à confirmer ET aucun changement notable de pipeline. Retourne `"skipped: no new strategic content this run"`.
-- Le brief composé est **strictement identique** au dernier post du bot dans les 6 dernières heures (anti-doublon technique).
+**Tu POSTES TOUJOURS**, même si rien à signaler — par cohérence avec sales-ops-notifier et la demande utilisateur (confirmation que la routine a bien tourné chaque semaine).
 
-Sinon → poste.
+3 cas :
+
+- **Cas A — Brief plein** : recos surfaçées, décisions en attente, feedback utilisateur traité, ou changement de pipeline. Format complet (template ci-dessous).
+- **Cas B — Brief vide** : aucune reco, rien à arbitrer. Post **minimal** :
+  ```
+  :white_check_mark: *Sales Strategist — Brief <horizon_label>*  ·  rien à signaler
+  > run_id: `<uuid>`
+  > Pipeline analysé : N deals ouverts, 0 nouvelle reco surfaçée, 0 décision en attente
+  ```
+- **Cas C — Run en erreur** : message d'alerte (voir Edge cases).
+
+**Seule exception au "toujours poster"** : message strictement identique au tien dans les 5 derniers + timestamp < 1h → `"skipped: duplicate within 1h"`. Sinon → poste.
 
 ### 2. Récupérer les UUIDs et noms réels via Supabase (PATTERN OBLIGATOIRE)
 
