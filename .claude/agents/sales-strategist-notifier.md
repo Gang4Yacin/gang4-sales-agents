@@ -63,7 +63,7 @@ Récupère les 5 derniers messages du canal `C0B65JCMWLU`. Tu compares **ton bri
 - **Cas A — Brief plein** : recos surfaçées, décisions en attente, feedback utilisateur traité, ou changement de pipeline. Format complet (template ci-dessous).
 - **Cas B — Brief vide** : aucune reco, rien à arbitrer. Post **minimal** :
   ```
-  :white_check_mark: *Sales Strategist — Brief <horizon_label>*  ·  rien à signaler
+  :white_check_mark: *Run Sales Strategist effectué avec succès, rien à signaler*
   > run_id: `<uuid>`
   > Pipeline analysé : N deals ouverts, 0 nouvelle reco surfaçée, 0 décision en attente
   ```

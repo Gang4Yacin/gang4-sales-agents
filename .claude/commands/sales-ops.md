@@ -48,15 +48,27 @@ Via `mcp__7af8b801-*__slack_read_channel` sur `C0B5EV7AN4F` :
 2. Si ce message a un `thread_ts`, récupère **les replies** via `slack_read_thread` sur ce ts.
 3. Collecte aussi les **réactions** sur le message (✅ = validé global, ❌ = rejeté global, 👀 = vu sans décision).
 
-**Parsing intelligent des replies** : chaque reply peut adresser un ou plusieurs follow-ups listés dans le précédent post du bot. Tu identifies (via le nom d'entreprise mentionné ou par position) à quel todo la reply se rapporte, et tu traduis en commande standard :
+**Parsing sémantique des replies (langage naturel)** : les replies utilisateur sont écrites en français naturel, **pas en commandes rigides**. Exemples typiques attendus :
+- *"Oui pour Insentials tu peux fermer le deal en Won"*
+- *"Non Alltricks ce n'est pas la peine de relancer, on snooze 15 jours"*
+- *"Crée un deal pour Quitoque, stage Qualified, lié à Lisa Blanc"*
+- *"Pour What Matters, attends une semaine puis relance Franck sur le pricing"*
+- *"Ignore Mercanis, c'est mort"*
+- *"Bien noté pour Morphée"*
 
-| Texte du user | Commande | Effet attendu |
+Tu **interprètes l'intention** de chaque reply (LLM judgment, pas pattern matching) et tu produis une commande structurée. Catégoriser en l'un de :
+
+| Commande structurée | Intent en français | Effet à passer à `crm-sync` |
 |---|---|---|
-| `"done"`, `"fait"`, `"ok"`, `"✓"`, `"✅"` | `done` | state='done', resolved_by='user_slack' |
-| `"snooze 7j"`, `"snooze 7"`, `"+7j"`, `"plus tard"` | `snooze N` | state='snoozed', due_at=now+Nj |
-| `"skip"`, `"annule"`, `"laisse tomber"`, `"❌"` | `cancel` | state='cancelled' |
-| `"crée un deal pour X"`, `"rouvre le deal Y"`, `"change le stage Z"` | `custom_action` | exécution Attio normale au prochain step |
-| autre texte libre sans commande claire | `note` | log dans `previous_user_requests_summary` pour le rapport |
+| `done` / `validate` | Validation, accord, "oui c'est bon", "ferme-le", "fais-le" | state='done', resolved_by='user_slack', avec la nuance précise dans `resolved_reason` (ex: "user a validé la bascule Won") |
+| `snooze` | Reporter, "plus tard", "dans X jours/semaines", "attends" | state='snoozed', due_at=now+durée, durée inférée du texte (par défaut 7j si non précisé) |
+| `cancel` | Rejet, "non", "laisse tomber", "ignore", "c'est mort" | state='cancelled', resolved_by='user_slack' |
+| `custom_action` | Demande d'action Attio précise non couverte par le todo en cours (créer deal, changer stage, lier person, etc.) | Exécution Attio normale via la section 6 du flow crm-sync, avec le détail de l'action dans `previous_user_requests_summary` |
+| `note` | Accusé de réception sans demande, question, commentaire informel ("merci", "ok je vois", "intéressant") | Log dans `previous_user_requests_summary` pour traçabilité. **Pas d'action Attio, pas de modification de todo.** |
+
+**Identification de la cible** : la reply mentionne typiquement le nom de l'entreprise (ex: "Insentials", "Alltricks"). Tu fais le match avec les todos / recos surfaçées dans le précédent post bot. Si plusieurs entreprises citées dans une reply → produis plusieurs commandes. Si la cible est ambiguë → garde en `note` plutôt que d'inventer.
+
+**Tu n'utilises PAS de regex/keyword matching rigide**. Tu lis la reply comme un humain comprend une phrase, et tu en extrais l'intent et la cible.
 
 Compile un objet `previous_user_requests` :
 ```json
@@ -77,7 +89,7 @@ Si aucun message bot précédent, ou aucune reply / réaction → `previous_user
 
 #### Acquittement par réaction ✅ (NOUVEAU)
 
-**Pour chaque reply parsée comme commande actionable** (`done`, `snooze`, `cancel`, `custom_action`), tu poses une **réaction ✅ sur le message du user** via curl + le bot token Sales Ops, pour signaler "je l'ai vu et traité". L'utilisateur visualise immédiatement quelles instructions ont été prises en compte.
+**Pour chaque reply dont l'intent a été interprété comme actionable** (toute commande autre que `note` : `done`, `snooze`, `cancel`, `custom_action`), tu poses une **réaction ✅ sur le message du user** via curl + le bot token Sales Ops, pour signaler "je l'ai vu et traité". L'utilisateur visualise immédiatement quelles instructions ont été prises en compte.
 
 ```bash
 curl -X POST https://slack.com/api/reactions.add \

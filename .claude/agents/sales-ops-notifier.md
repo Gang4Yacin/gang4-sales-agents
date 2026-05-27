@@ -93,7 +93,7 @@ Format complet (voir section 4 ci-dessous). Toutes les sections pertinentes sont
 Post **minimal** d'une ligne, juste pour confirmer la santé. Exemple :
 
 ```
-:white_check_mark: *Sales Ops — Run <horizon_label>*  ·  rien à signaler
+:white_check_mark: *Run Sales Ops effectué avec succès, rien à signaler*
 > run_id: `<uuid>`
 > <N emails scannés, M meetings scannés, 0 action appliquée, 0 todo nouveau>
 ```

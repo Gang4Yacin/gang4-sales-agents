@@ -55,11 +55,22 @@ Garde le `run_id` pour le passer aux sous-agents.
 Via `mcp__7af8b801-*__slack_read_channel` sur `C0B65JCMWLU` (#sales-strategist) :
 1. Récupère le **dernier message bot** posté dans le canal (run précédent du strategist).
 2. Si ce message a un `thread_ts`, récupère les replies via `slack_read_thread`.
-3. Parse les replies en commandes :
-   - `"go X"` / `"valide X"` / `"ok pour X"` → l'utilisateur valide la reco X (à passer au strategist : marque `state='resolved'`, `resolved_by='user_slack'`, le strategist peut décider de la ré-injecter en backlog d'actions concrètes à exécuter plus tard par les spécialistes — pour l'instant, juste persister la validation).
-   - `"reject X"` / `"non"` / `"skip X"` → reco rejetée : `state='rejected'`, `resolved_by='user_slack'`.
-   - `"snooze X N semaines"` / `"plus tard"` → marquer en `expired` provisoirement avec note (le strategist re-évaluera).
-   - Texte libre / questions → log dans `previous_user_feedback` pour passer au strategist.
+3. **Parse sémantique des replies (langage naturel)** : les replies sont en français naturel, pas en commandes rigides. Exemples attendus :
+   - *"Oui go pour Alltricks, c'est une bonne reco"*
+   - *"Non pas la peine de multi-thread chez Lunii, on a déjà Laura"*
+   - *"Pour Insentials reporte de 2 semaines, je dois en parler à Lucie"*
+   - *"Intéressant pour What Matters, mais creuse plus le contexte avant de me revenir"*
+
+   Tu interprètes l'intent (LLM judgment, pas regex) et produis une commande structurée par reco mentionnée :
+
+   | Intent perçu | Effet sur `strategic_recommendations` |
+   |---|---|
+   | Validation, accord, "oui go" | `state='resolved'`, `resolved_by='user_slack'`, `resolved_reason='<extrait reply>'` |
+   | Rejet, "non", "laisse tomber" | `state='rejected'`, `resolved_by='user_slack'` |
+   | Report, "plus tard", "dans X jours/semaines" | `state='expired'` (le strategist re-scorera la reco au prochain run) avec note explicative |
+   | Demande informationnelle, question, accusé de réception sans décision | Log dans `previous_user_feedback`, **pas de changement de state**. |
+
+   Tu ne fais PAS de pattern matching rigide. Tu lis la phrase comme un humain et tu extrais intent + cible.
 
 Compile un objet `previous_user_feedback` (replies + parsed commands) à passer dans le brief de `sales-strategist`.
 
