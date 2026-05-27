@@ -109,6 +109,36 @@ Le strategist :
 - Marque le **top 5** en `state='surfaced'` + `surfaced_at=now()` + `surfaced_in_run=<run_id>`.
 - Retourne un rapport markdown structuré (top 5 développés, analyse pipeline, signaux faibles).
 
+### Étape 3bis — Déléguer la rédaction des relances au sous-agent `comms-drafter`
+
+Une fois le strategist revenu, **avant** de clôturer le run, parcours le top 5 surfaçé et invoque `comms-drafter` (sous-agent) pour chaque reco actionable.
+
+**Recos actionables = `recommendation_kind` ∈ `{follow_up_email, tactical_outreach, pricing_review, multi_threading, demo_prep}`.**
+
+Les autres kinds (`reopen_deal`, `kill_deal`, `change_owner`, `change_strategy`, `escalate`, `upsell`, `other`) ne déclenchent **pas** de draft — elles restent purement humaines à arbitrer.
+
+Pour chaque reco actionable du top 5 :
+
+1. Avant d'invoquer, vérifie qu'il n'y a pas déjà une `relance_cards` ouverte pour cette reco :
+   ```sql
+   select id, state from sales.relance_cards
+   where recommendation_id = '<reco_id>'
+     and state in ('en_attente_validation', 'demande_modification');
+   ```
+   Si une existe → skip cette reco (le drafter ne ferait qu'un doublon).
+
+2. Invoque `subagent_type='comms-drafter'` avec brief :
+   - `run_id`
+   - `mode: "create"`
+   - `recommendation_id`
+   - reco complète (kind, target_object_type, target_record_id, target_name, title, rationale, scores)
+
+3. Récupère le JSON retourné. Si `skipped != null` → log dans le rapport mais continue.
+
+**Parallélisation** : tu peux lancer les invocations `comms-drafter` en parallèle dans un seul message (max 5 en parallèle), elles sont indépendantes.
+
+Agrège les résultats : `drafts_created`, `drafts_skipped`, liste des `notion_url` pour le rapport final.
+
 ### Étape 4 — Clôturer le run
 
 ```sql
@@ -142,4 +172,5 @@ Récupère sa réponse :
 - Le strategist non plus n'écrit pas dans Attio (cf. son prompt).
 - Si le strategist mentionne avoir voulu modifier Attio, c'est un bug critique — fais une re-passe pour corriger.
 - Sales-only : skip customers. Si le strategist en mentionne, idem, bug.
-- Les recommandations ne sont **JAMAIS** exécutées par toi ni par le strategist. Elles sont posées dans le brief Slack, validées (ou non) par humain, et plus tard exécutées par des sous-agents spécialisés (à venir).
+- Les recommandations stratégiques ne sont **JAMAIS** exécutées dans Attio par toi ni par le strategist. Elles sont posées dans le brief Slack, validées (ou non) par humain.
+- Exception : pour les recos kind `follow_up_email|tactical_outreach|pricing_review|multi_threading|demo_prep`, tu invoques `comms-drafter` qui crée un **draft Gmail** (pas d'envoi) + une **card Notion** de validation. Ce n'est pas une exécution Attio, c'est de la préparation que l'humain validera en envoyant manuellement ou en cliquant "Demander modification" dans Notion.

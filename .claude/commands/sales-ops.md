@@ -109,6 +109,62 @@ curl -X POST https://slack.com/api/reactions.add \
 
 **Pré-requis Slack App** : scope `reactions:write` doit être activé sur l'app bot Sales Ops. Si tu vois `missing_scope` → préviens l'utilisateur dans le rapport pour qu'il ajoute le scope dans Slack App config + reinvite le bot.
 
+### Étape 2ter — Cycle de vie des relance cards (Notion + Gmail drafts)
+
+Avant d'ingérer Gmail/Calendar, gère les cards de relance créées par `comms-drafter` (issues du dernier run de `/sales-strategist`). C'est ici qu'on détecte les régénérations demandées, les envois manuels, et qu'on applique les J+3 / J+10.
+
+#### 2ter-a — Pull des cards actives
+```sql
+select id, recommendation_id, notion_page_id, gmail_draft_id, gmail_thread_id,
+       recipient_email, target_name, subject, state, version,
+       proposed_at, last_nudged_at
+from sales.relance_cards
+where state in ('en_attente_validation', 'demande_modification')
+order by proposed_at;
+```
+
+#### 2ter-b — Détection "Demande de modification" depuis Notion
+
+Pour chaque card en `state='en_attente_validation'`, fetch sa page Notion (`mcp__4db788e3-*__notion-fetch` sur `notion_page_id`) et lis la propriété `État`.
+
+- Si `État == "Demande de modification"` ET (en DB) `state == 'en_attente_validation'` →
+  1. Update Supabase : `update sales.relance_cards set state='demande_modification', user_feedback='<contenu du champ Feedback Notion>', updated_at=now() where id=...`
+  2. **Invoque `comms-drafter`** avec `subagent_type='comms-drafter'`, brief :
+     - `run_id`
+     - `mode: "regenerate"`
+     - `relance_card_id` + row complète + `user_feedback` fraîchement saisi
+  3. Le drafter retourne la nouvelle version, met à jour Notion à `État = "En attente de validation"` et persiste la v_N+1.
+
+- Si `État == "Validée"` (l'humain a confirmé sans envoyer encore) → laisse en place, sera détecté soit à l'envoi Gmail (2ter-c) soit archivé J+10.
+
+- Si `État == "Archived"` (manuellement) → Supabase : `state='archived', resolved_at=now(), resolved_by='user_archive', archived_reason='manual_via_notion'`.
+
+#### 2ter-c — Détection envoi manuel via Gmail
+
+Pour chaque card avec `gmail_draft_id` non null et `state in ('en_attente_validation','demande_modification')` :
+
+1. Liste les drafts actuels de Samuel : `mcp__0dd48a09-*__list_drafts`.
+2. Si le `gmail_draft_id` de la card **n'existe plus** dans la liste des drafts → c'est très probablement un envoi (ou une suppression manuelle).
+3. Pour confirmer : `search_threads` sur `to:<recipient_email>` dans la fenêtre de ce run. Cherche un message **envoyé par Samuel** dans les 24h post-`proposed_at` matchant le sujet de la card.
+   - Match trouvé → `state='validee'`, `resolved_by='user_gmail_send'`, `gmail_message_id=<id>`, `resolved_at=now()`. Update Notion `État='Validée'`.
+   - Pas de match → probable suppression manuelle. `state='archived'`, `resolved_by='user_archive'`, `archived_reason='draft_deleted_no_send_detected'`. Update Notion `État='Archived'`.
+
+#### 2ter-d — Nudge J+3 et archivage J+10
+
+Pour les cards encore `en_attente_validation` :
+- `now() - proposed_at >= 3 jours` ET `last_nudged_at IS NULL` :
+  - Ajoute une ligne au rapport markdown sous une section "🔔 Relances en attente depuis J+3" → le `sales-ops-notifier` la propagera sur Slack.
+  - `update sales.relance_cards set last_nudged_at=now() where id=...`
+- `now() - proposed_at >= 10 jours` :
+  - `state='archived'`, `resolved_by='auto_archive'`, `archived_reason='no_action_after_10_days'`. Update Notion `État='Archived'`.
+
+#### 2ter-e — Détection prospect reply (expiration)
+
+Pour chaque card avec `gmail_thread_id` non null :
+- `get_thread` sur ce thread. Si un message **du prospect** (recipient_email) est arrivé après `proposed_at` → le draft est probablement obsolète (la conversation a bougé).
+- `state='expired'`, `resolved_by='auto_expired'`, `archived_reason='prospect_replied_after_draft'`. Update Notion `État='Archived'`.
+- Surface dans le rapport : "📩 Réponse prospect reçue sur thread avec relance en attente — draft expiré, à reconsidérer humainement (target_name)".
+
 ### Étape 3 — Appeler les 2 experts d'ingestion EN PARALLÈLE
 
 Dans **un seul message**, fais 2 appels Agent en parallèle :
