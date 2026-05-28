@@ -115,8 +115,10 @@ Une fois le strategist revenu, **avant** de clôturer le run, parcours le top 5 
 
 **Recos actionables = `recommendation_kind` ∈ `{follow_up_email, tactical_outreach}`.**
 
+Les deux kinds draftables se distinguent **uniquement par le registre de relance** (`follow_up_email` = posée/continuité ; `tactical_outreach` = travaillée/offensive avec nouvel angle), pas par le sujet — n'importe quel sujet peut tomber dans l'un ou l'autre.
+
 Les autres kinds ne déclenchent **pas** de draft — ils restent purement humains à arbitrer (reco Slack uniquement) :
-- `pricing_review` : déprécié comme kind dédié (trop spécifique). Une relance pricing s'exprime comme un `follow_up_email` dont l'angle est le pricing.
+- `pricing_review` : supprimé. Une relance pricing est un `follow_up_email` ou un `tactical_outreach` (sujet dans le rationale, kind = style).
 - `multi_threading` : pertinent mais **reporté** — pas de draft auto pour l'instant (reste surfaçable en reco Slack).
 - `demo_prep` : brief de prep interne, pas un email sortant — **reporté**, reste en reco Slack.
 - `reopen_deal`, `kill_deal`, `change_owner`, `change_strategy`, `escalate`, `upsell`, `other` : décisions humaines, jamais draftées.

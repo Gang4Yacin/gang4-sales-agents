@@ -172,10 +172,14 @@ insert into sales.strategic_recommendations (
 
 `recommendation_kind` ∈ `'follow_up_email' | 'phone_call' | 'reopen_deal' | 'kill_deal' | 'escalate' | 'change_owner' | 'change_strategy' | 'tactical_outreach' | 'multi_threading' | 'demo_prep' | 'upsell' | 'other'`.
 
-**Choix du kind pour les relances draftables** (ces 2 kinds déclenchent `comms-drafter` en aval — sois précis) :
-- `follow_up_email` : le deal n'avance pas et **aucune relance ciblée n'a encore été envoyée** (ou la dernière relance a eu une réponse qui appelle une suite). Inclut les situations pricing : une relance pricing = `follow_up_email` dont l'angle est le pricing. **N'utilise plus `pricing_review`** (déprécié, trop spécifique).
-- `tactical_outreach` : **un ou plusieurs `follow_up_email` sont déjà partis sans réponse** (vérifie dans `sales.relance_cards` les cards `validee`/`expired` sur ce deal + l'absence de réponse prospect). On change d'angle : objection à lever, offre, use case, mise en relation client référent. Mets l'angle visé dans le `rationale`.
-- `multi_threading` et `demo_prep` : tu peux toujours les surfaçer comme recos **humaines** (Slack), mais ils ne sont **pas** draftés pour l'instant (reportés).
+**Choix du kind pour les relances draftables** (ces 2 kinds déclenchent `comms-drafter` en aval) :
+
+Les deux peuvent porter sur **n'importe quel sujet** (pricing, prochaine étape, relance large…). La différence est uniquement le **style de relance** que tu recommandes — le sujet, lui, va dans le `rationale` :
+- `follow_up_email` : relance **posée, dans la continuité** — on reprend le fil et on redemande une réponse, sobrement. À privilégier quand une relance calme et directe suffit (échange déjà engagé, prospect simplement à recontacter).
+- `tactical_outreach` : relance **travaillée, plus offensive** — on change d'angle pour provoquer une réaction (offre, preuve client, use case, question directe, nouveau prétexte). À privilégier quand une relance posée ne suffira probablement pas (deal qui patine, contact silencieux, besoin d'un déclic).
+
+`pricing_review` n'existe plus : une relance pricing est un `follow_up_email` ou un `tactical_outreach` selon le registre (le sujet pricing va dans le `rationale`).
+- `multi_threading` et `demo_prep` : surfaçables comme recos **humaines** (Slack), mais **pas** draftés pour l'instant (reportés).
 
 ### 5. Surfacer le top 5
 

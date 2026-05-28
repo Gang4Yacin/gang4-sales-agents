@@ -91,23 +91,17 @@ Selon le mode :
 
 ### Étape 2 — Rédiger le draft
 
-#### Intent selon le kind de la reco
+#### Style de relance selon le kind
 
-Tu ne traites que **2 kinds**. Chacun a un objectif distinct :
+Tu ne traites que **2 kinds**. Ils peuvent porter sur **n'importe quel sujet** (pricing, prochaine étape, relance large, contexte spécifique au deal…) selon le lead, le deal et l'historique. **La seule différence entre les deux, c'est le STYLE / le registre de la relance** — pas le sujet, pas une position dans une séquence.
 
-- **`follow_up_email`** — relancer un deal qui n'avance pas. **Ce n'est PAS une relance "simple" / polie.** Même courte, elle doit :
-  - appuyer sur le(s) **bon(s) argument(s)** et le(s) **pain(s)** réels du prospect (tirés de la note mensuelle auto + historique Gmail/call) ;
-  - rappeler l'**objectif premier** (faire avancer le deal vers la prochaine étape concrète) ;
-  - viser **une réponse** : poser une question fermée ou un choix simple, pas juste "tenez-moi au courant".
-  - Si la dernière interaction portait sur le pricing, l'angle pricing s'intègre **ici** (pas de kind dédié) — la relance appuie alors sur la valeur vs le prix, lève l'objection, et demande un go/no-go.
+Dans les deux cas : email court, factuel, qui appuie sur les bons arguments/pains et vise une réponse. Ce qui change, c'est le ton :
 
-- **`tactical_outreach`** — intervient **après un ou plusieurs `follow_up_email` restés sans réponse**. On change d'angle plutôt que de re-pousser le même message. Choisis l'angle le plus pertinent selon le contexte :
-  - creuser/lever une **objection** identifiée ;
-  - proposer une **offre** si pertinent (incitation, conditions) ;
-  - proposer un **use case** concret adapté au prospect ;
-  - proposer une **mise en relation avec un client référent** Gang4 ;
-  - tout autre angle tactique justifié par le contexte.
-  Le `rationale` de la reco du strategist t'indique l'angle visé — respecte-le, mais affine avec le contexte que tu charges.
+- **`follow_up_email` — relance posée, dans la continuité.** On reprend le fil là où il s'est arrêté : rappel du dernier échange, contexte redonné, et on redemande une réponse de façon sobre et professionnelle. C'est la suite logique, calme et claire, d'une conversation déjà engagée — pas d'artifice.
+
+- **`tactical_outreach` — relance travaillée, plus offensive.** On change d'angle pour provoquer une réaction : nouvel argument, offre/incitation si pertinent, preuve client (use case, mise en relation avec un référent Gang4), question directe ou prétexte neuf. Le but est de créer un déclic, pas seulement de rappeler. Plus de préparation, un angle assumé.
+
+Le `recommendation_kind` te dit **quel registre** adopter ; le `rationale` de la reco te donne **le sujet/angle** visé. Respecte les deux : le kind = le ton, le rationale = le fond.
 
 #### Règles de rédaction (s'appliquent v1 et v_N+1)
 
@@ -238,4 +232,4 @@ L'orchestrateur appelant utilisera ce JSON pour son rapport final.
 - **Pas d'inventaire factuel.** Si tu n'es pas sûr d'un fait ("la dernière demo s'est passée comment ?"), ne l'invente pas dans l'email. Reste général et factuel sur ce que tu sais.
 - **Idempotence.** Si une `relance_cards` existe déjà avec même `recommendation_id` et `state in ('en_attente_validation','demande_modification')` → ne pas créer de doublon, retourne le card existant avec `skipped='duplicate'`.
 - **Pas plus de 5 drafts créés par run** (côté `/sales-strategist`) — l'orchestrateur t'invoque max 5 fois (top 5 actionable). Tu n'as pas de cap à gérer toi-même, mais soit défensif sur les boucles internes.
-- **Tu ne traites QUE `follow_up_email` et `tactical_outreach`.** Si on t'invoque sur un autre kind (`pricing_review`, `multi_threading`, `demo_prep`, etc.), retourne `skipped='out_of_scope_kind'` sans créer ni draft ni card. (`pricing_review` est absorbé dans `follow_up_email` ; `multi_threading` et `demo_prep` sont reportés.)
+- **Tu ne traites QUE `follow_up_email` et `tactical_outreach`.** Si on t'invoque sur un autre kind (`multi_threading`, `demo_prep`, etc.), retourne `skipped='out_of_scope_kind'` sans créer ni draft ni card. (`pricing_review` n'existe plus — une relance pricing est un `follow_up_email` ou un `tactical_outreach` selon le registre ; `multi_threading` et `demo_prep` sont reportés.)
