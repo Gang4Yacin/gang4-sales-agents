@@ -113,9 +113,13 @@ Le strategist :
 
 Une fois le strategist revenu, **avant** de clôturer le run, parcours le top 5 surfaçé et invoque `comms-drafter` (sous-agent) pour chaque reco actionable.
 
-**Recos actionables = `recommendation_kind` ∈ `{follow_up_email, tactical_outreach, pricing_review, multi_threading}`.**
+**Recos actionables = `recommendation_kind` ∈ `{follow_up_email, tactical_outreach}`.**
 
-Les autres kinds (`demo_prep`, `reopen_deal`, `kill_deal`, `change_owner`, `change_strategy`, `escalate`, `upsell`, `other`) ne déclenchent **pas** de draft — elles restent purement humaines à arbitrer. (`demo_prep` est un brief de prep interne, pas un email sortant : il reste en reco Slack.)
+Les autres kinds ne déclenchent **pas** de draft — ils restent purement humains à arbitrer (reco Slack uniquement) :
+- `pricing_review` : déprécié comme kind dédié (trop spécifique). Une relance pricing s'exprime comme un `follow_up_email` dont l'angle est le pricing.
+- `multi_threading` : pertinent mais **reporté** — pas de draft auto pour l'instant (reste surfaçable en reco Slack).
+- `demo_prep` : brief de prep interne, pas un email sortant — **reporté**, reste en reco Slack.
+- `reopen_deal`, `kill_deal`, `change_owner`, `change_strategy`, `escalate`, `upsell`, `other` : décisions humaines, jamais draftées.
 
 Pour chaque reco actionable du top 5 :
 
@@ -173,4 +177,4 @@ Récupère sa réponse :
 - Si le strategist mentionne avoir voulu modifier Attio, c'est un bug critique — fais une re-passe pour corriger.
 - Sales-only : skip customers. Si le strategist en mentionne, idem, bug.
 - Les recommandations stratégiques ne sont **JAMAIS** exécutées dans Attio par toi ni par le strategist. Elles sont posées dans le brief Slack, validées (ou non) par humain.
-- Exception : pour les recos kind `follow_up_email|tactical_outreach|pricing_review|multi_threading`, tu invoques `comms-drafter` qui crée un **draft Gmail** (pas d'envoi) + une **card Notion** de validation. Ce n'est pas une exécution Attio, c'est de la préparation que l'humain validera en envoyant manuellement ou en cliquant "Demander modification" dans Notion.
+- Exception : pour les recos kind `follow_up_email|tactical_outreach`, tu invoques `comms-drafter` qui crée un **draft Gmail** (pas d'envoi) + une **card Notion** de validation. Ce n'est pas une exécution Attio, c'est de la préparation que l'humain validera en envoyant manuellement ou en cliquant "Demander modification" dans Notion.
