@@ -50,6 +50,8 @@ JSON
 
 Règles identiques au `sales-ops-notifier` : `unfurl_*: false`, gérer `ok=false` proprement (retourne `"failed: <error>"`).
 
+**TOUJOURS un nouveau message de premier niveau.** N'inclus **JAMAIS** `thread_ts` dans le payload `chat.postMessage`. Chaque run produit un message **autonome** posté dans le canal (pas une réponse dans le fil du brief précédent). Le check anti-redondance (lecture des 5 derniers messages) sert uniquement à éviter un doublon strictement identique — pas à poster en thread.
+
 ## Logique de décision
 
 ### 1. Lire l'historique Slack — source de vérité unique

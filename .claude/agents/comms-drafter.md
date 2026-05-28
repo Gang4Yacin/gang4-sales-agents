@@ -53,7 +53,7 @@ Propriétés à renseigner via `notion-create-pages` ou `notion-update-page` :
 
 | Propriété | Type | Source |
 |---|---|---|
-| Title | title | `<target_name> — <objet court>` (ex: "What Matters — Relance pricing") |
+| Title | title | **TOUJOURS** `<nom complet marque> — <résumé relance en 3-6 mots>`. Jamais juste le nom de la marque. Ex: "Novoma — Relance proposition concrète", "Alltricks — Relance pricing", "Tikamoon — Nouvel angle use case". Le `<résumé>` décrit l'objet de la relance, pas l'objet de l'email. |
 | Entreprise | text | `target_name` |
 | Contact | text | `<recipient_name>` (ou email si pas de nom) |
 | Email destinataire | email | `recipient_email` |
@@ -63,8 +63,16 @@ Propriétés à renseigner via `notion-create-pages` ou `notion-update-page` :
 | État | status | "En attente de validation" en v1, "En attente de validation" aussi après regenerate (le webhook l'aura remis à "Demande de modification" puis on bascule à nouveau à "En attente de validation") |
 | Version | number | 1, 2, 3… |
 | Type de relance | select | "Follow-up" (`follow_up_email`) / "Tactique" (`tactical_outreach`) |
-| Lien Gmail draft | url | URL du draft Gmail (format `https://mail.google.com/mail/u/0/#drafts?compose=<draft_id>`) |
-| Lien Attio deal | url | URL du record Attio s'il y en a un |
+| Lien Gmail draft | url | URL du draft sur **le compte qui détient le draft** (cf. Étape 4 pour le format exact avec `authuser`). |
+| Lien Attio deal | url | URL **exacte** du record (cf. format ci-dessous). Deal si dispo, sinon company. |
+
+**Format URL Attio (CRITIQUE — sinon le lien ne fonctionne pas)** :
+```
+https://app.attio.com/gang-4-crm/<object_plural>/record/<full_uuid>/overview
+```
+- `<object_plural>` ∈ `deals` | `companies` | `people` (PLURIEL).
+- `<full_uuid>` = UUID **complet** en 5 segments (ex. `2b9c7b73-a794-4cdd-add0-e1c328fd20b4`), jamais tronqué.
+- Choix : si un deal existe pour la cible → `deals/record/<deal_id>/overview` ; sinon → `companies/record/<company_id>/overview`.
 | Reco source | text | `recommendation_id` Supabase |
 | Historique conversation | text (rich) | rendu lisible du `conversation_history` (v1, v2, …) |
 | Feedback | text | vide en v1 ; reflète `user_feedback` après régénération |
@@ -139,11 +147,27 @@ Via `mcp__0dd48a09-*__create_draft` :
 
 **Mode B** : si un `gmail_draft_id` existe déjà, le MCP n'a peut-être pas d'`update_draft`. Plan B : crée un nouveau draft et marque l'ancien comme superseded dans `conversation_history`. (Si tu vois un endpoint `update_draft` ou `replace_draft` dispo, utilise-le en priorité.)
 
-Récupère l'`id` du draft retourné par Gmail. Construis l'URL `https://mail.google.com/mail/u/0/#drafts?compose=<draft_id>`.
+**Récupération de l'id + construction de l'URL** :
+- Utilise **toujours** le champ `id` (l'identifiant de ressource draft) retourné par `create_draft`, de façon cohérente — pas un `message_id` ni un `thread_id`.
+- Le draft vit sur **le compte Gmail connecté au MCP** (celui qui détient et enverra l'email). L'URL **doit forcer ce compte** via `authuser`, sinon elle ouvre les drafts du mauvais compte dans le navigateur du relecteur :
+  ```
+  https://mail.google.com/mail/?authuser=<email_du_compte_emetteur>#drafts?compose=<draft_id>
+  ```
+  Ex. si le compte émetteur est `samuel@gang4.io` : `https://mail.google.com/mail/?authuser=samuel@gang4.io#drafts?compose=<draft_id>`.
+- **Important** : ne mets jamais `u/0` en dur — `u/0` = premier compte loggé du navigateur du relecteur, qui n'est pas forcément l'émetteur. Toujours `authuser=<email émetteur>`.
+- Stocke cette URL dans `notion_url`-adjacent (propriété `Lien Gmail draft`) ET garde le `draft_id` brut dans `relance_cards.gmail_draft_id`.
+
+> ⚠️ **Pré-requis d'accès** : le relecteur (celui qui valide dans Notion) doit avoir accès à la boîte du compte émetteur pour voir/envoyer le draft. Si l'émetteur et le relecteur sont deux personnes différentes sans délégation Gmail, le lien ne suffira pas — c'est une contrainte produit, pas un bug de format.
 
 ### Étape 5 — Créer/mettre à jour la card Notion
 
 #### Mode A (create)
+
+**Anti-doublon OBLIGATOIRE avant de créer** (une reco = une seule card) :
+1. Vérifie Supabase : `select id, notion_page_id from sales.relance_cards where recommendation_id = '<reco_id>' and state in ('en_attente_validation','demande_modification');` → si une ligne existe, **n'crée RIEN**, retourne `skipped='duplicate'`.
+2. Vérifie Notion : `notion-search` dans la database (`data_source_id = d11a5586-...`) filtré sur la propriété `Reco source` = `<recommendation_id>`. Si une page existe déjà, **réutilise-la** (passe en update Mode B) au lieu d'en créer une nouvelle.
+3. **Une seule** invocation `notion-create-pages` par card. Si l'appel a déjà réussi mais qu'une étape ultérieure échoue, ne ré-appelle PAS `notion-create-pages` — reprends sur la page existante (son id est dans la réponse du premier appel).
+
 Via `mcp__4db788e3-*__notion-create-pages` avec `parent.data_source_id = "d11a5586-cd9c-4e60-ae8c-9ab11772f792"`. Renseigne toutes les propriétés (cf. tableau plus haut).
 
 Le contenu de la page (body Notion, pas la propriété `Corps`) peut dupliquer le corps de l'email pour lecture rapide — mais la propriété `Corps` reste la source de vérité.
