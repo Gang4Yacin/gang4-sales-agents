@@ -95,6 +95,21 @@ order by surfaced_at asc;
 
 Le `target_record_id` te servira à construire les liens Attio.
 
+**État des relances (cards `comms-drafter`)** — pour afficher l'avancement de chaque reco draftable dans le top 5 :
+```sql
+select recommendation_id, state, version, proposed_at,
+       extract(day from now() - proposed_at)::int as days_open
+from sales.relance_cards
+where recommendation_id = any(array[<liste des reco_ids du top 5>]::uuid[]);
+```
+Mappe l'état pour l'affichage :
+- `en_attente_validation` (version 1) → "draft créé, en attente de validation depuis Nj"
+- `en_attente_validation` (version > 1) → "draft v_N régénéré, en attente depuis modif"
+- `demande_modification` → "modif demandée, régénération en cours"
+- `validee` → "✅ envoyé"
+- pas de card pour une reco draftable → "draft en cours de génération"
+- reco non draftable (`multi_threading`, `kill_deal`…) → pas de ligne relance.
+
 ### 3. Composer le message
 
 **Format URL Attio** (identique au sales-ops-notifier) :
@@ -154,8 +169,9 @@ Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N 
 :dart: *Top 5 priorités*
 
 *1. <Titre action> — <https://app.attio.com/gang-4-crm/deals/record/<uuid>/overview|Nom Complet Entreprise>*
-   ◦ Diagnostic : <2 phrases factuelles>
-   ◦ Reco : <action concrète>
+   ◦ Diagnostic : <pourquoi cette reco est dans le top 5 — 2 phrases factuelles : ce qu'on observe, pourquoi maintenant>
+   ◦ Reco : <ce qui est conseillé concrètement>
+   ◦ Relance : <état de la card si reco draftable — ex. "draft créé, en attente de validation depuis 2j" | "✅ envoyé" | "modif demandée"> ← OMETTRE si reco non draftable
    ◦ Score : impact N/5 · effort N/5 · confiance N/5 (composite XX)
    ↳ Réponds en thread : *valide* | *reject* | *snooze 2 semaines*
 
