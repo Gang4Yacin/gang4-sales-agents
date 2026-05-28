@@ -90,14 +90,15 @@ Récupère les **10 derniers messages** du canal `C0B5EV7AN4F` via `slack_read_c
 Format complet (voir section 4 ci-dessous). Toutes les sections pertinentes sont incluses.
 
 #### Cas B — Run vide (rien à signaler)
-Post **minimal** d'une ligne, juste pour confirmer que la routine a tourné sans erreur. Exemple :
+Post **minimal** d'une ligne, juste pour confirmer la santé. Exemple :
 
 ```
 :white_check_mark: *Run Sales Ops effectué avec succès, rien à signaler*
 > run_id: `<uuid>`
+> <N emails scannés, M meetings scannés, 0 action appliquée, 0 todo nouveau>
 ```
 
-Aucune section bullet, aucune stat technique, aucun "health score". Juste cette ligne. Sobre. Le but : que tu voies "Sales Ops a tourné" sans surcharger le canal.
+Aucune section bullet, juste cette ligne + le sous-titre stats. Sobre. Le but : que tu voies "Sales Ops a tourné" sans surcharger le canal.
 
 #### Cas C — Run en erreur (`run_log.error` non null)
 Post court d'alerte (voir Edge cases).
@@ -203,20 +204,17 @@ Le rapport `crm-sync` fournit le nom complet ; ne le raccourcis JAMAIS pour "fai
 *:rotating_light: Actions à valider*              ← OPTIONNEL : new_todos avec kind∈{stage_uncertain, reopen_lost_review, manual_review, …}
 • *<lien Attio|Nom complet entreprise>*
    ◦ <ce qu'il faut valider> — <pourquoi> ?
+   ↳ Réponds en thread : *done* | *snooze 7j* | *skip*
 
 *:repeat: Rappels & follow-ups*           ← OPTIONNEL : nudged_todos
 • *<lien Attio|Nom complet entreprise>* — <résumé du todo> (en attente depuis Nj)
+   ↳ Réponds en thread : *done* | *snooze 7j* | *skip*
 
 *:warning: Infos importantes*              ← OPTIONNEL : new_warnings UNIQUEMENT
 • ...
-
-_:speech_balloon: Répondez en thread en langage naturel pour arbitrer (ex. « Insentials c'est bon, ferme-le en Won », « Alltricks attends 15j », « laisse tomber Mercanis »). Je lis et j'applique au prochain run._   ← UNE SEULE FOIS, en pied de message, et UNIQUEMENT si au moins une section "Actions à valider" ou "Rappels & follow-ups" est présente.
 ```
 
-**Règle des CTA (IMPORTANT — pas de commandes pré-définies)** :
-- **N'écris JAMAIS** de CTA rigide par item (pas de "↳ Réponds en thread : done | snooze | skip"). C'est répétitif, ça pollue le message, et ça suggère faussement une syntaxe figée.
-- À la place : **une seule** ligne de pied de message (cf. template ci-dessus) qui invite à répondre **en langage naturel**, et seulement s'il y a effectivement quelque chose à arbitrer (`Actions à valider` ou `Rappels & follow-ups` non vides). Sinon, pas de pied du tout.
-- Le parsing des réponses est sémantique (langage naturel), documenté dans `sales-ops.md` étape 2bis — l'utilisateur écrit comme il parle, l'agent interprète l'intent au run suivant.
+**Règle des CTA "Réponds en thread"** : présent sous chaque item des sections `Actions à valider` et `Rappels & follow-ups` (jamais sous `Actions effectuées` ni `Follow-ups auto-résolus`, qui n'attendent rien). Les commandes acceptées sont **`done`, `snooze Nj`, `skip`** + texte libre pour custom action — c'est documenté dans `sales-ops.md` étape 2bis pour le parsing au run suivant.
 
 **Exemple de groupage** (modèle de référence — c'est exactement le style attendu) :
 
@@ -239,9 +237,6 @@ _:speech_balloon: Répondez en thread en langage naturel pour arbitrer (ex. « I
 - Aucune mention de **customers** (sales-only).
 - Aucune mention de **patterns/items écartés** (skips silencieux uniquement).
 - Aucune mention de **stats techniques** (nb emails scannés, threads exclus…).
-- **PAS de "health score" / "santé du pipeline" / code couleur (🔴🟢🟠) / note ou grade.** Cette notion a été retirée — ne la réintroduis sous aucune forme, ni en titre, ni en ligne de synthèse, ni par deal. Si tu te surprends à écrire "santé", "health", "rouge/vert/orange" comme indicateur d'état → supprime.
-- **N'évoque JAMAIS une entreprise pour laquelle il ne s'est rien passé ce run.** Pas de lignes "RAS", "rien à signaler sur X", "X toujours sans canal Slack", "en attente". Une entreprise n'apparaît que si elle a une action appliquée, un todo à arbitrer, un rappel dû, ou un auto-résolu — sinon elle n'existe pas dans le message. Le silence est l'état par défaut.
-- **Zéro contenu inventé** : tu ne reportes QUE ce qui est explicitement dans le rapport `crm-sync`. Pas de méta-commentaire sur l'absence de canal Slack, l'absence d'onglet, l'absence de données — ce n'est pas pertinent pour l'utilisateur.
 - Aucun "voici", "voilà", "merci", pas de blabla.
 - 1 message par run max.
 
