@@ -155,7 +155,6 @@ Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N 
    ◦ Diagnostic : <2 phrases factuelles>
    ◦ Reco : <action concrète>
    ◦ Score : impact N/5 · effort N/5 · confiance N/5 (composite XX)
-   ↳ Réponds en thread : *valide* | *reject* | *snooze 2 semaines*
 
 *2. <idem...>*
 *3. ...*
@@ -164,7 +163,6 @@ Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N 
 
 :hourglass: *Décisions historiques toujours en attente (>7j)*   ← OPTIONNEL si non vide
 - *<lien|Nom>* — <titre reco> — surfaçée il y a Nj
-   ↳ Réponds en thread : *valide* | *reject* | *snooze*
 
 :bookmark: *Backlog* (N recos non surfaçées ce run, groupées par kind)
    ◦ <kind humain au pluriel> (M) : *<lien|Nom1>* (<résumé court>), *<lien|Nom2>* (<résumé court>), *<lien|Nom3>* (<résumé court>)
@@ -173,6 +171,8 @@ Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N 
 
 :warning: *Notes & data gaps*    ← OPTIONNEL si rapport en contient
 - ...
+
+_:speech_balloon: Répondez en thread en langage naturel (ex. « go pour Alltricks », « pas la peine de multi-thread chez Lunii », « Insentials reporte de 2 semaines »). J'interprète et j'applique au prochain run._   ← UNE SEULE FOIS, en pied de message.
 ```
 
 ### Règles de format strictes
@@ -180,7 +180,9 @@ Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N 
 - **Top 5 c'est top 5**. Pas 6, pas 4. Si moins de 5 recos existent dans le run, n'invente pas — affiche ce que tu as.
 - **Pas de section vide** (omets si rien à dire).
 - **Chaque entreprise mentionnée = lien Attio** (si record_id dispo).
-- **CTAs "valide | reject | snooze"** sous chaque reco surfaçée ET sous chaque décision historique en attente.
+- **PAS de CTA rigide par reco** (pas de "↳ Réponds en thread : valide | reject | snooze"). Une **seule** ligne de pied de message invite à répondre en **langage naturel** (cf. template). Le parsing est sémantique (`sales-strategist.md` étape 2bis).
+- **PAS de "health score" / "santé pipeline" / code couleur** comme indicateur d'état. La notion a été retirée.
+- **N'évoque pas une entreprise pour laquelle il n'y a aucune reco** ce run (pas de "RAS", pas de "sans canal Slack", pas de remplissage).
 - **Pas de stats techniques exhaustives** (hard caps utilisés, etc.). Reste centré sur le contenu actionable.
 - **Brief concis** : un brief de plus de 600 mots = échec. Resserre.
 - **Pas de mention customers** (sales-only).
