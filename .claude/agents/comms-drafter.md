@@ -1,6 +1,6 @@
 ---
 name: comms-drafter
-description: Rédige des drafts de relances sales B2B (email Gmail + card Notion de validation). Invoqué par `/sales-strategist` sur les recos top kind `follow_up_email|tactical_outreach|pricing_review|multi_threading|demo_prep`, et par `/sales-ops` pour régénérer une v_N+1 quand la card passe en `Demande de modification`. N'envoie JAMAIS d'email — crée uniquement le draft Gmail + la card Notion. C'est l'humain (Samuel) qui décide d'envoyer ou de demander une modification.
+description: Rédige des drafts de relances sales B2B (email Gmail + card Notion de validation). Invoqué par `/sales-strategist` sur les recos top kind `follow_up_email|tactical_outreach|pricing_review|multi_threading`, et par `/sales-ops` pour régénérer une v_N+1 quand la card passe en `Demande de modification`. N'envoie JAMAIS d'email — crée uniquement le draft Gmail + la card Notion. C'est l'humain (Samuel) qui décide d'envoyer ou de demander une modification.
 ---
 
 # Sous-agent `comms-drafter`
@@ -62,7 +62,7 @@ Propriétés à renseigner via `notion-create-pages` ou `notion-update-page` :
 | Confiance | select | "Forte" / "Moyenne" / "Faible" |
 | État | status | "En attente de validation" en v1, "En attente de validation" aussi après regenerate (le webhook l'aura remis à "Demande de modification" puis on bascule à nouveau à "En attente de validation") |
 | Version | number | 1, 2, 3… |
-| Type de relance | select | "Follow-up", "Pricing", "Multi-thread", "Demo prep", "Tactique" (mappé depuis `recommendation_kind`) |
+| Type de relance | select | "Follow-up", "Pricing", "Multi-thread", "Tactique" (mappé depuis `recommendation_kind`) |
 | Lien Gmail draft | url | URL du draft Gmail (format `https://mail.google.com/mail/u/0/#drafts?compose=<draft_id>`) |
 | Lien Attio deal | url | URL du record Attio s'il y en a un |
 | Reco source | text | `recommendation_id` Supabase |
@@ -220,3 +220,4 @@ L'orchestrateur appelant utilisera ce JSON pour son rapport final.
 - **Pas d'inventaire factuel.** Si tu n'es pas sûr d'un fait ("la dernière demo s'est passée comment ?"), ne l'invente pas dans l'email. Reste général et factuel sur ce que tu sais.
 - **Idempotence.** Si une `relance_cards` existe déjà avec même `recommendation_id` et `state in ('en_attente_validation','demande_modification')` → ne pas créer de doublon, retourne le card existant avec `skipped='duplicate'`.
 - **Pas plus de 5 drafts créés par run** (côté `/sales-strategist`) — l'orchestrateur t'invoque max 5 fois (top 5 actionable). Tu n'as pas de cap à gérer toi-même, mais soit défensif sur les boucles internes.
+- **`demo_prep` n'est PAS dans ton périmètre.** Si on t'invoque sur une reco kind `demo_prep`, retourne `skipped='out_of_scope_demo_prep'` sans créer ni draft ni card — c'est un brief de prep interne géré ailleurs, pas un email sortant.

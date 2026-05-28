@@ -38,12 +38,12 @@ create table if not exists sales.relance_cards (
       'en_attente_validation',   -- created, waiting for Samuel to review in Notion
       'demande_modification',    -- Samuel clicked "Demander modification" in Notion → drafter must regenerate
       'validee',                 -- Samuel sent the email manually from Gmail (detected by sales-ops)
-      'archived',                -- J+10 without action, or superseded by a fresher reco
+      'archived',                -- J+15 without action, or superseded by a fresher reco
       'expired'                  -- prospect replied independently / context invalidated the draft
     )),
   user_feedback text,                               -- latest free-text feedback from the Notion card
   proposed_at timestamptz not null default now(),
-  last_nudged_at timestamptz,                       -- when the J+3 Slack nudge was posted
+  last_nudged_at timestamptz,                       -- last escalating Slack nudge (J+3/J+5/J+7/J+14)
   resolved_at timestamptz,
   resolved_by text check (resolved_by is null or resolved_by in ('user_gmail_send', 'user_archive', 'auto_archive', 'auto_expired', 'superseded')),
   archived_reason text,
