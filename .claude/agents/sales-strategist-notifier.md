@@ -180,6 +180,10 @@ Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N 
 *4. ...*
 *5. ...*
 
+:email: *Relances en attente de ton action*   ← OPTIONNEL si au moins 1 card active
+- *<lien Attio|Nom complet>* — <objet relance> · v<N> · en attente depuis Nj <flag urgence si applicable>
+- ...
+
 :hourglass: *Décisions historiques toujours en attente (>7j)*   ← OPTIONNEL si non vide
 - *<lien|Nom>* — <titre reco> — surfaçée il y a Nj
    ↳ Réponds en thread : *valide* | *reject* | *snooze*
@@ -192,6 +196,19 @@ Si plus de 5 entreprises dans un même groupe, mets les 5 plus scorées + "et N 
 :warning: *Notes & data gaps*    ← OPTIONNEL si rapport en contient
 - ...
 ```
+
+**Section "Relances en attente"** (juste sous le top 5, AVANT backlog & notes) : c'est le rappel hebdo de **toutes** les cards de relance qui attendent ton action (pas seulement celles du top 5 courant). Query :
+```sql
+select target_name, target_object_type, target_record_id, state, version,
+       extract(day from now() - proposed_at)::int as days_open, notion_url
+from sales.relance_cards
+where state in ('en_attente_validation', 'demande_modification')
+order by days_open desc;
+```
+- Trie par ancienneté décroissante (les plus vieilles d'abord).
+- **Flag d'urgence** : `≥14j` → "⏳ bientôt archivée"; `≥7j` → "à traiter"; sinon rien.
+- Lien : vers la card Notion (`notion_url`) OU le deal Attio — privilégie Notion (c'est là qu'on valide/édite).
+- Si 0 card active → omets la section.
 
 ### Règles de format strictes
 

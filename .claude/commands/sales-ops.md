@@ -149,25 +149,14 @@ Pour chaque card avec `gmail_draft_id` non null et `state in ('en_attente_valida
    - Match trouvé → `state='validee'`, `resolved_by='user_gmail_send'`, `gmail_message_id=<id>`, `resolved_at=now()`. Update Notion `État='Validée'`.
    - Pas de match → probable suppression manuelle. `state='archived'`, `resolved_by='user_archive'`, `archived_reason='draft_deleted_no_send_detected'`. Update Notion `État='Archived'`.
 
-#### 2ter-d — Relances échelonnées (J+3 → J+14) et archivage (J+15)
+#### 2ter-d — Archivage J+15 (silencieux — PAS de rappel Slack ici)
 
-Pour les cards encore `en_attente_validation`, calcule `age_days = now() - proposed_at`. Le `last_nudged_at` sert à ne pas reposter deux fois le même palier : pour chaque palier, ne relance que si `last_nudged_at IS NULL OR last_nudged_at < proposed_at + <palier> jours`. Après chaque relance, set `last_nudged_at = now()`.
+> ⚠️ **Les rappels de relances ne sont PLUS postés dans #sales-ops.** Par décision produit, le rappel hebdo des relances en attente vit dans le **brief Sales Strategist** (`/sales-strategist`, canal #sales-strategist), pas dans le run quotidien sales-ops. Ici, on se contente de la **gestion silencieuse du cycle de vie** (détection envoi/modif/expiration + archivage), sans poster de nudge.
 
-Paliers (du plus récent au plus ancien — n'applique que le palier le plus avancé atteint à ce run) :
-
-| Âge | Action | Message Slack (section dédiée du rapport) |
-|---|---|---|
-| `>= 14j` | **Dernière relance** | "⏳ Dernière relance — la card `<target_name>` est en attente depuis J+14. **Archivage automatique du draft demain** si pas d'action (envoi ou modification)." |
-| `>= 7j` | Relance | "🔔 Relance J+7 — `<target_name>` toujours en attente de validation." |
-| `>= 5j` | Relance | "🔔 Relance J+5 — `<target_name>` toujours en attente de validation." |
-| `>= 3j` | 1er nudge | "🔔 Relance en attente depuis J+3 — `<target_name>`." |
-
-Pour chaque card, applique **un seul** message par run : prends le palier le plus élevé atteint dont la condition `last_nudged_at` est remplie. Regroupe toutes les cards concernées sous une même section markdown "🔔 Relances en attente" que `sales-ops-notifier` propagera sur Slack.
-
-Puis archivage :
-- `age_days >= 15` :
+Archivage uniquement :
+- Pour les cards `en_attente_validation` avec `age_days = now() - proposed_at >= 15` :
   - `state='archived'`, `resolved_by='auto_archive'`, `archived_reason='no_action_after_15_days'`. Update Notion `État='Archived'`.
-  - Mentionne l'archivage dans le rapport ("🗄️ Draft `<target_name>` auto-archivé après 15j sans action").
+- N'ajoute **pas** de section "Relances en attente" au rapport sales-ops (elle est gérée par le strategist). Tu peux mentionner un archivage effectué dans les notes du run, mais sans CTA.
 
 #### 2ter-e — Détection prospect reply (expiration)
 

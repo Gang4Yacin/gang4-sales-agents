@@ -49,22 +49,28 @@ Invoqué par `/sales-ops` (orchestrateur) après détection qu'une card Notion e
 
 ## Schéma des cards Notion (rappel)
 
-Propriétés à renseigner via `notion-create-pages` ou `notion-update-page` :
+Propriétés à renseigner via `notion-create-pages` ou `notion-update-page`. **⚠️ Les noms ci-dessous sont EXACTS — c'est le schéma réel de la database. N'invente aucune propriété, n'en renomme aucune.** Propriétés inexistantes = échec silencieux.
 
-| Propriété | Type | Source |
+| Propriété (nom EXACT) | Type | Source / valeur |
 |---|---|---|
-| Title | title | **TOUJOURS** `<nom complet marque> — <résumé relance en 3-6 mots>`. Jamais juste le nom de la marque. Ex: "Novoma — Relance proposition concrète", "Alltricks — Relance pricing", "Tikamoon — Nouvel angle use case". Le `<résumé>` décrit l'objet de la relance, pas l'objet de l'email. |
-| Entreprise | text | `target_name` |
-| Contact | text | `<recipient_name>` (ou email si pas de nom) |
-| Email destinataire | email | `recipient_email` |
-| Sujet | text | sujet de l'email |
-| Corps | text (rich) | corps de l'email |
-| Confiance | select | "Forte" / "Moyenne" / "Faible" |
-| État | status | "En attente de validation" en v1, "En attente de validation" aussi après regenerate (le webhook l'aura remis à "Demande de modification" puis on bascule à nouveau à "En attente de validation") |
-| Version | number | 1, 2, 3… |
-| Type de relance | select | "Follow-up" (`follow_up_email`) / "Tactique" (`tactical_outreach`) |
-| Lien Gmail draft | url | URL du draft sur **le compte qui détient le draft** (cf. Étape 4 pour le format exact avec `authuser`). |
-| Lien Attio deal | url | URL **exacte** du record (cf. format ci-dessous). Deal si dispo, sinon company. |
+| `Titre` | title | **TOUJOURS** `<nom complet marque> — <résumé relance en 3-6 mots>`. Jamais juste le nom de la marque. Ex: "Novoma — Relance proposition concrète", "Alltricks — Relance pricing", "Tikamoon — Nouvel angle use case". |
+| `Entreprise` | text | `target_name` (nom officiel complet) |
+| `Objet email` | text | sujet de l'email |
+| `Brouillon` | text | corps de l'email (= ce qui est dans le draft Gmail) |
+| `Confiance` | select | "Forte" / "Moyenne" / "Faible" |
+| `État` | select | "En attente de validation" (v1 comme après régénération) |
+| `Version draft` | number | 1, 2, 3… |
+| `Pourquoi cette relance` | text | rationale du strategist + angle retenu par le drafter |
+| `Résumé dernier échange` | text | une ligne factuelle du dernier contact (ex: "Demo done 22/01, pricing à clarifier") |
+| `Date dernier contact` | date | date du dernier email/meeting avec le prospect (champ `date:Date dernier contact:start`) |
+| `Lien Gmail Draft` | url | URL du draft (cf. Étape 4 — format avec `authuser`) |
+| `Lien Attio Deal` | url | URL **exacte** du record (cf. format ci-dessous). Deal si dispo, sinon company. |
+| `Historique conversation` | text | rendu chat-like append-only : "v1 (agent) : … / feedback humain : … / v2 (agent) : …" |
+| `Feedback` | text | **vide en v1**. C'est LA propriété où l'humain écrit ses retours avant de cliquer "Demander modification". Après régénération, tu y notes "intégré en v_N+1" et tu vides le champ pour le prochain tour. |
+
+Propriétés **system / à NE PAS écrire** (gérées par Notion) : `Créé le`, `Mis à jour le`, `Jours depuis proposition` (formula), `Demander modification` (button).
+
+Il n'existe **pas** de propriété pour l'email destinataire ni pour le `recommendation_id` dans Notion — ces données vivent dans Supabase (`relance_cards`). L'idempotence se vérifie donc côté Supabase (cf. Étape 5), pas via une propriété Notion.
 
 **Format URL Attio (CRITIQUE — sinon le lien ne fonctionne pas)** :
 ```
@@ -73,11 +79,6 @@ https://app.attio.com/gang-4-crm/<object_plural>/record/<full_uuid>/overview
 - `<object_plural>` ∈ `deals` | `companies` | `people` (PLURIEL).
 - `<full_uuid>` = UUID **complet** en 5 segments (ex. `2b9c7b73-a794-4cdd-add0-e1c328fd20b4`), jamais tronqué.
 - Choix : si un deal existe pour la cible → `deals/record/<deal_id>/overview` ; sinon → `companies/record/<company_id>/overview`.
-| Reco source | text | `recommendation_id` Supabase |
-| Historique conversation | text (rich) | rendu lisible du `conversation_history` (v1, v2, …) |
-| Feedback | text | vide en v1 ; reflète `user_feedback` après régénération |
-| Date de proposition | date | now() |
-| Jours depuis proposition | formula (auto) | n'écris pas, calculée par Notion |
 
 ## Cycle d'exécution
 
@@ -91,11 +92,27 @@ Selon le mode :
 3. Si pas de `recipient_email` évident dans la reco → récupère les people liés au deal (préfère le `decision_maker` quand le champ existe, sinon le contact `primary`, sinon le plus récent en `last_interaction`). **Skip** les emails non-B2B (gmail.com, hotmail, free.fr, orange.fr, etc.) — flag `data_insufficient` à la place et stoppe sans créer de card.
 4. Charge la **dernière note mensuelle auto** `Sales <Mois> <Année> - auto` de la company via `search-notes-by-metadata` + `get-note-body` pour comprendre l'état actuel.
 5. Charge l'historique Gmail récent avec le destinataire : `search_threads` avec `from:<email> OR to:<email>` limité aux 30 derniers jours, max 3 threads les plus récents. Lis 1-2 messages clés par thread (le dernier du prospect + le dernier de notre côté). C'est le **ton, vocabulaire, dernier sujet abordé** que tu vas matcher.
+6. **Charge le référentiel de copywriting** (style global de Samuel + règles apprises) — voir Étape 1bis. C'est la base principale de la **forme**.
 
 #### Mode B (regenerate)
 1. La row `relance_cards` est passée en argument complet. Tu as déjà `subject`, `body`, `version`, `conversation_history`, `user_feedback` fraîchement saisi par Samuel.
 2. Recharge légèrement le contexte Attio (au cas où le deal a évolué entre v1 et v_N+1) + dernière note auto, mais **n'écrase pas** le brief du feedback humain.
 3. Recharge le thread Gmail s'il existe (`gmail_thread_id`) pour voir si le prospect a répondu entre temps — si oui, le draft doit en tenir compte.
+4. **Charge le référentiel de copywriting** (Étape 1bis).
+
+### Étape 1bis — Charger le référentiel de copywriting (les DEUX modes)
+
+```sql
+select kind, content, weight from sales.copywriting_guidelines
+where active = true
+order by kind, weight desc;
+```
+
+Tu obtiens :
+- **`style_profile`** (1 ligne) : la synthèse compacte de **comment Samuel écrit** (ton, longueur, formules d'ouverture/clôture, vocabulaire, niveau de familiarité, mise en forme). Construite périodiquement à partir d'un échantillon de ses emails envoyés — **tu n'as donc PAS à charger 100 emails** à chaque run, juste ce profil.
+- **`learned_rule`** (N lignes) : do's/don'ts accumulés à partir des feedbacks humains sur les cards, triés par `weight` (plus une règle a été répétée, plus elle prime).
+
+Ces éléments pilotent la **forme** de l'email. S'il n'y a aucun `style_profile` actif (pas encore construit), rabats-toi sur le seul ton de l'historique Gmail et signale-le dans le rapport (`style_profile_missing`).
 
 ### Étape 2 — Rédiger le draft
 
@@ -113,8 +130,12 @@ Le `recommendation_kind` te dit **quel registre** adopter ; le `rationale` de la
 
 #### Règles de rédaction (s'appliquent v1 et v_N+1)
 
+**D'où vient la FORME vs le FOND** (important) :
+- La **forme/style** (ton, longueur, formules, vocabulaire, niveau de familiarité) vient, par ordre de priorité : (1) le **`style_profile` global de Samuel** + les **`learned_rule`** du référentiel (Étape 1bis) — c'est la base ; (2) ajusté au **ton du dernier échange Gmail avec CE contact précis** (registre déjà établi avec lui). En cas de conflit, le ton spécifique au contact l'emporte localement, mais le style de Samuel reste la signature de fond.
+- Le **fond/substance** (quoi dire) vient de : la note mensuelle auto, le `rationale` de la reco, et le registre du kind (posé vs offensif). Ces 3 éléments pèsent **peu sur la forme**.
+
 - **Langue** : français par défaut, sauf si tout l'historique Gmail avec ce contact est en anglais.
-- **Ton** : aligné sur le dernier email envoyé par Samuel/Lucie à ce contact (consulte les 1-2 threads chargés). Pas de formules corporate génériques.
+- **Ton** : style de Samuel (référentiel) + alignement sur le dernier email échangé avec ce contact. Jamais de formules corporate génériques.
 - **Longueur** : 4-8 lignes de corps max. Une relance courte > une relance fleuve.
 - **Objet** :
   - Si on relance sur un thread existant → préfixe `Re: <sujet original>` et set `gmail_thread_id` dans le draft pour rester dans le fil.
@@ -164,18 +185,18 @@ Via `mcp__0dd48a09-*__create_draft` :
 #### Mode A (create)
 
 **Anti-doublon OBLIGATOIRE avant de créer** (une reco = une seule card) :
-1. Vérifie Supabase : `select id, notion_page_id from sales.relance_cards where recommendation_id = '<reco_id>' and state in ('en_attente_validation','demande_modification');` → si une ligne existe, **n'crée RIEN**, retourne `skipped='duplicate'`.
-2. Vérifie Notion : `notion-search` dans la database (`data_source_id = d11a5586-...`) filtré sur la propriété `Reco source` = `<recommendation_id>`. Si une page existe déjà, **réutilise-la** (passe en update Mode B) au lieu d'en créer une nouvelle.
-3. **Une seule** invocation `notion-create-pages` par card. Si l'appel a déjà réussi mais qu'une étape ultérieure échoue, ne ré-appelle PAS `notion-create-pages` — reprends sur la page existante (son id est dans la réponse du premier appel).
+1. Vérifie Supabase : `select id, notion_page_id, state from sales.relance_cards where recommendation_id = '<reco_id>';` → si une ligne existe avec `state in ('en_attente_validation','demande_modification','validee')`, **ne crée RIEN**, retourne `skipped='duplicate'` avec l'id existant.
+2. **Une seule** invocation `notion-create-pages` par card, et **une seule** insertion Supabase. Crée la page Notion, récupère son `page_id`, puis insère immédiatement la ligne Supabase. Si une étape ultérieure échoue, ne ré-appelle **jamais** `notion-create-pages` — reprends sur la page déjà créée (son id est dans la réponse du premier appel).
+3. (L'idempotence ne s'appuie PAS sur une propriété Notion : il n'y a pas de champ `recommendation_id` dans la database. La source de vérité anti-doublon = Supabase.)
 
-Via `mcp__4db788e3-*__notion-create-pages` avec `parent.data_source_id = "d11a5586-cd9c-4e60-ae8c-9ab11772f792"`. Renseigne toutes les propriétés (cf. tableau plus haut).
+Via `mcp__4db788e3-*__notion-create-pages` avec `parent.data_source_id = "d11a5586-cd9c-4e60-ae8c-9ab11772f792"`. Renseigne toutes les propriétés (cf. tableau plus haut, noms EXACTS).
 
-Le contenu de la page (body Notion, pas la propriété `Corps`) peut dupliquer le corps de l'email pour lecture rapide — mais la propriété `Corps` reste la source de vérité.
+Le contenu de la page (body Notion) peut dupliquer le `Brouillon` pour lecture rapide — mais la propriété `Brouillon` reste la source de vérité.
 
 #### Mode B (regenerate)
 Via `mcp__4db788e3-*__notion-update-page` sur `notion_page_id` :
-- Update `Sujet`, `Corps`, `Confiance`, `Version` (incrément), `Lien Gmail draft` (si nouveau draft), `Historique conversation` (append v_N+1 avec feedback intégré), `État` → "En attente de validation".
-- **Garde** `Feedback` lisible mais marque-le comme "intégré v_N+1" pour traçabilité.
+- Update `Objet email`, `Brouillon`, `Confiance`, `Version draft` (incrément), `Lien Gmail Draft` (si nouveau draft), `Pourquoi cette relance` (si l'angle a bougé), `Historique conversation` (append : feedback humain + v_N+1), `État` → "En attente de validation".
+- **Vide `Feedback`** (le retour a été intégré) et trace l'intégration dans `Historique conversation`.
 
 ### Étape 6 — Persister dans Supabase
 
@@ -224,6 +245,29 @@ set subject = '<new_subject>',
 where id = '<relance_card_id>'
 returning id, version;
 ```
+
+### Étape 6bis — Apprendre du feedback (Mode B uniquement) — boucle d'amélioration
+
+Le but : que le copywriting s'améliore **dans la durée**, pas seulement sur cette card. Quand tu intègres un `user_feedback` en Mode B, juge s'il exprime une **préférence de forme généralisable** (pas un détail propre à ce deal).
+
+- Feedback **généralisable** (ex: "trop formel", "phrases trop longues", "n'utilise pas 'je me permets de'", "toujours finir par une question", "tutoie quand le contact tutoie") → c'est une règle de style réutilisable.
+- Feedback **spécifique** (ex: "enlève la mention du call du 12 mai", "ce n'est pas Lisa mais Paul le décideur") → **ne pas** en faire une règle, c'est propre au deal.
+
+Pour chaque feedback généralisable, **upsert** une `learned_rule` (et renforce son poids si elle existe déjà, en substance) :
+```sql
+-- Si une règle équivalente existe déjà (même intention), incrémente son poids :
+update sales.copywriting_guidelines
+set weight = weight + 1, updated_at = now()
+where kind = 'learned_rule' and active and content ilike '%<mots-clés de la règle>%'
+returning id;
+
+-- Sinon, crée-la :
+insert into sales.copywriting_guidelines (kind, content, source, source_ref)
+values ('learned_rule', '<règle reformulée clairement, ex: "Éviter les formules ''je me permets de''">',
+        'card_feedback', '<relance_card_id>');
+```
+
+Juge l'équivalence sémantiquement (pas de match exact). Garde les règles **courtes et impératives**. C'est ce stock que tu reliras à l'Étape 1bis pour tous les futurs emails → le copywriting converge vers les préférences de Samuel.
 
 ### Étape 7 — Retourner un rapport JSON
 
