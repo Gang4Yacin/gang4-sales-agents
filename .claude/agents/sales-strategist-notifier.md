@@ -120,8 +120,8 @@ Si tu te surprends à utiliser un trigramme/sigle pour une entreprise, relis le 
 
 **Lexique humain — pas de jargon brut** : remplace les termes techniques par leur intention sales :
 - `multi_threading` / `multi-thread` → "ajouter un 2ᵉ contact chez le prospect" (= identifier un second stakeholder, ex: boss, technique, finance, en plus du contact principal). Ne dis JAMAIS "multi-threading" ni "multi-thread" tels quels dans le brief.
-- `pricing_review` → "trancher question pricing en suspens"
-- `tactical_outreach` → "relance ciblée"
+- `follow_up_email` → "relance" (registre posé, dans la continuité)
+- `tactical_outreach` → "relance avec un nouvel angle" (registre plus offensif)
 - `change_owner` / `change_strategy` → ne pas surfacer aujourd'hui (single-owner contexte, voir sales-strategist.md dim E désactivée).
 - `escalate` → "remontée management" + précise pourquoi
 - `kill_deal` → "fermer le deal en Deal Lost"
