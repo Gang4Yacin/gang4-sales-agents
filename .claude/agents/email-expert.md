@@ -98,8 +98,9 @@ Retourne **un objet JSON par compte** (Samuel + Lucie), chacun dans son propre b
         { "email": "samuel@gang4.io | lucie.bonnet@gang4.io", "name": "..." }
       ],
       "direction": "inbound | outbound | mixed",
+      "last_message_direction": "inbound | outbound",
       "summary": "Résumé sales factuel en 1-3 phrases : qui, quoi, où on en est.",
-      "signals": ["proposal_sent" | "demo_requested" | "meeting_proposed" | "objection" | "next_step_committed" | "pricing_discussed" | "intro_email" | "follow_up" | "silence_break" | "deal_signed"],
+      "signals": ["positive_reply" | "proposal_sent" | "demo_requested" | "meeting_proposed" | "objection" | "next_step_committed" | "pricing_discussed" | "intro_email" | "follow_up" | "silence_break" | "deal_signed"],
       "url": "https://mail.google.com/mail/u/0/#inbox/<thread_id>"
     }
   ],
@@ -122,6 +123,8 @@ Retourne **un objet JSON par compte** (Samuel + Lucie), chacun dans son propre b
 - **Summary factuel** : tu décris ce qui s'est dit, pas ce que tu interprètes. Pas de conseil, pas de recommandation.
 - **Signals** : utilise uniquement ceux qui sont **manifestes** dans le texte. En cas de doute, ne mets pas le signal.
 - **Direction** : `inbound` = externe → interne, `outbound` = interne → externe, `mixed` = les deux dans le thread.
+- **`last_message_direction`** : direction du **dernier** message du thread (`inbound` si le prospect a répondu en dernier, `outbound` si c'est nous). Champ critique : `crm-sync` s'en sert pour distinguer une vraie réponse du prospect d'un simple envoi de notre part.
+- **`positive_reply`** : à mettre **uniquement** si le dernier message est `inbound` ET que le prospect y manifeste un intérêt concret (accord « oui envoie / vas-y », demande de créas/UGC, demande de RDV, question pricing avec intention d'avancer). Un thread purement `outbound` sans réponse n'a JAMAIS ce signal. Ce signal sert à autoriser la création d'un deal côté `crm-sync`.
 
 ## Ce que tu ne fais PAS
 
