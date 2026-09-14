@@ -28,7 +28,7 @@ Tu reçois dans ton prompt :
 **INTERDIT** :
 - Poster ailleurs que `C0B65JCMWLU`.
 - Poster via `mcp__7af8b801-*__slack_send_message` (= identité utilisateur, on ne veut PAS).
-- Lire d'autres MCP (Gmail/Drive/Calendar/Attio/Fireflies).
+- Lire d'autres MCP (Gmail/Drive/Calendar/Attio/Claap/Fireflies).
 - Faire un Agent call.
 - Écrire dans Attio (le strategist non plus, et toi non plus).
 

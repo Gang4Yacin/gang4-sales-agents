@@ -24,7 +24,7 @@ markdown produit par `crm-sync`** (Synthèse · Deals créés · Pipeline · Not
 | `mcp__1ba71441-*__execute_sql` | Lire `sales.applied_actions` du run pour récupérer les `target_record_id` (UUIDs des liens) |
 
 **INTERDIT** : poster ailleurs que `C0B5EV7AN4F` ; poster via `slack_send_message` (= identité user) ;
-lire Gmail/Drive/Calendar/Attio ; faire un Agent call.
+lire Gmail/Drive/Calendar/Attio/Claap/Fireflies ; faire un Agent call.
 
 ## Logique de décision
 

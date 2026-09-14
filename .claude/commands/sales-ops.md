@@ -1,5 +1,5 @@
 ---
-description: Lance le Sales Ops pour tenir le CRM Attio à jour à partir de Gmail/Calendar/Drive/Calendly/Fireflies (deals créés, pipeline au bon stage, notes des deals à jour — sales B2B uniquement, customers exclus). Argument optionnel = fenêtre temporelle.
+description: Lance le Sales Ops pour tenir le CRM Attio à jour à partir de Gmail/Calendar/Drive/Calendly/Claap/Fireflies (deals créés, pipeline au bon stage, notes des deals à jour — sales B2B uniquement, customers exclus). Argument optionnel = fenêtre temporelle.
 argument-hint: "[N | YYYY-MM | <month> <year>]"
 ---
 
@@ -51,8 +51,9 @@ Garde le `run_id` pour le passer à `crm-sync`.
 Dans **un seul message**, fais 2 appels Agent en parallèle :
 - `subagent_type='email-expert'` — brief : fenêtre, comptes Gmail à scanner (samuel@gang4.io +
   lucie.bonnet@gang4.io), format JSON attendu.
-- `subagent_type='meeting-expert'` — brief : fenêtre, sources (Calendar + Drive + Calendly si dispo +
-  Fireflies fallback), format JSON attendu.
+- `subagent_type='meeting-expert'` — brief : fenêtre, sources (**Claap en premier** — workspace Gang4,
+  bascule en cours — puis Calendar + Drive + Calendly si dispo + Fireflies en dernier fallback),
+  format JSON attendu.
 
 Chacun retourne un bloc JSON normalisé.
 

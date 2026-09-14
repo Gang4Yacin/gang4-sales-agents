@@ -3,7 +3,7 @@
 Agent **Sales Ops** + sous-agents spécialisés pour **tenir le CRM Attio à jour** automatiquement.
 
 Conçu pour tourner **dans Claude Code** en utilisant les MCP connectés à la session (Attio, Supabase,
-Gmail/Calendar/Drive, Calendly, Fireflies, Slack).
+Gmail/Calendar/Drive, Calendly, Claap, Fireflies, Slack).
 
 ## Objectif unique de `/sales-ops`
 
@@ -56,8 +56,9 @@ Dans Claude Code, sur ce repo :
   le run, appelle les sous-agents, présente le rapport.
 - **`email-expert`** (`.claude/agents/email-expert.md`) — Gmail. Exclut warm-up, notifications SaaS,
   threads internes, non-B2B. Fournit `direction` / `last_message_direction` / `positive_reply`.
-- **`meeting-expert`** (`.claude/agents/meeting-expert.md`) — Google Calendar + Drive (Meet Recordings)
-  + Calendly + Fireflies (fallback). Fournit `demo_booked_via_calendly` / `demo_done`.
+- **`meeting-expert`** (`.claude/agents/meeting-expert.md`) — **Claap** (source primaire des
+  résumés/transcripts, bascule en cours) + Google Calendar + Drive (Meet Recordings) + Calendly +
+  Fireflies (dernier fallback). Fournit `demo_booked_via_calendly` / `demo_done`.
 - **`crm-sync`** (`.claude/agents/crm-sync.md`) — le **cerveau** : croise avec Attio, applique deals /
   stages / notes (règle de deal stricte), persiste l'audit log Supabase.
 - **`sales-ops-notifier`** (`.claude/agents/sales-ops-notifier.md`) — notif Slack **courte** :
@@ -77,7 +78,9 @@ L'agent ne traite **jamais** :
 - Google Calendar : 3 comptes via partage à samuel@gang4.io.
 - Google Drive : dossiers « Meet Recordings » partagés à samuel@gang4.io.
 - Calendly : demos bookées via le site (si MCP connecté).
-- Fireflies : fallback transcripts.
+- Claap : résumés IA + transcripts des meetings (workspace `Gang4`, id `JqwajNYNLd`) — **source
+  primaire des résumés meetings, bascule progressive en cours**.
+- Fireflies : dernier fallback transcripts (historique pré-Claap).
 - Attio : **lecture + écriture** (apply mode). Audit log dans `sales.applied_actions`.
 
 ## Plomberie Supabase (minimale)
@@ -119,6 +122,7 @@ order by status, target_record_id;
 - ✅ MVP `crm-sync` + experts `email-expert` / `meeting-expert`
 - ✅ Activation écriture Attio (apply mode + audit log)
 - ✅ Recentrage `/sales-ops` : règle de deal stricte, suppression des rappels/follow-ups, notif courte
+- ✅ Claap = source primaire des résumés meetings (bascule progressive ; Drive/Gemini puis Fireflies en fallback)
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
 - ⏳ Gmail Yacin via n8n
 - ⏳ Reprise du `sales-strategist`

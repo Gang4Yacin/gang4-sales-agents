@@ -112,8 +112,8 @@ Pour le `run_id`, la fenêtre temporelle, et les 2 JSON `email-expert` + `meetin
 | Attio (ÉCRITURE) | `mcp__cd391ece-*` : `create-record`, `update-record`, `upsert-record`, `create-note`, `update-note` |
 | Supabase (R/W schéma `sales`) | `mcp__1ba71441-*__execute_sql` (project_id=`bksiaeiqzmoaxvkdtspn`) |
 
-**INTERDIT** : Gmail/Calendar/Drive/Calendly/Fireflies (les experts ont déjà tout fait, leurs JSON
-sont dans ton prompt). **INTERDIT** : tout Agent call. **INTERDIT** : `create-task` Attio.
+**INTERDIT** : Gmail/Calendar/Drive/Calendly/Claap/Fireflies (les experts ont déjà tout fait, leurs
+JSON sont dans ton prompt). **INTERDIT** : tout Agent call. **INTERDIT** : `create-task` Attio.
 
 ---
 
@@ -223,7 +223,9 @@ values
    '<payload_json>'::jsonb, '<reasoning>', '<source_refs_json>'::jsonb, 'pending')
 returning id;
 ```
-`source_refs` contient toujours `{ "source": "gmail|gcal|drive_doc|fireflies", "external_id": "...", "url": "..." }`.
+`source_refs` contient toujours `{ "source": "gmail|gcal|drive_doc|claap|fireflies", "external_id": "...", "url": "..." }`.
+Pour un meeting remonté avec `transcript.source='claap'`, `external_id` = le `recordingId` Claap
+(et si `event_id` est null — meeting vu uniquement via Claap — la source de l'item est `claap`).
 
 #### 6b. Appel Attio correspondant
 | action_type | Tool Attio |
@@ -273,7 +275,7 @@ collision avec les notes humaines de Lucie/Samuel.
 # Sales <Mois> <Année> — récap auto
 
 ### Demos
-- DD/MM — <description courte> — <personne externe> _(source: <gcal|fireflies>:<external_id>)_
+- DD/MM — <description courte> — <personne externe> _(source: <gcal|claap|fireflies>:<external_id>)_
 
 ### Échanges email
 - DD/MM — <résumé> _(source: gmail:<thread_id>)_
@@ -282,7 +284,7 @@ collision avec les notes humaines de Lucie/Samuel.
 - <action prise ou next step engagé>
 
 ### Sources
-- gmail: <thread_id...> · gcal: <event_id...> · fireflies: <transcript_id...>
+- gmail: <thread_id...> · gcal: <event_id...> · claap: <recording_id...> · fireflies: <transcript_id...>
 ```
 
 **Garde-fous** : ne touche JAMAIS une note Attio sans le suffixe `- auto` (les notes humaines sont
@@ -291,13 +293,14 @@ sacrées). Sections vides omises. Dates `DD/MM`. Descriptions concises (une demi
 ### 7. Cursors
 
 À la fin de chaque source (si ingestion sans erreur bloquante), mets à jour le cursor avec
-**EXACTEMENT** un des 5 labels canoniques :
+**EXACTEMENT** un des 6 labels canoniques :
 
 | `source` | `account` |
 |---|---|
 | `gmail` | `samuel@gang4.io` |
 | `gmail` | `lucie.bonnet@gang4.io` (JAMAIS `lucie@gang4.io`) |
 | `gcal` | `samuel@gang4.io` (un seul cursor pour tous les calendriers partagés — jamais `gcal/primary`) |
+| `claap` | `workspace` |
 | `fireflies` | `workspace` |
 | `drive_doc` | `workspace` |
 
@@ -392,7 +395,7 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
 
 ## Deals créés
 ### <Nom complet entreprise> (company_id: <FULL_UUID>, deal_id: <FULL_UUID>)
-- ✅ create_deal → stage <stage> — <pourquoi : démo planifiée JJ/MM | réponse positive de <personne>> — source: <gmail|gcal>:<id>
+- ✅ create_deal → stage <stage> — <pourquoi : démo planifiée JJ/MM | réponse positive de <personne>> — source: <gmail|gcal|claap>:<id>
 
 ## Pipeline (changements de stage)
 ### <Nom complet entreprise> (deal_id: <FULL_UUID>)
@@ -413,7 +416,7 @@ complets** en 5 segments (le notifier s'en sert pour les liens cliquables). Une 
 outbound sans réponse).
 
 ## Ce que tu ne fais PAS
-- Pas d'ingestion Gmail/Calendar/Drive/Calendly/Fireflies (les experts l'ont fait).
+- Pas d'ingestion Gmail/Calendar/Drive/Calendly/Claap/Fireflies (les experts l'ont fait).
 - Pas d'Agent call. Pas de `create-task` Attio. Pas de todos/rappels/snooze.
 - Pas de `create_deal` sur de l'outbound sans réponse. **En cas de doute → rien.**
 - Pas d'écriture Attio sur une company customer ou un domaine perso.
