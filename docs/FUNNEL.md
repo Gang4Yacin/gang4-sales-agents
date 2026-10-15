@@ -361,6 +361,7 @@ Pour rendre les ❌ auditables : activer « Available in MCP » sur chaque workf
 12. **Hygiène Attio** : ~728 companies sans `company_status`, ~1 270 sans `icp` ; attribut `owner_7` (select Samuel/Yacin) redondant avec `owner` ; `Temperature` peu utilisé.
 13. **Tables legacy actives** : 160 `strategic_recommendations` open/surfaced, 16 `agent_todos` open, 4 `relance_cards` → bruit pour tout futur agent, à archiver.
 14. **Incohérence admin** : changer le statut depuis `/admin/orga/:orgId/infos` ne lance pas la cascade (créas test non nettoyées, `OfferWhitelisting` non créée).
+15. **Nurturing sans campagne cible active** : le workflow n8n « 💆‍♀️ Nurturing Deals (Attio) → Lemlist » pousse les deals `Nurturing` (15 au snapshot) vers une campagne Lemlist, mais la seule campagne de nurturing connue, `Nurturing Test` (`cam_a8yhsMQ53Yuxia7ZR`), est **terminée**. À vérifier : ces 15 deals reçoivent-ils encore quelque chose ?
 
 ---
 
@@ -455,6 +456,7 @@ Attendu : un run par jour, `pending_actions = 0`, cursors `gmail`/`gcal`/`claap`
 - [ ] Attio : décider du sort du siège de Samuel (réactiver ou réassigner ses 13 deals) ; nettoyer `owner_7`.
 - [ ] Supabase `sales` : archiver `agent_todos`, `strategic_recommendations`, `relance_cards`.
 - [ ] Admin : faire passer la fiche `/admin/orga/:orgId/infos` par la cascade CUSTOMER, ou documenter que seul `/admin/business-clients/new` est autorisé pour le passage CUSTOMER.
+- [ ] Lemlist / n8n : vérifier la campagne cible du workflow « Nurturing Deals (Attio) → Lemlist » (la campagne `Nurturing Test` est terminée) et décider d'une vraie séquence de nurturing.
 
 ---
 
@@ -472,4 +474,5 @@ Attendu : un run par jour, `pending_actions = 0`, cursors `gmail`/`gcal`/`claap`
 
 | Date | Auteur | Changement |
 |---|---|---|
+| 2026-10-15 | Claude (session Yacin) | Relecture par panel d'agents de la page de synthèse (artifact « Funnel Gang4 360° ») : ajout de l'écart 15 (nurturing sans campagne active) et de l'item backlog associé. |
 | 2026-10-15 | Claude (session Yacin) | Création : cartographie complète (Trendtrack → Lemlist → Attio → Calendar/Claap → Admin → Meta → Stripe), snapshot chiffré, 14 écarts détectés, contrôles §8, backlog §10. Sources : repo, Attio, Supabase (`public`, `sales`, `stripe`), Lemlist, Google Calendar/Drive, Calendly, Claap, Fireflies, Slack, n8n (2 workflows lisibles sur 15), repo `SamuelGang4/admin-user-hop`, site gang4.io. |
