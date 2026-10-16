@@ -13,7 +13,14 @@
       "WebFetch",
       "WebSearch",
       "Bash(curl:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "mcp__lemlist__get_campaigns",
+      "mcp__lemlist__get_campaigns_stats",
+      "mcp__lemlist__get_campaign_details",
+      "mcp__lemlist__get_campaign_sequences",
+      "mcp__lemlist__search_campaign_leads",
+      "mcp__lemlist__load_skill",
+      "mcp__lemlist__call_api"
     ]
   }
 }
