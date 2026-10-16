@@ -42,7 +42,8 @@ Pour chaque étape : qui/quel outil, le **signal de vérité** (la donnée qui p
 
 ### Étape 0 — Sourcing des marques (Growth, amont de Lemlist)
 
-- **Qui / outil** : Growth (Yacin/Samuel) via l'admin `/admin/growth/prospects` + Trendtrack + n8n.
+- **Qui / outil** : Growth (Yacin/Samuel) via l'admin `/admin/growth/prospects` + n8n.
+- **Sources** (plusieurs, pas seulement Trendtrack) : marques e-commerce déjà en base que l'on relance (audience « Campaign Attio »), Trendtrack (audience « Top ICP »), listes produites par Claude, ajouts manuels, apporteurs/agences (Spark, Growth Society) et inbound direct. Quelle que soit la source, la marque doit finir avec une company Attio et un `BusinessClient` ; au 16/10, 8 clients payants n'ont jamais eu de deal Attio (écart 17).
 - **Flux** :
   1. Trendtrack → `public.trendtrack_prospect` (marques e-commerce avec ads actives).
   2. n8n **🧢 Prospect Prequalify** (cron toutes les heures à HH:11) : trouve la page LinkedIn officielle et compte les employés France → `prequalify_status ∈ {ok, no_linkedin, no_fr_employees}`.
@@ -97,6 +98,7 @@ Deux chemins :
    - Les démos calées à la main (Yacin, Samuel) ont des titres libres (`Lovys x Gang4`, `Tikamoon X Gang4`, `Keobiz x Gang4`).
 - **Signal de vérité** : événement Google Calendar futur avec ≥1 participant externe B2B. Calendriers à couvrir : `samuel@`, `lucie.bonnet@`, `yacin@`, `alice.morel@gang4.io` (partagés entre eux ; les agents utilisent `samuel@gang4.io` comme compte de référence, le connecteur de cette session était celui de Yacin).
 - **Stage Attio** : réponse positive entrante → `Prospect identified` ; démo à venir → `Demo scheduled` (créé/mis à jour par `/sales-ops`, owner par défaut Lucie).
+- **Deux chemins de création de deal** : (1) `/sales-ops` (`crm-sync`, règle stricte, owner Lucie) ; (2) une **automatisation Attio native** non documentée qui crée un deal (acteur `system`, owner = siège suspendu de Samuel, value 400 €) au marquage « intéressé » dans Lemlist : 11 des 24 deals créés depuis le 01/09 viennent de ce chemin, mais il ne s'est pas déclenché pour Orus ni Magimix. À identifier dans Attio > Workflows.
 
 ### Étape 4 — Préparation de la démo : batch de créas test personnalisé
 
@@ -362,6 +364,10 @@ Pour rendre les ❌ auditables : activer « Available in MCP » sur chaque workf
 13. **Tables legacy actives** : 160 `strategic_recommendations` open/surfaced, 16 `agent_todos` open, 4 `relance_cards` → bruit pour tout futur agent, à archiver.
 14. **Incohérence admin** : changer le statut depuis `/admin/orga/:orgId/infos` ne lance pas la cascade (créas test non nettoyées, `OfferWhitelisting` non créée).
 15. **Nurturing sans campagne cible active** : le workflow n8n « 💆‍♀️ Nurturing Deals (Attio) → Lemlist » pousse les deals `Nurturing` (15 au snapshot) vers une campagne Lemlist, mais la seule campagne de nurturing connue, `Nurturing Test` (`cam_a8yhsMQ53Yuxia7ZR`), est **terminée**. À vérifier : ces 15 deals reçoivent-ils encore quelque chose ?
+16. **13 clients payants encore « ouverts » dans Attio** (16/10, requête §8-B) : Withings, Inga, Baobab Labs (`Qualified`), Lunii, Skin & Out (`Nurturing`), Morphea, Cut by Fred, Abby, Jho, Seoni, Limova, Cuure, La Marque En Moins (`Meta Connected`) ont un abonnement actif sur leur organisation. Cause structurelle : `crm-sync` ne met à jour une company que sur email/meeting frais (règle « fenêtre du run ») et sa requête de détection lit des colonnes inexistantes (`mi."businessClientId"`, `BusinessUser`). Vérifier `product` avant de passer Deal Won.
+17. **8 clients payants sans aucun deal Attio** : HomeExchange, AlloVoisins, Avatacar, May, Boku, Fempo, Ôdass Paris, WWWatch (arrivés via agences ou inbound direct, hors Lemlist).
+18. **Churn invisible** : Caats, OMA & ME, Pomponne sont `LOST` côté Supabase (abonnement annulé) mais `Deal Won` + `Customer` dans Attio ; 26 des 33 `Deal Lost` n'ont pas de `lost_reason`.
+19. **`BusinessClient.updated_at` ne date pas le go** : mise à jour de masse le 18/09/2026 sur ~486 marques ; utiliser `BackfillSession.created_at` (première connexion Meta) ou `OrganisationSubscription.created_at` comme dates de référence.
 
 ---
 
@@ -429,6 +435,18 @@ Attendu : un run par jour, `pending_actions = 0`, cursors `gmail`/`gcal`/`claap`
 
 **G. Deals Attio ouverts sans next step ou sans activité** : `list-records` sur `deals` avec `stage not in (Deal Won, Deal Lost, Hors ICP, Archived)`, trier par `created_at`, repérer `next_step_description` vide (ex. au snapshot : Mool, We Love Digital, Aroma-Zone, Biocyte, Primal Supplements, Trone, Les Petits Culottés, Alltricks, Skin & Out, Morphee, Ultra Premium Direct, Poppins, Stride Up, Rives Studio, Reach).
 
+**I. Churn et clients hors funnel** (à comparer aux deals Attio `Deal Won` et aux companies `Customer`)
+```sql
+select bc.name, bc.domain, bc.status,
+  (select min(os.created_at)::date from public."OrganisationSubscription" os where os.organisation_id=bc.organisation_id and os.status='active') as paying_since,
+  (select string_agg(os.product||':'||os.status, ', ') from public."OrganisationSubscription" os where os.organisation_id=bc.organisation_id and os.status<>'active') as other_subs,
+  (select min(bs.created_at)::date from public."BackfillSession" bs join public."MetaIntegration" mi on mi.id=bs.integration_id where mi.business_client_id=bc.id) as meta_since
+from public."BusinessClient" bc
+where bc.status in ('CUSTOMER','LOST')
+order by paying_since desc nulls last, bc.name;
+```
+Lecture : `paying_since` non nul → le deal Attio doit être `Deal Won` (vérifier `product`) ; `status='LOST'` ou abonnement `canceled` sans actif → la company Attio ne doit plus être `Customer`.
+
 **H. Volume top-of-funnel Lemlist** : `get_campaigns_stats` sur les 4 campagnes actives (§1 étape 2) avec `startDate` = lundi de la semaine.
 
 ---
@@ -447,6 +465,8 @@ Attendu : un run par jour, `pending_actions = 0`, cursors `gmail`/`gcal`/`claap`
 ---
 
 ## 10. Backlog (améliorations proposées, rien de modifié dans les commandes existantes)
+
+> Les propositions détaillées du 16/10 (18 trous du funnel avec correction retenue, pipeline Attio « Balle & Date », migration des 60 deals) sont dans **`docs/PROPOSITIONS-2026-10-16.md`**. Ce backlog en est le résumé.
 
 - [ ] `meeting-expert` / `crm-sync` / README : remplacer le signal Calendly par la détection `Démo Gang4 - Partnership Ad (…)` + description `Réservé par` (Google Calendar appointment schedule).
 - [ ] `crm-sync` : lire `BusinessClient.status='CUSTOMER'` et `OrganisationSubscription.status='active'` (plus fiable que `public."Contract"`/`StripeIntegration`, tables non utilisées pour le B2B) pour `Meta Connected` / `Deal Won`.
@@ -474,5 +494,6 @@ Attendu : un run par jour, `pending_actions = 0`, cursors `gmail`/`gcal`/`claap`
 
 | Date | Auteur | Changement |
 |---|---|---|
+| 2026-10-16 | Claude (session Yacin) | Précisions de Yacin (sources multiples, siège Samuel non prioritaire, LinkedIn dans Lemlist). Audit par segment + recoupement Supabase/Attio : écarts 16-19 ajoutés, requête §8-I, deux chemins de création de deal documentés (étape 3), pointeur vers `docs/PROPOSITIONS-2026-10-16.md`. |
 | 2026-10-15 | Claude (session Yacin) | Relecture par panel d'agents de la page de synthèse (artifact « Funnel Gang4 360° ») : ajout de l'écart 15 (nurturing sans campagne active) et de l'item backlog associé. |
 | 2026-10-15 | Claude (session Yacin) | Création : cartographie complète (Trendtrack → Lemlist → Attio → Calendar/Claap → Admin → Meta → Stripe), snapshot chiffré, 14 écarts détectés, contrôles §8, backlog §10. Sources : repo, Attio, Supabase (`public`, `sales`, `stripe`), Lemlist, Google Calendar/Drive, Calendly, Claap, Fireflies, Slack, n8n (2 workflows lisibles sur 15), repo `SamuelGang4/admin-user-hop`, site gang4.io. |
