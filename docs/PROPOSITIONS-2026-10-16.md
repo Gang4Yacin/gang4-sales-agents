@@ -8,6 +8,80 @@
 > Calendly, lecture de `BusinessClient.status` et `OrganisationSubscription` pour Meta Connected /
 > Deal Won, Gmail de Yacin) ; siège Attio de Samuel : non prioritaire ; LinkedIn : tout vit dans Lemlist ;
 > le sourcing ne vient pas que de Trendtrack (base e-commerce à relancer, listes Claude, ajouts manuels).
+>
+> **Mise à jour du 2026-10-19** : n8n a été lu en entier via l'API (556 workflows, 94 lus et contre-vérifiés,
+> inventaire `docs/N8N.md`). La **Partie 0** ci-dessous dit ce que cela change ; les parties 1 et 2 restent
+> valables, avec les ajustements signalés « (19/10) ».
+
+---
+
+## Partie 0 — Ce que la lecture complète de n8n change (19/10)
+
+### 0.1 Le diagnostic en cinq points
+
+1. **La bascule PROSPECT → CUSTOMER peut être automatique.** Le workflow Onboard Brand passe en CUSTOMER, chaque nuit à 22:43, toute marque PROSPECT dont le backfill Meta est terminé, et le fait aussi à chaque Launch Onboarding. CUSTOMER ne prouve donc pas un go commercial. Aucune bascule n'a été observée dans l'historique conservé (≈ 58 h) : on ne sait pas encore quelle part des 74 CUSTOMER vient de ce chemin.
+2. **n8n ne crée aucun deal et n'écrit presque rien d'utile dans Attio.** Il écrit `people.lead_status`, crée des people et companies, et **supprime chaque nuit** des fiches liées au warm-up, sans trace. `companies.company_status` n'est tenu par personne. Les deals « system » viennent d'un mécanisme hors n8n. T13 reste donc le seul moyen de faire arriver le go et le paiement dans Attio.
+3. **Les signaux temps réel existent déjà, mais dans des canaux Slack techniques.** Réponses Lemlist (email et LinkedIn), intérêts, réservations et paiements arrivent dans `#n8n-alerts` ; batch démo et comptes rendus Claap dans `#test-n8n`. Aucun n'est lu par `/sales-ops` ni posté dans `#sales-ops`.
+4. **Les relances Admin ont des angles morts volontaires.** Prospect Relance Sync exclut les deals `Demo scheduled`, `Meta Connected`, `Deal Won`, `Deal Lost` et les CUSTOMER. Une démo sans suite restée en Demo scheduled (T9) et un go sans CB (T15) n'y apparaissent jamais.
+5. **La fiabilité n8n est invisible.** Beaucoup de workflows du funnel n'ont pas d'alerte d'erreur, un run « réussi » ne prouve pas le résultat, et l'historique ne couvre que 58 h. S'y ajoutent des risques de sécurité : la boîte Gmail de Lucie est exposée par un serveur MCP sans authentification, des webhooks internes sont publics et des clés sont écrites en clair.
+
+### 0.2 Effet sur les 18 trous
+
+| # | Effet | Ce qui change dans la correction |
+|---|---|---|
+| T1 | modifié | Le stock à décider = `launch` vide avec ≥ 1 contact ICP, plus les 6 lancements en erreur de juin. Aucun `pending` bloqué aujourd'hui. Le sourcing neuf est arrêté depuis le 30/08 (voir T26). Faire un lancement test de bout en bout avant de relancer le stock. Placer la ligne du vendredi dans `/sales-check`, pas dans le workflow du résumé Lemlist. |
+| T2 | modifié | Construire la vue sur `people.lead_status` (tenu par n8n) et non sur `company_status` (tenu par personne). |
+| T3 | étendu | Trois chemins mènent un client à recevoir une séquence : l'upload Growth (aucun filtre), le push Nurturing (clients payants inclus) et le rattachement par nom du webhook PROSPECT. Le bon point d'accroche pour la désinscription Lemlist est Onboard Brand, juste après la bascule CUSTOMER. Lemlist accepte la désinscription par domaine. |
+| T4 | modifié | Abandonner la variante n8n (le workflow visé n'écoute pas les réponses). Garder la correction sales-ops : lire l'inbox Lemlist (ou `ProspectTouch`, canal LinkedIn entrant, sans les tags « interested »). |
+| T5 | confirmé | `lead_status` n'est pas un signal fiable (leads sans `iDAttio` ignorés) : `crm-sync` doit partir du message entrant. |
+| T6 | confirmé | Aucun changement. |
+| T7 | modifié | Détecter une réservation par la description `Réservé par`, quel que soit le titre (« Démo Gang4 - … », « Samuel - Gang4 », « 30 min avec Yacin »). Lire d'abord `DemoBatchRequest.business_client_id` pour rattacher la marque. La logique d'extraction existe déjà dans un workflow n8n et peut être reprise. |
+| T8 | modifié | Nouvelle requête (FUNNEL §8-D) fondée sur `batch_run_id IS NULL`, et contrôle des `asked` sans décision, qui bloquent en silence toutes les démos suivantes de la marque (Keobiz aujourd'hui). Le rappel ne doit pas partir dans `#test-n8n`. |
+| T9 | confirmé, aggravé | Aucun filet côté Admin (Demo scheduled exclu des relances). Reprendre la règle du workflow Claap : un externe qui a parlé était présent, sinon c'est un no-show. |
+| T10 | confirmé | Le Nurturing a un « réveil » aveugle : ré-ajout dès la fin de séquence (au plus tôt 15 jours après le dernier ajout) dans une campagne terminée. À couper pendant la migration (M8, T21). |
+| T11 | confirmé | Deal Lost exclu des relances Admin. |
+| T12 | confirmé | Aucun changement. |
+| T13 | confirmé, précisé | R6 doit exclure les 6 comptes internes Gang4, lire seulement `OrganisationSubscription` (jamais le Slack « Nouveau paiement » ni `start_subscription`), normaliser les domaines, et créer la company si elle a disparu (suppressions nocturnes). |
+| T14 | confirmé | Aucun workflow ne voit le churn. |
+| T15 | confirmé | Relances Admin aveugles sur les CUSTOMER. Une partie des 22 « go sans CB » peut n'être qu'un BM connecté sans go commercial : à trier pendant M3. |
+| T16 | étendu | Contrôler aussi la fraîcheur des tables écrites par n8n (FUNNEL §8-J). |
+| T17 | étendu | `/sales-check` inclut §8-D corrigée, §8-J, §8-K et les erreurs n8n de la semaine (§8-L). |
+| T18 | modifié | La connexion Gmail de Yacin existe déjà dans n8n. Créer un serveur MCP **authentifié** pour `email-expert` ; ne pas copier celui de Lucie. Effort S. |
+
+### 0.3 Trous nouveaux révélés par n8n
+
+| # | Étape | Trou | Impact | Correction proposée | Où | Effort | Lot |
+|---|---|---|---|---|---|---|---|
+| T19 | transverse | Sécurité : MCP Gmail de Lucie sans authentification, webhooks internes publics (dont des actions destructives ou payantes), clés et secrets en clair | **fort** | Authentification Bearer sur le MCP et mise à jour du client ; authentification sur les webhooks internes ; rotation des clés et passage en credentials | n8n | M | **0** |
+| T20 | 2 | Suppressions Attio nocturnes (Lemwarm Delete) sans journal, domaines génériques inclus | **fort** | Ne jamais supprimer une company qui a un deal ou une note ; exclure les domaines génériques ; journaliser chaque suppression ; ou couper le workflow | n8n | S | **0** |
+| T21 | 6 | Push Nurturing quotidien vers une campagne terminée, clients payants inclus | moyen | Désactiver jusqu'à ce qu'une vraie campagne de nurturing existe ; ensuite filtrer `company_status ≠ Customer` et respecter « Prochaine action le » | n8n | S | **0** |
+| T22 | 7 | Bascule CUSTOMER automatique non signalée côté sales | moyen | Décider si elle est voulue ; dans tous les cas, R6 la traite (CUSTOMER + Meta sans abonnement → Meta Connected, relance CB) | décision + sales-ops | S | 1 |
+| T23 | 2-3 | Signaux sales dans des canaux techniques, non lus par `/sales-ops` | moyen | Pas de nouvelle écriture Attio (R1). Regrouper réponses, réservations et paiements dans un canal sales ; `/sales-check` liste les signaux Slack restés sans suite dans Attio | n8n + sales-ops | S | 2 |
+| T24 | transverse | Couverture d'erreurs n8n trouée, historique de 58 h | moyen | Brancher le Global Error Handler sur les workflows du funnel ; conserver les succès des workflows clés ; historique ≥ 14 jours | n8n | S | 2 |
+| T25 | 4 | Chaîne batch démo fragile (`asked` bloquant, échec de Launch non tracé, run `planned` jamais repris) | moyen | Écrire la décision dès le clic, faire expirer un `asked` après 48 h, étendre le Watchdog aux runs `planned` | n8n | M | 2 |
+| T26 | 0 | Sourcing neuf arrêté : TrendTrack Radar inactif depuis le 30/08 | moyen | Décider de le réactiver (crédits) ; faire poster un Slack quand il se coupe seul | décision + n8n | S | 3 |
+| T27 | 0-2 | Identités approximatives : contact Attio rapproché par nom seul, marque rattachée par nom | moyen | Supprimer le match « nom seul » ; ne rattacher par nom que sans domaine | n8n | S | 3 |
+| T28 | 2-3 | Canal téléphone Allo hors CRM | faible | Décider s'il fait partie du funnel ; si oui, ingérer les appels joints comme signal frais | décision + sales-ops | M | 3 |
+
+**Lot 0 (nouveau, à faire avant le reste)** : T19, T20, T21. Ce sont des réglages n8n hors des commandes de ce repo, mais ils modifient des automatisations existantes : rien n'est fait sans ton accord.
+
+### 0.4 Effet sur la Partie 2 (pipeline « Balle & Date »)
+
+- **Stages inchangés : confirmé.** Deux workflows n8n filtrent les deals par le titre du stage (Nurturing, Relance Sync). Renommer un stage les casserait sans bruit.
+- **Définition de Meta Connected** : « BM connecté et backfill terminé (CUSTOMER souvent automatique), en attente de CB ».
+- **R1 tient pour les deals** : aucun workflow n8n n'écrit dans `deals`. n8n reste auteur de `people.lead_status`, de créations de fiches et de suppressions (T20).
+- **R6 précisé** (voir T13 ci-dessus).
+- **M0** : archiver `owner_7` change l'owner affiché dans `/admin/relances` (Relance Sync le lit en priorité). Réassigner à Lucie dans la même session.
+- **M1** : sortir Lunii et Skin & Out de Nurturing arrête aussi le push Nurturing vers eux.
+- **M8** : désactiver le push Nurturing (T21) avant de reclasser les deals Nurturing.
+
+### 0.5 Décisions nouvelles à prendre
+
+1. **Sécurité n8n (T19)** : je prépare la liste exacte des points (sans valeurs) pour la personne qui gère n8n ?
+2. **Bascule CUSTOMER automatique (T22)** : voulue, ou faut-il attendre un go humain ?
+3. **Lemwarm Delete (T20)** : garder avec des gardes, ou couper ?
+4. **Push Nurturing (T21)** : le désactiver tant qu'aucune campagne de nurturing n'est active ?
+5. **Allo (T28) et TrendTrack Radar (T26)** : dans le funnel ou non ?
 
 ---
 
@@ -189,12 +263,12 @@ la création des vues (sinon « avant demain »).
 
 ### 2.5 Les règles d'écriture (qui remplit quoi)
 
-- **R1 — Un seul auteur automatique : `crm-sync`.** n8n et les workflows Attio n'écrivent jamais Balle ni la date. Prospect Relance Sync reste en lecture (contrôle hebdo).
+- **R1 — Un seul auteur automatique : `crm-sync`.** n8n et les workflows Attio n'écrivent jamais Balle ni la date. Prospect Relance Sync reste en lecture (contrôle hebdo). (19/10) Vérifié : aucun workflow n8n n'écrit dans `deals` ; n8n écrit seulement `people.lead_status`, des créations de fiches et des suppressions (T20).
 - **R2 — À la création d'un deal** : owner Lucie ; `Prospect identified` → Balle Gang4, date = jour du run, next step « Proposer un créneau à <contact> » ; `Demo scheduled` → RDV calé, date de la démo ; `Qualified` (démo tenue) → Gang4, J+1 « Envoyer le récap / la proposition ».
 - **R3 — Email frais sur un deal ouvert** : dernier message entrant → Balle Gang4, date = aujourd'hui (toujours, même si Lucie avait mis plus tard) ; sortant sans réponse → Prospect, date = envoi + 7 j (lundi si week-end) ; si le texte donne une date (« retour avant le 09/10 ») → cette date, Balle selon qui doit revenir.
 - **R4 — Meeting** : événement futur avec un externe du deal → RDV calé, date de l'événement (prime sur R3) ; événement passé sans suite → Gang4, J+1.
 - **R5 — Garde-fou « fenêtre du run » conservé** : les deux champs ne sont écrits que sur signal frais ; hors signal, ils appartiennent à Lucie. Si la date humaine est postérieure à la date calculée et Balle identique → skip (sauf entrant, R3). Lecture avant écriture, skip si valeurs identiques, trace dans `sales.applied_actions` (payload de `update_next_step` enrichi, pas de nouveau `action_type`).
-- **R6 — Réconciliation produit (T13)** : à chaque run, hors fenêtre : abonnement actif `partnership_ads` → Deal Won + Customer ; CUSTOMER + Meta sans abonnement → Meta Connected, Prospect, J+7 « Activer l'abonnement — relance n/3 » ; CUSTOMER sans Meta → Prospect, J+7 « Obtenir l'accès BM » ; payant sans deal → deal créé en Deal Won.
+- **R6 — Réconciliation produit (T13)** : à chaque run, hors fenêtre : abonnement actif `partnership_ads` → Deal Won + Customer ; CUSTOMER + Meta sans abonnement → Meta Connected, Prospect, J+7 « Activer l'abonnement — relance n/3 » ; CUSTOMER sans Meta → Prospect, J+7 « Obtenir l'accès BM » ; payant sans deal → deal créé en Deal Won. (19/10) Exclure les 6 comptes internes Gang4 (même liste qu'Onboard Brand) ; ne jamais lire le Slack « Nouveau paiement » ni `start_subscription` ; normaliser les domaines ; si la company n'existe plus, la recréer et le tracer.
 - **R7 — Next step court** : ≤ 160 caractères, verbe en tête ; le détail dans la note mensuelle.
 - **R8 — Workflow Attio natif, unique et optionnel** (selon le plan) : « deal créé par l'acteur system » → owner Lucie, Balle Gang4, date aujourd'hui. Sinon, corriger l'automatisation Attio existante qui crée ces deals.
 - **R9 — Slack du soir inchangé** (3 sections, pas de rappel). Seule ligne nouvelle acceptable : un compteur neutre « N deals dans Aujourd'hui demain matin ». À décider à l'étape 3.
@@ -202,7 +276,7 @@ la création des vues (sinon « avant demain »).
 
 ### 2.6 Migration des 60 deals ouverts (une session Lucie + Yacin, ~1 h 30)
 
-- **M0 (Yacin, 15 min)** : créer les 2 attributs sur `deals`, archiver `owner_7`, créer les 5 vues, épingler « Aujourd'hui » pour Lucie, réassigner à Lucie les 11 deals ouverts du siège de Samuel (Gourmandiz, PayFit, Dream Machine Technology, Parfums Molinard, Lovys, Ops Clean, Abby, Araw, Elmut, The Bradery, Limova).
+- **M0 (Yacin, 15 min)** : créer les 2 attributs sur `deals`, archiver `owner_7`, créer les 5 vues, épingler « Aujourd'hui » pour Lucie, réassigner à Lucie les 11 deals ouverts du siège de Samuel (Gourmandiz, PayFit, Dream Machine Technology, Parfums Molinard, Lovys, Ops Clean, Abby, Araw, Elmut, The Bradery, Limova). (19/10) Faire la réassignation dans la même session que l'archivage de `owner_7`, que Relance Sync lit en priorité.
 - **M1 — Sortir du pipe les payants** → Deal Won + Customer : Abby, Baobab Labs, Cut by Fred, Cuure, Inga, Jho, La Marque En Moins, Limova, Lunii, Morphea, Seoni, Skin & Out, Withings. Vérifier d'abord `OrganisationSubscription.product` (un `social_proof` actif ne vaut pas un deal Partnership Ads gagné). Créer les 8 deals manquants directement en Deal Won (HomeExchange, AlloVoisins, Avatacar, May, Boku, Fempo, Ôdass Paris, WWWatch). Reste ≈ 47 deals.
 - **M2 — Aligner sur Supabase** : Lovys → Meta Connected ; Poppins → Meta Connected ou Deal Lost ; Amoseeds, Goodvest → Qualified (démos tenues) ; Célims → Hors ICP (email étudiant) ; Nowa No Water → Prospect identified.
 - **M3 — Go sans CB** (Aloe Paris, Araw, Bricks, Cygnes, Les Commis, Lovys, MB Heritage, QRU ; Gourmandiz et Maju sans BM) : Balle Prospect, J+7, « Activer l'abonnement — relance n/3 » ou « Obtenir l'accès BM ». Aloe Paris : 3e et dernière relance, puis Deal Lost ou abonnement manuel.
@@ -210,7 +284,7 @@ la création des vues (sinon « avant demain »).
 - **M5 — On attend le prospect, échéance dépassée** → Prospect, date = aujourd'hui : Ops Clean, Bloon Paris, Elmut, Amoseeds, Lunettes Pour Tous, Flotte, Gourmandiz, Nowa No Water, Circle Sportswear.
 - **M6 — À nous de jouer** → Gang4, date = aujourd'hui : Mool, The Bradery, Dream Machine Technology, Hindbag, Hapik, Goodvest, Emily's Pillow, Novoma.
 - **M7 — 14 deals sans next step** : 20 min à deux. Candidats à Archived (ni BusinessClient ni contact récent) : Reach, Rives Studio, Stride Up, Morphee, Trone, Les Petits Culottés, Alltricks, We Love Digital. Dernière relance puis Deal Lost : Primal Supplements, Nala Pour Elle. À qualifier : Biocyte, Aroma-Zone.
-- **M8 — Nurturing restants** (Ultra Premium Direct, Coudac, Belveo, Circle Sportswear, Aroma-Zone, Novoma…) : Gang4 + date de reprise ≤ 90 j, sinon Deal Lost « Not the right time ».
+- **M8 — Nurturing restants** (Ultra Premium Direct, Coudac, Belveo, Circle Sportswear, Aroma-Zone, Novoma…) : Gang4 + date de reprise ≤ 90 j, sinon Deal Lost « Not the right time ». (19/10) Désactiver d'abord le push Nurturing (T21), qui vise une campagne terminée.
 - **M9** : mettre à jour `crm-sync.md` (R2 à R7, T5, T6, T9, T11, T13), `meeting-expert.md` (T7), `email-expert.md` (T4, T5), `sales-ops.md` (T16), FUNNEL.md ; lancer `/sales-ops 30` pour que les signaux des 30 derniers jours écrivent Balle et date sur les deals touchés.
 - **M10 — Contrôle à J+5** : Hygiène = 0 ligne ; répartition plausible (≈ 15 Prospect, 10 Gang4, 5 RDV calé sur ~35 deals réellement ouverts) ; cursors à jour.
 
@@ -226,10 +300,13 @@ la création des vues (sinon « avant demain »).
 - Jour 1 : ~25 deals remontent d'un coup ; prévoir la session d'1 h 30, pas 10 minutes.
 - Deal Won en masse (M1) : filtrer `product` deal par deal.
 - Règle des 3 relances : portée par le texte « relance n/3 », donc par la rigueur d'écriture.
+- (19/10) Suppressions nocturnes Attio (T20) : une company peut disparaître sous un deal ; garde à poser avant la migration.
+- (19/10) Renommer un stage casserait deux workflows n8n qui filtrent par titre : garder les titres actuels.
 
 ---
 
 ## Partie 3 — Ordre proposé pour la suite
+0. (19/10) Trancher les décisions de la Partie 0.5 et traiter le Lot 0 (T19, T20, T21).
 1. Valider ou amender la Partie 2 (champs, vues, règles) et la liste Lot 1 de la Partie 1.
 2. Session de migration Attio (M0 à M8) + mise à jour des prompts (M9) + routine 7/7 + Gmail Yacin.
 3. Lot 2 la semaine suivante ; `/sales-check` hebdo.

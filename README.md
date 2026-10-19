@@ -8,7 +8,7 @@ Gmail/Calendar/Drive, Calendly, Claap, Fireflies, Slack).
 ## Documentation du funnel
 
 La vue 360° du funnel Growth / Sales (étapes, signaux par système, états Lemlist / Attio / Supabase /
-Stripe, workflows n8n, requêtes de contrôle, écarts connus) est dans **[`docs/FUNNEL.md`](docs/FUNNEL.md)**.
+Stripe, workflows n8n, requêtes de contrôle, écarts connus) est dans **[`docs/FUNNEL.md`](docs/FUNNEL.md)**. Le détail des workflows n8n du funnel est dans **[`docs/N8N.md`](docs/N8N.md)** (export rejouable avec `scripts/n8n_export.py`, clé dans `N8N_API_KEY`).
 À lire avant de modifier une commande ou d'analyser le pipeline.
 
 ## Objectif unique de `/sales-ops`

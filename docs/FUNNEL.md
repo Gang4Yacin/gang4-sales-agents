@@ -3,7 +3,7 @@
 > **Source de vérité documentaire du funnel.** Tout agent ou humain qui travaille sur le sales/growth
 > (sales-ops, strategist, relances, nettoyage CRM, nouvelles commandes) lit ce fichier d'abord.
 >
-> Dernière mise à jour : **2026-10-15** (snapshot complet, voir §6 et §7). Propriétaire : Yacin.
+> Dernière mise à jour : **2026-10-19** (lecture complète de n8n via l'API : §5.1 et `docs/N8N.md` ; snapshot chiffré du 15/10 en §6, compléments du 19/10). Propriétaire : Yacin.
 > Procédure de mise à jour : §11. Journal des modifications : §12.
 
 ---
@@ -15,7 +15,7 @@
  ────────          ───────────            ─────────────              ────                ────────              ─────────               ──────────                ─────────────
  Trendtrack        Lemlist                Email (Samuel/Lucie)       Google Meet         Email / 2e call       Admin: BusinessClient   Meta BM connecté          Moyen de paiement
  → growth_*        (emails Samuel+Lucie   ou "Réserver une démo"     enregistré Claap    ou silence            PROSPECT → CUSTOMER     → backfill ads/comm.      (Stripe)
- → BusinessClient    + LinkedIn)          (Google Calendar booking)  (Drive / Fireflies  → relance             (manuel, cascade)       → 1er batch onboarding    → OrganisationSubscription
+ → BusinessClient    + LinkedIn)          (Google Calendar booking)  (Drive / Fireflies  → relance             (admin ou n8n auto)     → 1er batch onboarding    → OrganisationSubscription
    PROSPECT        → Attio lead_status    → event "Démo Gang4 -       en fallback)        (ProspectRelance-     → Launch Onboarding     → call onboarding ou        status=active
  + créas test        (n8n webhooks)         Partnership Ad (Nom)"   → sales-ops:          Candidate)              (modules, n8n)          accès par email         → Attio Deal Won
    (Marion/Alexy)                        → Demo Batch Scanner        Qualified + note                                                   → validation créas          + company Customer
@@ -34,6 +34,13 @@ Les 3 systèmes qui portent l'état "officiel" :
 
 Attio est tenu à jour par l'agent `/sales-ops` (quotidien) mais **peut avoir du retard** sur Supabase : la règle de réconciliation est en §3.
 
+Ce que la lecture complète de n8n a changé le 19/10 :
+
+- **Le passage en CUSTOMER n'est pas toujours un geste humain.** Il se fait soit dans l'admin, soit chaque nuit par le workflow n8n **Onboard Brand**, dès que le backfill Meta est terminé (§1 étape 7). `CUSTOMER` veut donc souvent dire « Meta connecté et backfill fini », pas « go commercial » ni « payé ».
+- **Aucun workflow n8n n'écrit de deal Attio.** Les deals viennent de `/sales-ops` ou d'une automatisation hors n8n (§1 étape 3). n8n n'écrit dans Attio que `people.lead_status`, des créations de people/companies, et des **suppressions nocturnes** (§7-21).
+- **Les signaux temps réel du funnel partent dans des canaux Slack techniques** (`#n8n-alerts`, `#test-n8n`, `#n8n-updates`), jamais dans `#sales-ops`, et `/sales-ops` ne les lit pas (§2).
+- L'inventaire des 94 workflows lus (déclencheur, écritures, canal, alerte d'erreur, santé) est dans **`docs/N8N.md`**.
+
 ---
 
 ## 1. Le funnel étape par étape
@@ -45,13 +52,13 @@ Pour chaque étape : qui/quel outil, le **signal de vérité** (la donnée qui p
 - **Qui / outil** : Growth (Yacin/Samuel) via l'admin `/admin/growth/prospects` + n8n.
 - **Sources** (plusieurs, pas seulement Trendtrack) : marques e-commerce déjà en base que l'on relance (audience « Campaign Attio »), Trendtrack (audience « Top ICP »), listes produites par Claude, ajouts manuels, apporteurs/agences (Spark, Growth Society) et inbound direct. Quelle que soit la source, la marque doit finir avec une company Attio et un `BusinessClient` ; au 16/10, 8 clients payants n'ont jamais eu de deal Attio (écart 17).
 - **Flux** :
-  1. Trendtrack → `public.trendtrack_prospect` (marques e-commerce avec ads actives).
-  2. n8n **🧢 Prospect Prequalify** (cron toutes les heures à HH:11) : trouve la page LinkedIn officielle et compte les employés France → `prequalify_status ∈ {ok, no_linkedin, no_fr_employees}`.
-  3. Une `growth_campaign` (ex. `✅ 🐳 Campaign Attio 06/09/2026 - 8`, `✅ 🪼 Campaign Trendtrack (Top ICP) 05/09/2026 - 6`) regroupe des `growth_company` (≈30-40 marques par campagne). Enrichissement : images Ad Library (`growth_ad_images`), employés + emails (`growth_employee`, Apify), produit (`growth_product` → `product`), **image perso "Partnership Ad"** (`growth_company.custom_image_url`) générée avec les créas test.
-  4. Edge function admin `launch-growth-businessclient` → webhook n8n `growth-company-to-businessclient` (**Webhook growth_company → BusinessClient (PROSPECT)**) → crée la marque `BusinessClient` en `PROSPECT` (+ `BatchConfiguration` "Config par défaut" par trigger SQL à l'insert).
+  1. Deux radars n8n alimentent `public.trendtrack_prospect` : **Growth - TrendTrack Radar** (`7tgHN9J3koXeJ0Va`, API Trendtrack, boutiques avec ads actives) est **inactif depuis le 30/08** (cause non tracée : vivier épuisé, plancher de crédits ou arrêt manuel ; l'arrêt sur crédits ne laisse ni journal ni Slack) ; **🗞️ Growth - Media Ads Radar** (`6piqNfR1y3voY7Oj`, horaire, `source='media_scrap'`) n'a rien ajouté depuis le 30/09. Les deux excluent les domaines déjà présents dans Attio. Au 19/10 : 4 264 lignes `trendtrack` (dernière le 30/08), 664 `media_scrap` (dernière le 30/09). Le passage d'un prospect « ok » à une `growth_campaign` est **manuel** (`/admin/growth/prospects`).
+  2. n8n **🧢 Prospect Prequalify** (cron toutes les heures à HH:11) : trouve la page LinkedIn officielle et compte les employés France → `prequalify_status ∈ {ok, no_linkedin, no_fr_employees}`. Lots de 100, reprise après 6 h, exclusion des doublons sociaux (`social_dup`) et des marques ajoutées à une campagne depuis moins de 72 h. Quand ni l'indice LinkedIn ni la page d'accueil ne donnent de lien et que les méthodes Apify / OpenRouter échouent, il écrit un `no_linkedin` définitif, sans alerte.
+  3. Une `growth_campaign` (ex. `✅ 🐳 Campaign Attio 06/09/2026 - 8`, `✅ 🪼 Campaign Trendtrack (Top ICP) 05/09/2026 - 6`) regroupe des `growth_company` (≈30-40 marques par campagne). Enrichissement par 6 workflows 🧢 appelés par l'admin : page Facebook, Instagram, LinkedIn, Ad Library et images (`growth_ad_images`), employés via **🧢 Employees from Ecommerce** (Apify ; `icp` = score LLM ≥ 75 ; rapprochement Attio par LinkedIn, puis nom + société, puis **nom seul**, avec un risque d'homonyme), email et téléphone via **🤑 Enrich email & phone number** (Lemlist Enrich), produit (`growth_product` → `product`), **image perso "Partnership Ad"** (`growth_company.custom_image_url`, n8n **Growth - Create custom image for ecommerce** `OUY8d0Uc8sbalTU6` → GitHub Actions). Les campagnes continuent sur le stock existant : 120 marques ajoutées la semaine du 05/10, 202 celle du 12/10.
+  4. Edge function admin `launch-growth-businessclient` → webhook n8n `growth-company-to-businessclient` (**Webhook growth_company → BusinessClient (PROSPECT)**) → crée la marque `BusinessClient` en `PROSPECT` (+ `BatchConfiguration` "Config par défaut" par trigger SQL à l'insert). Il réutilise d'abord un `BusinessClient` existant trouvé par domaine **ou par nom**, quel que soit son statut : une marque peut ainsi être rattachée à un homonyme, y compris CUSTOMER.
 - **Signal de vérité** : `growth_company.business_client_id` renseigné, `BusinessClient.status='PROSPECT'`.
 - **Deux audiences distinctes** : "Trendtrack (Top ICP)" = nouvelles marques ; "Campaign Attio" = marques déjà dans Attio (recontact). Les deux sont poussées vers des listes Attio (`🔥 Campaign Attio 02/09/2026`, `🌸 Campaign Trendtrack (Top ICP) 31/08/2026`) et des listes Lemlist (`clt_oiWQG9LRJCkfAFQgY` email Attio, `clt_BHyjBRh3tYfeXgT2D` LinkedIn Attio, `clt_78k6ACGbbobfxDBL6` email Trendtrack, `clt_QhZ4xwyPJSjnL6K4H` LinkedIn Trendtrack).
-- **Où ça se perd** : `growth_company.launch` en erreur (`Lemlist - Upsert Company: Company validation failed` ...), marques `attio_status` null jamais lancées (315 lignes au snapshot).
+- **Où ça se perd** : `growth_company.launch` en erreur (6 marques de juin, `Lemlist - Upsert Company: Company validation failed` ...), marques `attio_status` null jamais lancées (315 lignes au snapshot), enrichissements qui échouent sans alerte (4 workflows 🧢 sans alerte d'erreur), rapprochement d'un homonyme côté Attio ou côté `BusinessClient`. `growth_company.attio_status` est un instantané pris à l'enrichissement, jamais remis à jour.
 
 ### Étape 1 — Marque PROSPECT + créas test (avant tout contact)
 
@@ -79,11 +86,18 @@ Pour chaque étape : qui/quel outil, le **signal de vérité** (la donnée qui p
 | Attio Q4 2026 - Partnership Ads Copy | `cam_uHHjmqTxzEfPZ9Mbi` | Email, `samuel@gang4.io` | Marques déjà dans Attio |
 | Linkedin Attio - Q4 2026 - Partnership Ads Copy | `cam_9HZHY6RJAcAfMQeHe` | LinkedIn, Samuel (**aucune mailbox rattachée**) | idem |
 
-  Campagne de nurturing : `Nurturing Test` (`cam_a8yhsMQ53Yuxia7ZR`, terminée) alimentée par n8n **💆‍♀️ Nurturing Deals (Attio) → Lemlist**.
-- **Automatisations** : n8n **🤑 Create Attio - Lemlist List** (crée la liste Attio de campagne), **🤑 Upload Attio - Lemlist** (+ Error Handler) pousse les contacts Attio/growth vers les listes Lemlist. Lemlist → n8n via 6 webhooks (`contacted`, `hooked`, `attracted`, `warmed`, `interested`, `notInterested`, créés le 26/09/2026) → **Lemlist Triggers - Update Attio People** (5 triggers) met à jour Attio `people.lead_status` / `companies.company_status` (et `growth_company.attio_status`). **Lemlist Trigger - Send Response on Slack** notifie chaque réponse. **📬 Lemlist — Résumé quotidien Slack** (cron 19h30 Paris lun-ven) poste les KPIs du jour dans Slack `C09TCQB7CHG` (#test-n8n).
-- **Signal de vérité** : Attio `people.lead_status` (Contacted → Opened → Interacted → Replied - Interested / Replied - Not Interested / OptedOut …) et `companies.company_status` (Contacted → Opened → Interacted → Interested …). Statut Lemlist du lead (`interested`, `notInterested`).
+  Campagne de nurturing : `Nurturing Test` (`cam_a8yhsMQ53Yuxia7ZR`, statut `ended` vérifié le 19/10), toujours alimentée chaque jour par n8n (étape 6).
+- **Automatisations** (lues le 19/10, détail dans `docs/N8N.md`) :
+  - **🤑 Create Attio - Lemlist List** (`VuqzYlEFQ0H3WAL5`) crée la liste Attio **et** les listes Lemlist email et LinkedIn de la campagne.
+  - **🤑 Upload Attio - Lemlist** (`cpA7MxZO6Sx5nO75`) crée ou retrouve les companies et people Attio (sans `company_status`), les ajoute à la liste Attio, puis pousse les contacts `icp=TRUE` dans la liste Lemlist email (avec email) ou LinkedIn (sans email). Il ne filtre pas les clients existants. Son Error Handler (`jBkGYFiauAgZ7ZbN`) ne réagit qu'aux plantages.
+  - **Lemlist Triggers - Update Attio People** (`cbUqJsrUTTsNvw8L`, 5 webhooks Lemlist) écrit **uniquement** `people.lead_status`, sans jamais le faire reculer. Il ignore les leads sans `iDAttio`. Il n'écrit ni `companies.company_status`, ni `growth_company.attio_status`, ni deal. Il poste « intéressé / pas intéressé » dans `#n8n-alerts`.
+  - **Lemlist Trigger - Send Response on Slack** (`SrE0KZiWjMQewuAA`, événement `warmed`) poste chaque réponse email ou LinkedIn, texte compris, dans `#n8n-alerts`. Il n'écrit rien.
+  - **📬 Lemlist — Résumé quotidien Slack** (cron 19:30 Paris lun-ven) poste les KPIs du jour dans `#test-n8n` (`C09TCQB7CHG`).
+  - **Lemwarm Delete People / Company** (`Hp4VwiDPiZmDf0Ws`, chaque soir 20:28) **supprime dans Attio** les people et companies liés aux emails de warm-up (label Gmail de Lucie) s'ils ont moins de 6 mois, y compris la première company du domaine de l'email. Il n'exclut pas les domaines génériques et ne journalise rien (§7-21).
+  - **☎️ Create Power Dialer list** (`GY78q1igjkXyQVEK`, 09:15 et 12:15 en semaine) remplit la file d'appels Allo avec les 30 leads Lemlist les plus engagés. Rien n'est écrit dans Attio ni Supabase : le canal téléphone est invisible pour le CRM (§7-28).
+- **Signal de vérité** : Attio `people.lead_status` (Contacted → Opened → Interacted → Replied - Interested / Replied - Not Interested …) et statut Lemlist du lead (`interested`, `notInterested`). `companies.company_status` n'est écrit par aucun workflow n8n, seulement par `crm-sync` ou à la main : c'est pourquoi ~728 companies n'ont pas de statut.
 - **Stage Attio** : toujours aucun deal. Un email sortant sans réponse ne crée jamais de deal (règle `crm-sync`).
-- **Où ça se perd** : le warm-up (`label:lemwarmup`) pollue Gmail ; une réponse "intéressée" peut rester en `lead_status` sans deal si `/sales-ops` ne la juge pas assez explicite (voir §7, exemples Orus / GeoRide / Invoxia / Dougs / Beem).
+- **Où ça se perd** : le warm-up (`label:lemwarmup`) pollue Gmail et déclenche les suppressions Attio de Lemwarm Delete ; une réponse "intéressée" peut rester en `lead_status` sans deal si `/sales-ops` ne la juge pas assez explicite (voir §7, exemples Orus / GeoRide / Invoxia / Dougs / Beem) ; un contact poussé dans Lemlist sans `id attio` (échec Attio à l'upload) n'aura jamais de `lead_status`.
 
 ### Étape 3 — Réponse du prospect et prise de RDV
 
@@ -93,19 +107,21 @@ Deux chemins :
 2. **Réservation directe sur le site gang4.io** : les boutons "Réserver une démo" pointent vers **deux pages de réservation Google Calendar** (appointment schedules, calendrier de Samuel), pas Calendly :
    - `https://calendar.google.com/calendar/appointments/schedules/AcZssZ2G07RPH6-h71D3wPhLR0RQXNeHneacqYk_PmkTSrq98Kj0jNzxjUpdj9vYsxt0-EqTcG6c4si_?gv=true` (section "Partnership Ad")
    - `https://calendar.google.com/calendar/appointments/schedules/AcZssZ0LdFPrT26JkLBLDwgyQxggUQGtssA6BhGYljWKzXwc31laDrb_IYtrYlMPkidDANuyrsRnuQFt?gv=true` (section "social proof")
-   - L'événement créé s'appelle **`Démo Gang4 - Partnership Ad (<Prénom Nom>)`**, organisateur `samuel@gang4.io`, description `Réservé par <Nom>\n<email>`. C'est **le** marqueur fiable d'une démo bookée via le site.
+   - Les pages de réservation créent des événements organisés par `samuel@` (ou `yacin@`) avec une description `Réservé par <Nom>\n<email>`. Titres observés : `Démo Gang4 - Partnership Ad (<Nom>)` (page Partnership Ad), `Démo Gang4 - Social Proof (<Nom>)` (page social proof, déduit), mais aussi `Samuel - Gang4 (<Nom>)`, `30 min avec Yacin (<Nom>)` et `Onboarding Gang4 (<Nom>)`. **La description `Réservé par` est le marqueur fiable** d'une réservation en ligne, quel que soit le titre. Dernière réservation « Démo Gang4 » : créée le 07/10 pour une démo le 09/10 (vérifié le 19/10).
+   - n8n **Google Calendar - Démo réservée → Slack** (`l0VaoraJx3j259Ao`) lit chaque minute les emails « Rendez-vous réservé / annulé : Démo Gang4 » de la boîte de Samuel et poste dans `#n8n-alerts`. Il n'écrit nulle part et ignore les autres pages de réservation.
    - **Calendly** (`https://calendly.com/lucie-bonnet/gang4-call`, event type "Gang4 Call (30 min)") est **dormant** : 0 réservation depuis le 01/08/2026. Les prompts `meeting-expert` / `crm-sync` parlent encore de `demo_booked_via_calendly` : ce signal ne se déclenche plus (voir §10).
    - Les démos calées à la main (Yacin, Samuel) ont des titres libres (`Lovys x Gang4`, `Tikamoon X Gang4`, `Keobiz x Gang4`).
 - **Signal de vérité** : événement Google Calendar futur avec ≥1 participant externe B2B. Calendriers à couvrir : `samuel@`, `lucie.bonnet@`, `yacin@`, `alice.morel@gang4.io` (partagés entre eux ; les agents utilisent `samuel@gang4.io` comme compte de référence, le connecteur de cette session était celui de Yacin).
 - **Stage Attio** : réponse positive entrante → `Prospect identified` ; démo à venir → `Demo scheduled` (créé/mis à jour par `/sales-ops`, owner par défaut Lucie).
-- **Deux chemins de création de deal** : (1) `/sales-ops` (`crm-sync`, règle stricte, owner Lucie) ; (2) une **automatisation Attio native** non documentée qui crée un deal (acteur `system`, owner = siège suspendu de Samuel, value 400 €) au marquage « intéressé » dans Lemlist : 11 des 24 deals créés depuis le 01/09 viennent de ce chemin, mais il ne s'est pas déclenché pour Orus ni Magimix. À identifier dans Attio > Workflows.
+- **Deux chemins de création de deal** : (1) `/sales-ops` (`crm-sync`, règle stricte, owner Lucie) ; (2) une automatisation **hors n8n** qui crée un deal (acteur `system`, owner = siège suspendu de Samuel, value 400 €) au marquage « intéressé » dans Lemlist : 11 des 24 deals créés depuis le 01/09 viennent de ce chemin, mais il ne s'est pas déclenché pour Orus ni Magimix. Aucun des 556 workflows n8n n'écrit dans `deals` (vérifié le 19/10) : l'auteur est un workflow Attio ou l'intégration Lemlist → Attio, à identifier dans Attio > Workflows et Apps. Hypothèse : il ne se déclenche pas quand le contact n'a pas d'`iDAttio` ou quand son `lead_status` est déjà plus avancé.
+- **Réponses LinkedIn** : elles n'existent que dans l'inbox Lemlist et dans `#n8n-alerts` (aucune écriture Attio).
 
 ### Étape 4 — Préparation de la démo : batch de créas test personnalisé
 
-- **Automatisation** : n8n **Demo Batch 1 - Scanner V1** (2 triggers, non lisible via MCP) scanne les événements démo du calendrier et écrit `public."DemoBatchRequest"` : `calendar_event_id`, `event_summary`, `invitee_emails`, `business_client_id`, `match_method ∈ {domain, title, growth_employee, employee_name}`, `confidence ∈ {sure, guess, unknown}`, `action ∈ {auto_launched, asked, batch_exists, unresolved, skipped_duplicate}`, `decision` (`approved` quand un humain valide dans Slack, `slack_ts`), `notes` ("existant: N créa(s) BrandMedia hors refused, M ad_creative").
+- **Automatisation** : n8n **Demo Batch 1 - Scanner V1** (`Q2moxJShfO0173xL`, toutes les 3 h à :43, plus un webhook manuel) scanne sur 7 jours les agendas `samuel@`, `yacin@` et `lucie.bonnet@` (une seule connexion Google pour les trois ; `alice.morel@` n'est pas scanné ; une erreur Google passe pour un run réussi) et écrit `public."DemoBatchRequest"` : `calendar_event_id`, `event_summary`, `invitee_emails`, `business_client_id`, `match_method ∈ {domain, title, growth_employee, employee_name}`, `confidence ∈ {sure, guess, unknown}`, `action ∈ {auto_launched, asked, batch_exists, unresolved, not_ready, pending_elsewhere, launch_failed, skipped_duplicate}`, `decision` (`approved` quand un humain valide dans Slack `#test-n8n`, attente 48 h), `notes` ("existant: N créa(s) BrandMedia hors refused, M ad_creative"). `batch_exists` couvre aussi « plus de 10 créas déjà existantes ».
   Puis **Demo Batch 2 - Launch V1** lance la `BatchConfiguration` (`status='launched'`, `type='generation'`, `profile='equilibre'`, ~18-48 créas) et un `BatchRun` ; `DemoBatchRequest.batch_configuration_id` / `batch_run_id` sont remplis.
-- **Signal de vérité** : ligne `DemoBatchRequest` avec `action in ('auto_launched','batch_exists')` ou `decision='approved'`, puis `BatchConfiguration.status='launched'` sur la marque PROSPECT.
-- **Où ça se perd** : `action='unresolved'` (marque non reconnue : pas de `BusinessClient`, domaine différent, email perso) → la démo a lieu **sans batch**. `action='asked'` sans `decision` → en attente humaine. Voir §7.
+- **Signal de vérité** : `DemoBatchRequest.batch_run_id` renseigné (ou `action='batch_exists'`). Une ligne `auto_launched` ou `asked` peut rester sans batch si Launch échoue après coup : le Scanner écrit l'action avant l'appel et Launch répond dès réception.
+- **Où ça se perd** : `action='unresolved'` (marque non reconnue : pas de `BusinessClient`, domaine différent, email perso) → la démo a lieu **sans batch**. `action='asked'` sans `decision` → en attente humaine, et **bloque en silence toutes les démos suivantes de la même marque** (`pending_elsewhere`, aucun message). Au 19/10 : 1 `asked` orphelin (Keobiz, 24/09), 2 démos des 14 derniers jours sans batch (Socialdesk, Duroc). Dernière ligne `DemoBatchRequest` créée le 09/10. Voir §7 et §8-D.
 
 ### Étape 5 — Démo tenue
 
@@ -114,6 +130,7 @@ Deux chemins :
   1. **Claap** (workspace `Gang4`, id `JqwajNYNLd`) : source primaire, résumé IA + transcript. 52 enregistrements avec participant externe entre le 15/09 et le 15/10/2026.
   2. **Google Drive** dossier "Meet Recordings" de Samuel (`1WNKH1RS6AoCDisrIq8iU8iIRITaaaVar`) + dossiers de Lucie/Yacin partagés : notes Gemini.
   3. **Fireflies** : fallback historique, reçoit encore certains meetings (ex. `Onboarding BPM - Gang4` 13/10, `BPM X Gang4` 22/09).
+- **Diffusion automatique** : n8n **Claap - Meeting Summary to Slack** (`BbU98AJlqngglpDL`) poste chaque enregistrement Claap (démos, onboardings, monthly, réunions internes) dans `#test-n8n`, résumé en fil. Il applique une règle utile pour détecter un no-show : un externe qui a parlé était présent. **Fireflies résumé meeting** (`2GO7hCzneGBxGhrtJJjDZ`) poste dans `#fireflies-update`. Aucun des deux n'écrit dans Attio.
 - **Signal de vérité** : enregistrement Claap daté du jour de l'événement avec un speaker `isExternal=true` ; `/sales-ops` signal `demo_done`.
 - **Stage Attio** : `Qualified` si la démo a permis de qualifier (budget Meta, besoin). Note mensuelle `Sales <Mois> <Année> - auto` sur le deal, `next_step_description` mis à jour.
 - **Où ça se perd** : meeting trop court / transcript vide (ex. Hindbag, Nala Pour Elle) ; meeting absent de Claap ET de Drive ; participant avec email perso exclu par les filtres.
@@ -122,34 +139,38 @@ Deux chemins :
 
 - **Chemins** : (a) échanges email → go/no-go ; (b) 2e call de décision ; (c) silence.
 - **Automatisations** :
-  - n8n **🔁 Prospect Relance Sync V1** (cron, non lisible via MCP) alimente `public."ProspectRelanceCandidate"` : `case_type ∈ {a_toi_de_repondre, demo_sans_suite, conversation_retombee}`, `status ∈ {a_relancer, relance, snooze, disqualifie, resolu}`, `evidence` ("X a écrit le JJ/MM et attend une réponse depuis N j"), copies partielles de l'état Attio (`deal_stage`, `deal_temperature`, `deal_next_step`, `icp`, `meta_budget`). Interface : admin `/admin/relances`.
-  - n8n **💆‍♀️ Nurturing Deals (Attio) → Lemlist** : deals Attio en `Nurturing` → campagne Lemlist de nurturing.
+  - n8n **🔁 Prospect Relance Sync V1** (`jZiQzo7RTFqco8D6`, cron 10:46) lit Lemlist, les Gmail de Samuel, Yacin et Lucie, l'agenda de Samuel et Attio (en lecture). Il écrit `public."ProspectTouch"` (journal de toutes les touches) et `public."ProspectRelanceCandidate"` : `case_type ∈ {a_toi_de_repondre, demo_sans_suite, conversation_retombee}`, `status ∈ {a_relancer, relance, snooze, disqualifie, resolu}`, `evidence` ("X a écrit le JJ/MM et attend une réponse depuis N j"), copies de l'état Attio (`deal_stage`, `deal_temperature`, `deal_next_step`, owner = `owner_7` puis `owner`). Interface : admin `/admin/relances`. Rien n'est écrit dans Attio.
+    - **Angles morts** : il exclut les deals `Demo scheduled`, `Meta Connected`, `Deal Won`, `Deal Lost` et les marques CUSTOMER. Une démo restée en `Demo scheduled` ou un go sans CB n'apparaît donc jamais dans `/admin/relances`. `deal_stage` n'est rempli que si la personne figure dans les `associated_people` du deal (premier deal renvoyé, 500 deals lus au plus) : un `deal_stage` vide ne prouve pas l'absence de deal. Un tag Lemlist « interested » compte comme une réponse. Un « résolu » posé à la main est rouvert si le cas persiste. `keobiz.fr` est exclu en dur (cabinet comptable), donc le prospect Keobiz n'y apparaît jamais. Les appels Allo ne sont pas ingérés.
+  - n8n **💆‍♀️ Nurturing Deals (Attio) → Lemlist** (`zOU33tc2mZk74deJ`, cron 15:33) ajoute chaque jour les contacts des deals `Nurturing` (filtre sur le titre du stage, sans filtre de statut, clients payants compris) à la campagne codée en dur `cam_a8yhsMQ53Yuxia7ZR`, **terminée**. Quand la séquence d'un lead est terminée et que son dernier ajout date de plus de 15 jours, il le retire et le ré-ajoute, ce qui relance la séquence. Les refus de Lemlist sont masqués et le workflow n'a pas d'alerte d'erreur (§7-26).
   - `sales.relance_cards` (schéma `sales`) : ancien système de cartes de relance (4 lignes de mai 2026, abandonné).
 - **Stage Attio** : `Nurturing` (après démo, intérêt mais pas maintenant), `Deal Lost` (+ `lost_reason` : No budget / Not the right time / No more contact / Not the right offer), `Hors ICP`, `Archived`. Réouverture d'un `Deal Lost` = décision humaine (l'agent pose une note, ne change pas le stage).
 - **Où ça se perd** : prospect qui a écrit en dernier et attend (`a_toi_de_repondre`), démo sans suite, candidats de relance sans `company_name` (identité non résolue).
 
-### Étape 7 — GO : passage PROSPECT → CUSTOMER (Admin)
+### Étape 7 — GO : passage PROSPECT → CUSTOMER (Admin ou n8n)
 
 - **Qui** : un admin (Samuel/Yacin/Lucie) dans l'admin `https://admin-user-hop.lovable.app` (repo `SamuelGang4/admin-user-hop`).
-- **Mécanique (telle que codée)** :
-  - Le statut `BusinessClient.status` passe à `CUSTOMER` **manuellement** (`/admin/business-clients/new` ou fiche `/admin/orga/:orgId/infos`). Aucun trigger SQL, aucun lien Stripe.
-  - Depuis `/admin/business-clients/new` (ou bouton "Relancer la cascade CUSTOMER"), la **cascade** edge function `promote-business-client-to-customer` : (1) description via `scrape-business-client`, (2) création/complétion de l'`OfferWhitelisting`, (3) **toutes** les `ad_creative` de la marque → `GANG4_REJECTED` (les créas test sont nettoyées), (4) suppression des `Whitelisting` des profils test. ⚠️ Depuis la fiche `/admin/orga/:orgId/infos`, le statut change **sans cascade** (incohérence connue).
-  - **Launch Onboarding** (depuis `/admin/orga-onboarding` ou le détail d'un prospect) écrit `business_module_access` (modules `social_proof`, `whitelisting`, `batch_requests`…) et appelle le webhook n8n `onboard-brand` (**Onboard Brand**). Il ne change pas le statut.
+- **Mécanique (vérifiée le 19/10)** : deux chemins coexistent, aucun lien Stripe.
+  - **À la main dans l'admin** : `/admin/business-clients/new` (ou bouton "Relancer la cascade CUSTOMER") passe le statut et lance la **cascade** edge function `promote-business-client-to-customer` : (1) description via `scrape-business-client`, (2) création/complétion de l'`OfferWhitelisting`, (3) **toutes** les `ad_creative` de la marque → `GANG4_REJECTED` (les créas test sont nettoyées), (4) suppression des `Whitelisting` des profils test. ⚠️ Depuis la fiche `/admin/orga/:orgId/infos`, le statut change **sans cascade** (incohérence connue).
+  - **Automatiquement par n8n** : **Onboard Brand** (`XOVwplXL1eSbO9XG`) tourne chaque nuit à 22:43 (Paris) et sur le bouton **Launch Onboarding** (qui écrit aussi `business_module_access`). La nuit, il prend toute marque hors TEST et hors 6 comptes internes dont la première `BackfillSession` est terminée depuis moins d'un mois, sans session en cours, et dont l'onboarding n'a pas encore produit. Il passe en `CUSTOMER` celles qui sont encore `PROSPECT`, puis enchaîne Description, Regenerate Concepts, Detect Missing Products, Whitelisting Offer, Reject & Cleanup (créas des profils test seulement) et Social Offer. Depuis Launch Onboarding, la bascule se fait sans condition de backfill. Récap dans `#n8n-updates`, détail dans `#test-n8n`.
+  - **Ce qu'on observe** : le 18/10, les 7 marques candidates (Araw, bpm, Bricks, HomeExchange, Lovys, QRU, Reverso) étaient déjà CUSTOMER, donc aucune bascule. Aucune marque PROSPECT n'a de backfill terminé au 19/10. On ne sait pas encore quelle part des CUSTOMER a été basculée par n8n plutôt qu'à la main (historique n8n conservé ≈ 58 h).
+  - **Conséquence** : `CUSTOMER` signifie souvent « BM Meta connecté et backfill terminé », pas un go commercial ni un paiement.
   - Invitations utilisateurs : manuelles, `/admin/orga/:orgId/users` → table `invitations` (`status`, `expires_at`, `reminded_at`).
-- **Signal de vérité** : `BusinessClient.status='CUSTOMER'` (date = `BusinessClient.updated_at`, pas de date dédiée). `business_module_access.is_enabled=true`.
+- **Signal de vérité** : `BusinessClient.status='CUSTOMER'` (pas de date dédiée ; `updated_at` ne convient pas, écart 19 ; approximation : fin de la première `BackfillSession` + au plus 1 jour). `business_module_access.is_enabled=true`.
 - **Stage Attio** : **pas de stage "Go"** ; le deal reste `Qualified` jusqu'à la connexion Meta. C'est une zone grise entre Attio et Supabase (voir §3).
-- **Effet produit du statut** : `run_batch_composer` (hors repo) ne compose des batchs automatiques que pour les CUSTOMER ; le SaaS B2B ne lit pas ce statut.
+- **Effet produit du statut** : n8n **Batch Launcher** (étape 9) ne lance les batchs mensuels que pour les CUSTOMER (la fonction `run_batch_composer` appelée par le Composer filtre probablement aussi, logique non visible) ; le SaaS B2B ne lit pas ce statut.
 
 ### Étape 8 — Connexion Meta (Business Manager) et backfill
 
 - **Qui** : la marque invite Gang4 sur son BM (ou Business Partner ID pour les cas sécurité type Withings).
 - **Signal de vérité** : ligne `public."MetaIntegration"` (`business_client_id`, `ads_sync_enabled`, `comments_enabled`, `last_ads_sync`, `meta_connexion_id` → `MetaConnexion` par organisation avec `granted_at`). Backfill terminé = `BackfillSession.status='completed'` (étape "Meta Integration" de l'onboarding admin). `MetaIntegration` n'a **pas** de `created_at` : la date de connexion se lit dans `MetaConnexion.granted_at`/`created_at` ou `BackfillSession`.
 - **Stage Attio** : `Meta Connected` (`crm-sync` vérifie `MetaIntegration` par nom de marque ou email contact).
-- **Où ça se perd** : invitation BM jamais reçue (Le Petit Lunetier), refus d'accès (Withings), BM connecté mais marque toujours PROSPECT dans l'admin (Lovys au snapshot : CUSTOMER + MetaIntegration mais deal Attio `Qualified`).
+- **Producteur** : `MetaIntegration` et `BackfillSession` ne sont écrits ni par n8n ni par le repo admin (repo B2B probable). La fin du premier backfill déclenche la bascule CUSTOMER de la nuit (étape 7).
+- **Où ça se perd** : invitation BM jamais reçue (Le Petit Lunetier), refus d'accès (Withings), BM connecté mais deal Attio resté `Qualified` (Lovys au snapshot), session de backfill bloquée qui empêche la bascule automatique (aucune au 19/10).
 
 ### Étape 9 — Onboarding : premier batch + call (ou accès par email)
 
-- **Batch d'onboarding** : `BatchConfiguration` (CUSTOMER, `period` mensuelle `2026-10`, `2026-11`…) lancée par Gang4 ou par le composer automatique → `BatchRun` → `BatchItem` → `BrandMedia` (QA via `BrandMediaQA`) → `ad_creative` (`state=GANG4_VALIDATED` après validation interne). Notifications client : n8n **Notifications Client B2B — Ordonnanceur** → `notification_batch` / `ad_creative.client_notified_at` (déduit du schéma).
+- **Batch d'onboarding** : `BatchConfiguration` (CUSTOMER, `period` mensuelle `2026-10`, `2026-11`…) → `BatchRun` → `BatchItem` → `BrandMedia` (QA via `BrandMediaQA`) → `ad_creative` (`state=GANG4_VALIDATED` après validation interne). Chaîne n8n : **Batch Config Composer V1** (06:30) → **Batch Launcher** (07:30, CUSTOMER uniquement, 5 marques par jour au plus, 1 run par marque tous les 7 jours) → **Batch Planner** → **Batch Executor** → génération (Partenership Ads Edit Generation V12, Batch Video Add-on). Watchdog toutes les 10 min, préflight J-1 et fin de batch dans `#n8n-updates`. Un échec de l'Executor laisse le run `planned` sans alerte et bloque la marque 7 jours.
+- **Notifications client** : n8n **Notifications Client B2B — Ordonnanceur** (toutes les 5 min) orchestre les edge functions `notify-collect`, `notify-produce` et `notify-dispatch`, et écrit lui-même le rappel J+10 « créas en attente » dans `notification_outbox`.
 - **Call d'onboarding** : événement Calendar `Onboarding <Marque> - Gang4` (ou `Onboarding Gang4 (<Nom>)`), enregistré dans Claap. Sinon accès envoyés par email (invitation plateforme).
 - **Étapes suivies par l'admin** (`/admin/orga-onboarding`, `src/lib/onboardingProgress.ts`) pour une marque CUSTOMER : Meta Integration (MetaIntegration + BackfillSession completed) · Social Offer (`Offer`) · Offer Code (`OfferCode`/`ManualOfferCode`/Shopify) · Partnership Ads (`OfferWhitelisting`) · Batch (≥10 BrandMedia réels + ad_creative validées, hors test) · Produit (`product` + images taguées + `ProductDetails` + CP/USP/MA régénérés après backfill). Pour un PROSPECT : Produit · Whitelisting Test · Batch Test. La liste `/admin/orga-onboarding` ne montre **que les CUSTOMER** ; les prospects ne sont visibles que sur `/admin/orga/:orgId/onboarding/:bcId`.
 - **Stage Attio** : reste `Meta Connected` (les notes mensuelles tracent l'onboarding).
@@ -165,6 +186,7 @@ Deux chemins :
 - **Mécanique** : page Billing de gang4.io → Stripe (compte `acct_1RAWvuGhvpxOiVhK`, live). Le customer Stripe est lié à l'organisation (`stripe.customers.metadata.organisation_id`) ; la souscription Stripe est reflétée par webhook dans `public."OrganisationSubscription"` (`product ∈ {social_proof, partnership_ads}`, `tier ∈ {community, starter, expert, scale, enterprise}`, `interval`, `status` Stripe, `source ∈ {stripe, manual}`, `billed_by_invoice`). Activation manuelle possible (facturation sur facture) via `POST /api/admin/orga/:id/subscriptions` → `source='manual'`.
   Le schéma Supabase `stripe` (Sync Engine) contient le miroir complet : `customers`, `subscriptions`, `payment_methods`, `setup_intents`, `invoices`, `charges`… (65 customers, 55 subscriptions, 51 payment methods au snapshot).
 - **Signal de vérité ("officiellement client")** : `EXISTS OrganisationSubscription WHERE organisation_id = BusinessClient.organisation_id AND status='active'` (`trialing` non compté). C'est aussi la règle `has_active_subscription` de l'admin ("Plan à configurer" sinon).
+- **Factures** : n8n **🧾 Factures clients** (`z12EH6BG4uWHU7Yk`, événement Stripe `invoice.payment_succeeded`) appelle l'edge function `send-invoice-email` (envoi par Resend depuis le 13/10) et poste « 🤑 Nouveau paiement » dans `#n8n-alerts`. Ce message ne nomme pas la marque et part aussi sur les cas d'alerte : il ne sert pas de signal Deal Won. Aucun workflow n8n n'écrit `OrganisationSubscription` ni Attio.
 - **Stage Attio** : `Deal Won` **et** `companies.company_status='Customer'` (toujours ensemble, par `crm-sync` quand il voit un paiement actif) → la company sort du périmètre sales (customer success).
 - **Pricing observé dans les notes** (à titre indicatif) : 49 € le 1er mois puis ~149 €/mois + commission sur le spend (2 / 5 / 9 %) ; offres starter agence sans frais fixes ; 2 mois offerts parfois négociés.
 
@@ -179,23 +201,25 @@ Deux chemins :
 
 | Système | Rôle dans le funnel | Identifiants / accès | Ce qu'on y lit | Limites connues |
 |---|---|---|---|---|
-| **Trendtrack** | Sourcing marques (ads actives) | MCP Trendtrack ; table `public.trendtrack_prospect` | Marques candidates, `prequalify_status` | Jointure avec `growth_company` par domaine normalisé, pas de FK |
-| **Supabase `public.growth_*`** | Pipeline Growth (campagnes, marques, employés, images) | Projet `bksiaeiqzmoaxvkdtspn` (Gang4_MVP) | `growth_campaign`, `growth_company` (`attio_status`, `launch`, `business_client_id`), `growth_employee` (`attio_id`, `email`, `icp`) | `attio_status` est une copie, pas la vérité Attio |
+| **Trendtrack** | Sourcing marques (ads actives) | MCP Trendtrack ; table `public.trendtrack_prospect` | Marques candidates, `prequalify_status` | Jointure avec `growth_company` par domaine normalisé, pas de FK ; radar n8n inactif depuis le 30/08 |
+| **Supabase `public.growth_*`** | Pipeline Growth (campagnes, marques, employés, images) | Projet `bksiaeiqzmoaxvkdtspn` (Gang4_MVP) | `growth_campaign`, `growth_company` (`attio_status`, `launch`, `business_client_id`), `growth_employee` (`attio_id`, `email`, `icp`) | `attio_status` est un instantané pris à l'enrichissement, jamais remis à jour |
 | **Lemlist** | Envoi emails + LinkedIn, statut lead | Team Samuel + Lucie ; MCP lemlist | Campagnes, stats, leads `interested/notInterested`, inbox | Pas de mailbox sur la campagne LinkedIn Samuel ; warm-up dans Gmail |
-| **Gmail** | Réponses prospects, échanges post-démo | `samuel@gang4.io` (MCP Gmail), `lucie.bonnet@gang4.io` (MCP n8n `Get_many_messages_in_Lucie_Gmail`) | Threads sales B2B (`email-expert`) | **Gmail Yacin non couvert** alors que Yacin mène des démos/onboardings |
-| **Google Calendar** | Démos, onboardings, monthly ; pages de réservation du site | Calendriers `samuel@`, `lucie.bonnet@`, `yacin@`, `alice.morel@gang4.io` partagés à Samuel ; MCP Google Calendar | Événements `Démo Gang4 - Partnership Ad (<Nom>)`, `Onboarding … - Gang4`, `Monthly …` | Titres libres pour les RDV manuels |
+| **Gmail** | Réponses prospects, échanges post-démo | `samuel@gang4.io` (MCP Gmail), `lucie.bonnet@gang4.io` (MCP n8n `Get_many_messages_in_Lucie_Gmail`) | Threads sales B2B (`email-expert`) | **Gmail Yacin non lu par `/sales-ops`**, alors que n8n l'ingère déjà (Relance Sync, Client Comms Sync, Scanner) ; le serveur MCP n8n qui expose la boîte de Lucie n'a **aucune authentification** (§7-25) |
+| **Google Calendar** | Démos, onboardings, monthly ; pages de réservation du site | Calendriers `samuel@`, `lucie.bonnet@`, `yacin@`, `alice.morel@gang4.io` partagés à Samuel ; MCP Google Calendar | Événements de réservation (description `Réservé par`), `Onboarding … - Gang4`, `Monthly …` | Titres libres pour les RDV manuels ; plusieurs pages de réservation (§1 étape 3) |
 | **Calendly** | (historique) | Compte Lucie, event type "Gang4 Call (30 min)" | Rien depuis août 2026 | **Dormant** ; encore cité dans README et prompts |
 | **Claap** | Enregistrement + résumé IA des meetings (primaire) | Workspace `Gang4` `JqwajNYNLd` ; MCP Claap | `get_recordings` (filtre `hasExternalSpeaker`), `get_recording` (résumé), transcript | Date sans heure (`createdAt`) ; speakers parfois mal nommés |
 | **Google Drive** | Notes Gemini / enregistrements Meet (fallback) | Dossier "Meet Recordings" Samuel `1WNKH1RS6AoCDisrIq8iU8iIRITaaaVar` + dossiers Lucie/Yacin partagés | Docs "Notes by Gemini — …" | Recherche multi-pattern nécessaire |
 | **Fireflies** | Transcripts (dernier fallback) | MCP Fireflies | Transcripts + résumés | Couvre surtout l'historique pré-Claap, plus quelques meetings externes |
-| **Attio** | CRM : people, companies, deals, notes | Workspace `gang-4-crm` ; objets `companies` `7bed3fe6-8888-4bc8-92b7-e016f9529c93`, `deals` `f991e7fb-e365-429d-9a6b-d5e919ac7c9e`, `people` `9f824707-069e-45ef-a7f0-18ce498a05b0` ; membres : Lucie `d43bf257-796c-424e-807d-ada473d1cdd6` (admin), Samuel `c9935a42-b833-4935-aedc-a5802d3a5234` (**siège suspendu**) | Stages, statuses, notes `- auto`, lists | Retard possible vs Supabase ; 728 companies sans `company_status`, 1 270 sans `icp` |
-| **Supabase `public` (produit)** | Marques, créas, Meta, batchs, onboarding, abonnements | idem projet | `BusinessClient`, `ad_creative`, `WhitelistClient`, `MetaIntegration`, `MetaConnexion`, `BackfillSession`, `BatchConfiguration`/`BatchRun`, `DemoBatchRequest`, `ProspectRelanceCandidate`, `Organisation`, `OrganisationSubscription`, `invitations`, `business_module_access` | `BusinessClient.status` changé à la main ; pas de date de passage CUSTOMER |
+| **Attio** | CRM : people, companies, deals, notes | Workspace `gang-4-crm` ; objets `companies` `7bed3fe6-8888-4bc8-92b7-e016f9529c93`, `deals` `f991e7fb-e365-429d-9a6b-d5e919ac7c9e`, `people` `9f824707-069e-45ef-a7f0-18ce498a05b0` ; membres : Lucie `d43bf257-796c-424e-807d-ada473d1cdd6` (admin), Samuel `c9935a42-b833-4935-aedc-a5802d3a5234` (**siège suspendu**) | Stages, statuses, notes `- auto`, lists | Retard possible vs Supabase ; 728 companies sans `company_status` (aucun workflow ne l'écrit), 1 270 sans `icp` ; suppressions nocturnes par n8n (§7-21) |
+| **Supabase `public` (produit)** | Marques, créas, Meta, batchs, onboarding, abonnements | idem projet | `BusinessClient`, `ad_creative`, `WhitelistClient`, `MetaIntegration`, `MetaConnexion`, `BackfillSession`, `BatchConfiguration`/`BatchRun`, `DemoBatchRequest`, `ProspectRelanceCandidate`, `Organisation`, `OrganisationSubscription`, `invitations`, `business_module_access` | `BusinessClient.status` changé à la main ou par n8n Onboard Brand ; pas de date de passage CUSTOMER |
 | **Supabase `stripe`** | Miroir Stripe (Sync Engine) | idem | `customers` (`metadata.organisation_id`), `subscriptions`, `payment_methods`, `setup_intents`, `invoices` | Lisible uniquement par l'edge function `backend` côté admin ; en SQL direct pour nous |
 | **Supabase `sales`** | Plomberie des agents Claude (audit, cursors, idempotence) | idem | `run_log`, `applied_actions`, `processed_items`, `sync_cursors` (+ legacy `agent_todos`, `strategic_recommendations`, `relance_cards`, `copywriting_guidelines`) | Tables legacy à archiver |
 | **Admin (Lovable)** | Pilotage go client / onboarding / relances / growth | `https://admin-user-hop.lovable.app`, repo `SamuelGang4/admin-user-hop` | Pages §5 | Logique en front + edge functions ; `backend` (Stripe) hors repo |
-| **n8n** | Automatisations Growth ↔ Lemlist ↔ Attio, demo batch, onboarding, relances, notifs | `https://n8n.srv882539.hstgr.cloud` ; MCP n8n | Détails des workflows | **13 des 15 workflows du funnel ne sont pas exposés au MCP** ("Available in MCP" désactivé) |
-| **Slack** | Notifications | `#sales-ops` `C0B5EV7AN4F`, `#sales-strategist` `C0B65JCMWLU`, `#gang4-growth-society` `C0C105Z7Q21`, `#test-n8n` `C09TCQB7CHG` (résumé Lemlist) | Messages bots Sales Ops / Lemlist / Demo Batch | Canal du Demo Batch Scanner à confirmer |
+| **n8n** | Automatisations Growth ↔ Lemlist ↔ Attio, demo batch, onboarding, relances, notifs | `https://n8n.srv882539.hstgr.cloud` ; API publique (clé dans `N8N_API_KEY`) ; MCP n8n (seulement les workflows « Available in MCP ») | 556 workflows (272 actifs), 94 lus le 19/10 : inventaire `docs/N8N.md` | Erreurs → 🚨 Global Error Handler → `#n8n-errors`, mais plusieurs workflows du funnel n'y sont pas branchés ; « success » ne prouve pas le résultat métier ; historique d'exécutions ≈ 58 h |
+| **Slack** | Notifications | `#sales-ops` `C0B5EV7AN4F` (seul `/sales-ops`), `#sales-strategist` `C0B65JCMWLU`, `#gang4-growth-society` `C0C105Z7Q21` ; canaux n8n : `#n8n-alerts` `C094VTQLX96` (réponses et intérêts Lemlist, démos réservées/annulées, paiements, plus de l'infra), `#test-n8n` `C09TCQB7CHG` (batch démo et sa validation, comptes rendus Claap, résumé Lemlist, détail d'onboarding, résumé hebdo PA), `#n8n-updates` `C0A1RKZ462E` (récap d'onboarding, fin de batch, préflight), `#n8n-errors` `C092P6PUV71` (erreurs), `#fireflies-update` `C0AEJ22URN2`, `#app-visitors` `C0BU9C8C6UQ` (sessions PostHog) | Messages bots | Signaux sales répartis dans des canaux techniques, aucun lu par `/sales-ops` ; des signaux de production passent par `#test-n8n` |
 | **Stripe** | Paiement | Compte `Gang4` `acct_1RAWvuGhvpxOiVhK` (live) ; MCP Stripe | Customers, subscriptions, invoices | Lien customer ↔ organisation via metadata |
+| **Allo** | Appels sortants (power dialer) | File remplie par n8n ☎️ Create Power Dialer list | Appels | Aucune trace dans Attio ni Supabase ; numéros nationaux mal convertis |
+| **PostHog** | Sessions sur la plateforme | n8n PostHog → Slack `#app-visitors` | Pages visitées par utilisateur | Signal d'intérêt hors CRM ; workflow en erreur répétée (504) |
 
 ---
 
@@ -208,25 +232,25 @@ Lecture de gauche à droite = progression. Les lignes ne sont pas strictement al
 | Sourcé | — | — | — | — | `PROSPECT` (créé par Growth) | — |
 | Contacté | contacted | Contacted | Contacted | — | PROSPECT | — |
 | A ouvert / cliqué | hooked / attracted | Opened / Interacted | Opened / Interacted | — | PROSPECT | — |
-| A répondu | warmed | (Replied - …) | Interacted | — | PROSPECT | — |
+| A répondu | warmed | inchangé (Slack seulement) | — | — | PROSPECT | — |
 | Intéressé | interested | Replied - Interested | Interested | **Prospect identified** | PROSPECT | — |
 | Pas intéressé / opt-out | notInterested | Replied - Not Interested / OptedOut | Lost | (pas de deal) ou Deal Lost | PROSPECT / LOST | — |
 | Démo bookée | — | — | Interested / Qualified | **Demo scheduled** | PROSPECT (+ batch test) | — |
 | Démo tenue, qualifiée | — | Demo completed | Qualified | **Qualified** | PROSPECT | — |
 | Proposition envoyée | — | Proposal sent | Proposal Sent | Qualified | PROSPECT | — |
-| Go (admin) | — | — | Qualified | Qualified (pas de stage dédié) | **CUSTOMER** | aucune |
+| Go (admin) ou backfill fini (n8n) | — | — | Qualified | Qualified (pas de stage dédié) | **CUSTOMER** | aucune |
 | BM Meta connecté | — | — | Qualified | **Meta Connected** | CUSTOMER + `MetaIntegration` | aucune |
 | Onboardé, pas payé | — | — | Qualified / Proposal Sent | Meta Connected | CUSTOMER + batch lancé | aucune ("Plan à configurer") |
 | Payant | — | Customer | **Customer** | **Deal Won** | CUSTOMER | `OrganisationSubscription.status='active'` |
 | Perdu | — | Lost | Lost | Deal Lost (+ lost_reason) | LOST | canceled |
 | Pas maintenant | — | — | — | Nurturing | PROSPECT | — |
 
-Mapping Lemlist → Attio déduit des noms d'événements et d'options (workflow n8n non lisible) : à confirmer en ouvrant **Lemlist Triggers - Update Attio People**.
+Mapping Lemlist → `people.lead_status` **vérifié le 19/10** dans **Lemlist Triggers - Update Attio People** : contacted → Contacted, hooked → Opened, attracted → Interacted, interested → Replied - Interested, notInterested → Replied - Not Interested. Le statut ne recule jamais (seuls Interested et Not Interested peuvent s'inverser). `warmed` (réponse) ne change pas `lead_status`. `OptedOut` n'est posé par aucun workflow. La colonne `companies.company_status` n'est écrite par aucun workflow n8n : seulement par `crm-sync` ou à la main.
 
 **Règles de réconciliation (ce qui fait foi en cas d'écart)**
 
 1. Paiement : `OrganisationSubscription.status='active'` fait foi → Attio doit être `Deal Won` + `Customer`.
-2. Go / activation : `BusinessClient.status='CUSTOMER'` + `MetaIntegration` fait foi → Attio doit être au moins `Meta Connected`.
+2. Go / activation : `BusinessClient.status='CUSTOMER'` + `MetaIntegration` fait foi → Attio doit être au moins `Meta Connected`. Attention : CUSTOMER peut avoir été posé par n8n après le backfill, ce n'est pas la preuve d'un go commercial.
 3. Démo : événement Calendar passé + enregistrement Claap fait foi → Attio au moins `Qualified` (ou `Demo scheduled` si pas de compte rendu exploitable).
 4. Intérêt : message entrant du prospect fait foi → deal `Prospect identified` minimum (règle stricte de `crm-sync` : jamais sur de l'outbound sans réponse).
 
@@ -236,7 +260,7 @@ Mapping Lemlist → Attio déduit des noms d'événements et d'options (workflow
 
 ### Marque et activation
 
-- `public."BusinessClient"` : `id`, `name`, `domain`, `status` (`PROSPECT | CUSTOMER | TEST | LOST`), `organisation_id` (NOT NULL), `meta_business_id`, `start_subscription` (date saisie à la main, informative), `exclude_from_auto_batch`, `created_at`, `updated_at`.
+- `public."BusinessClient"` : `id`, `name`, `domain`, `status` (`PROSPECT | CUSTOMER | TEST | LOST`), `organisation_id` (NOT NULL), `meta_business_id`, `start_subscription` (rempli chaque nuit par n8n à partir de la première Action Social Proof VALIDATED ; ne date ni le go ni un paiement Partnership Ads), `exclude_from_auto_batch`, `created_at`, `updated_at`.
 - `public."Organisation"` : `id`, `name`, `archived_at`. Une organisation porte l'abonnement et peut avoir plusieurs marques (ex. agences).
 - `public."OrganisationSubscription"` : `organisation_id`, `product`, `tier`, `interval`, `status`, `source`, `stripe_subscription_id`, `current_period_end`, `billed_by_invoice`, `activated_by_user_id`. UNIQUE (`organisation_id`, `product`).
 - `public."MetaIntegration"` : `id` (ad account), `business_client_id`, `ads_sync_enabled`, `comments_enabled`, `insights_sync_enabled`, `last_ads_sync`, `meta_connexion_id`. `public."MetaConnexion"` : `organisation_id`, `status`, `granted_at`, `expires_at`.
@@ -251,7 +275,10 @@ Mapping Lemlist → Attio déduit des noms d'événements et d'options (workflow
 - `public."WhitelistClient"` (`user_id` → `public."User"`), `public."Whitelisting"` (créateur ↔ offre marque), `public."OfferWhitelisting"`.
 - `public."BatchConfiguration"` (`status draft|launched`, `type`, `profile`, `period`, `n_creas`, `launched_at`), `public."BatchRun"`, `public."BatchItem"`, `public."BatchRequest"` (demandes client : `pending → processing → delivered | cancelled`).
 - `public."DemoBatchRequest"` : voir étape 4. Écrite par n8n uniquement (aucune page admin, aucune migration dans le repo admin).
-- `public."ProspectRelanceCandidate"`, `public."ProspectRelanceSkipLog"` : voir étape 6.
+- `public."ProspectRelanceCandidate"`, `public."ProspectRelanceSkipLog"`, `public."ProspectTouch"` (journal de toutes les touches) : voir étape 6.
+- `public."ClientCommunication"` (emails et Slack clients rattachés à une marque) et `public."ClientTask"` (tâches extraites par IA) : n8n 💬 Client Comms Sync et 🗂️ Client Task Extractor, périmètre client.
+- `public.notification_outbox`, `public.notification_type_config`, `public.invoice_email_send`, `public.email_transport_config` : notifications et factures clients (étapes 9 et 11).
+- `public.brand_candidate` : corpus de marques pour la bibliothèque de créas (Brand Discovery Engine), **hors funnel sales**.
 
 ### Growth
 
@@ -268,25 +295,38 @@ Mapping Lemlist → Attio déduit des noms d'événements et d'options (workflow
 
 ### 5.1 Workflows n8n du funnel
 
-| Workflow (id) | Étape | Trigger | Écrit dans | Lisible via MCP |
-|---|---|---|---|---|
-| 🧢 Prospect Prequalify (`IBkkVgRlxHqZ57E3`) | 0 | cron horaire HH:11 | `trendtrack_prospect` (`linkedin`, `prequalify_status`, `fr_employees_count`) | ✅ (analysé : Apify + OpenRouter, pas d'écriture Attio/Lemlist) |
-| Webhook growth_company → BusinessClient (PROSPECT) (`M0Pe4EpCBtHN76CV`) | 0-1 | webhook `growth-company-to-businessclient` (edge function `launch-growth-businessclient`) | `BusinessClient` PROSPECT, `growth_company.business_client_id` | ❌ |
-| Growth - Prospect Product (via Create Product) (`E7QInJAIxJH88pEP`) | 0-1 | webhook (edge function `launch-growth-create-product`) | `product`, `growth_product` | ❌ |
-| 🤑 Create Attio - Lemlist List (`VuqzYlEFQ0H3WAL5`) | 2 | webhook | liste Attio + `growth_campaign.attio_list_id` | ❌ |
-| 🤑 Upload Attio - Lemlist (`cpA7MxZO6Sx5nO75`) + Error Handler (`jBkGYFiauAgZ7ZbN`) | 2 | webhook | people/companies Attio, listes Lemlist, `growth_company.launch` | ❌ |
-| Lemlist Triggers - Update Attio People (`cbUqJsrUTTsNvw8L`) | 2-3 | 5 webhooks Lemlist | Attio `people.lead_status`, `companies.company_status`, `growth_company.attio_status` | ❌ |
-| Lemlist Trigger - Send Response on Slack (`SrE0KZiWjMQewuAA`) | 3 | webhook Lemlist (réponse) | Slack | ❌ |
-| 📬 Lemlist — Résumé quotidien Slack (`HxeErTwbwKB6eyG6`) | 2 | cron 19:30 lun-ven | Slack `C09TCQB7CHG` | ✅ (analysé) |
-| Demo Batch 1 - Scanner V1 (`Q2moxJShfO0173xL`) | 4 | cron (horaire, d'après les timestamps `HH:43`) | `DemoBatchRequest`, Slack | ❌ |
-| Demo Batch 2 - Launch V1 (`ke80h6YLGLYSf54Y`) | 4 | appelé après scanner / décision Slack | `BatchConfiguration`, `BatchRun`, `DemoBatchRequest.batch_*` | ❌ |
-| 🔁 Prospect Relance Sync V1 (`jZiQzo7RTFqco8D6`) (+ Backfill ponctuel, inactif) | 6 | cron | `ProspectRelanceCandidate`, `ProspectRelanceSkipLog` | ❌ |
-| 💆‍♀️ Nurturing Deals (Attio) → Lemlist (`zOU33tc2mZk74deJ`) | 6 | cron/webhook | leads Lemlist campagne nurturing | ❌ |
-| Onboard Brand (`XOVwplXL1eSbO9XG`) + Onboard - Social Offer / Whitelisting Offer / Reject & Cleanup / Description / Regenerate Concepts | 7-9 | webhooks `onboard-*` appelés par l'admin | `Offer`, `OfferWhitelisting`, `ad_creative` (cleanup), description | ❌ |
-| Notifications Client B2B — Ordonnanceur (`BAJgIWjrerXvM0OK`) | 9-10 | cron | `notification_batch`, emails clients | ❌ |
-| 📊 Stripe → rapport mensuel des paiements (Keobiz) (`j1lDvebLPnXfqVQb`) | 11-12 | cron mensuel | rapport compta | ❌ |
+Lecture complète le 19/10 via l'API n8n (94 workflows lus et contre-vérifiés). **L'inventaire détaillé, cluster par cluster, est dans `docs/N8N.md`.** Ce tableau ne garde que les maillons qui font avancer un lead.
 
-Pour rendre les ❌ auditables : activer « Available in MCP » sur chaque workflow (carte du workflow ou settings) puis relancer une analyse.
+| Étape | Workflow (id) | Déclencheur | Écrit dans | Slack | Point d'attention |
+|---|---|---|---|---|---|
+| 0 | Growth - TrendTrack Radar (`7tgHN9J3koXeJ0Va`) | cron | `trendtrack_prospect` | — | **Inactif depuis le 30/08** (cause non tracée) |
+| 0 | 🗞️ Growth - Media Ads Radar (`6piqNfR1y3voY7Oj`) | horaire HH:11 | `trendtrack_prospect` (`media_scrap`) | — | Rien d'ajouté depuis le 30/09 |
+| 0 | 🧢 Prospect Prequalify (`IBkkVgRlxHqZ57E3`) | horaire HH:11 | `trendtrack_prospect` (LinkedIn, employés FR) | — | Pas d'alerte d'erreur ; une panne peut figer `no_linkedin` |
+| 0 | 6 workflows 🧢 d'enrichissement + 🤑 Enrich email & phone | webhooks (admin) | `growth_company`, `growth_employee`, `growth_ad_images` | — | Échecs silencieux ; match Attio par nom seul |
+| 0-1 | Webhook growth_company → BusinessClient (PROSPECT) (`M0Pe4EpCBtHN76CV`) | webhook (edge function admin) | `BusinessClient` PROSPECT, `Organisation`, `growth_company.business_client_id` | — | Rattache aussi par nom, tout statut |
+| 0-1 | Growth - Prospect Product (`E7QInJAIxJH88pEP`) → Create Product from URL (`Tu73kBd9ycpESkpk`) | webhooks (admin) | `product`, `growth_product`, `Whitelisting` test | `#n8n-errors` | Timeout possible : produit sans Whitelisting test |
+| 2 | 🤑 Create Attio - Lemlist List (`VuqzYlEFQ0H3WAL5`) | webhook (admin) | liste Attio, listes Lemlist, `growth_campaign` | — | Plante si la liste Attio existe déjà |
+| 2 | 🤑 Upload Attio - Lemlist (`cpA7MxZO6Sx5nO75`) + Error Handler (`jBkGYFiauAgZ7ZbN`) | webhook (admin) | people/companies Attio, listes Lemlist, `growth_company.launch` | `#n8n-errors` | Aucun filtre client ; échec company Attio = marque figée sans alerte |
+| 2 | Lemwarm Delete People / Company (`Hp4VwiDPiZmDf0Ws`) | chaque soir 20:28 | **suppressions** Attio | — | Sans journal, domaines génériques inclus |
+| 2 | ☎️ Create Power Dialer list (`GY78q1igjkXyQVEK`) | 09:15 et 12:15 en semaine | file Allo | — | Hors CRM |
+| 2-3 | Lemlist Triggers - Update Attio People (`cbUqJsrUTTsNvw8L`) | 5 webhooks Lemlist | `people.lead_status` uniquement | `#n8n-alerts` | Leads sans `iDAttio` ignorés |
+| 3 | Lemlist Trigger - Send Response on Slack (`SrE0KZiWjMQewuAA`) | Lemlist `warmed` | — | `#n8n-alerts` | Seule trace des réponses LinkedIn hors Lemlist |
+| 2 | 📬 Lemlist — Résumé quotidien Slack (`HxeErTwbwKB6eyG6`) | 19:30 lun-ven | — | `#test-n8n` | Compteurs « intéressés » partiels |
+| 3 | Google Calendar - Démo réservée → Slack (`l0VaoraJx3j259Ao`) | Gmail Samuel, chaque minute | — | `#n8n-alerts` | Ne voit que les emails « Démo Gang4 » |
+| 4 | Demo Batch 1 - Scanner V1 (`Q2moxJShfO0173xL`) | toutes les 3 h à :43 + webhook | `DemoBatchRequest` | `#test-n8n` | Erreurs Google avalées ; `asked` orphelin bloquant |
+| 4 | Demo Batch 2 - Launch V1 (`ke80h6YLGLYSf54Y`) | webhook (Scanner) + validation Slack 48 h | `BatchConfiguration`, `BatchRun`, `DemoBatchRequest.batch_*` | `#test-n8n` | Échec après réception non tracé |
+| 5 | Claap - Meeting Summary to Slack (`BbU98AJlqngglpDL`) | webhook Claap | — | `#test-n8n` | Pas d'alerte d'erreur ; 4 résumés jamais postés |
+| 6 | 🔁 Prospect Relance Sync V1 (`jZiQzo7RTFqco8D6`) | cron 10:46 | `ProspectTouch`, `ProspectRelanceCandidate`, `ProspectRelanceSkipLog`, `ProspectAutoCreateQueue` (essai à blanc) | — | Exclut Demo scheduled, Meta Connected, CUSTOMER ; succès non conservés |
+| 6 | 💆‍♀️ Nurturing Deals (Attio) → Lemlist (`zOU33tc2mZk74deJ`) | cron 15:33 | leads Lemlist `cam_a8yhsMQ53Yuxia7ZR` | — | **Campagne terminée**, clients payants inclus |
+| 7-9 | Onboard Brand (`XOVwplXL1eSbO9XG`) + 5 sous-workflows Onboard - * + Detect Missing Products + Match Product to MetaAds V2 | cron 22:43 + webhook Launch Onboarding | **`BusinessClient.status` → CUSTOMER**, `Offer`, `OfferWhitelisting`, `ad_creative` (cleanup test), description, CP/USP | `#n8n-updates`, `#test-n8n` | Bascule CUSTOMER automatique ; aucune alerte d'erreur |
+| 9 | Batch Config Composer V1 → Batch Launcher → Planner → Executor (+ Watchdog, Preflight, Slack Notifier) | 06:30, 07:30, webhooks, toutes les 10/15 min | `BatchConfiguration`, `BatchRun`, `BatchItem` | `#n8n-updates` | Run `planned` orphelin non repris |
+| 9-10 | Notifications Client B2B — Ordonnanceur (`BAJgIWjrerXvM0OK`) | toutes les 5 min | `notification_outbox` (+ edge functions notify-*) | — | Périmètre client |
+| 11 | 🧾 Factures clients (`z12EH6BG4uWHU7Yk`) | Stripe `invoice.payment_succeeded` | `invoice_email_send` (via edge function) | `#n8n-alerts` | « Nouveau paiement » n'est pas un signal Deal Won |
+| 11-12 | 📊 Stripe → rapport mensuel des paiements (Keobiz) (`j1lDvebLPnXfqVQb`) | le 5 du mois 9:00 | email compta | `#test-n8n` | Compta |
+| 11 | add start_subscription for BusinessClient (`enBcpu7Vb0rzYXSB`) | chaque nuit | `BusinessClient.start_subscription` | — | Basé sur Social Proof, pas sur Stripe |
+| tout | 🚨 Global Error Handler (`pqpAWc8JOJQmZrS9`) | erreur d'un workflow branché | — | `#n8n-errors` | Ne reçoit ni les crashs ni les workflows non branchés |
+
+**Ce qu'aucun workflow ne fait** (vérifié sur les 556) : créer ou modifier un deal Attio, écrire `companies.company_status`, écrire `OrganisationSubscription`, signaler une connexion Meta, détecter un churn.
 
 ### 5.2 Agents Claude Code (ce repo)
 
@@ -343,6 +383,18 @@ Pour rendre les ❌ auditables : activer « Available in MCP » sur chaque workf
 | `sales.applied_actions` | create_deal 72 · update_stage 98 · upsert_monthly_note 420 · update_next_step 182 · create_person 50 · create_company 22 · link_person_to_deal 28 · update_company_status 12 |
 | `sales.processed_items` | gmail 601 · gcal 269 · claap 75 · drive_doc 36 |
 
+**Compléments du 19/10 (lecture n8n)**
+
+| Indicateur | Valeur |
+|---|---|
+| n8n | 556 workflows · 272 actifs · 64 archivés · 94 lus pour le funnel · historique d'exécutions ≈ 58 h |
+| `trendtrack_prospect` par source | trendtrack 4 264 (dernier ajout 30/08, 883 non prequalifiés) · media_scrap 664 (dernier 30/09) |
+| `growth_company` créées | 120 la semaine du 05/10 · 202 celle du 12/10 ; `launch` : 517 success (dernier 16/10) · 545 vides · 6 en erreur (campagnes de juin) · 0 `pending` |
+| `DemoBatchRequest` sans `batch_run_id` | 1 `asked` sans décision (Keobiz, 24/09) · 6 `unresolved` · 21 `batch_exists` · 1 `skipped_duplicate` ; dernière ligne créée le 09/10 |
+| Réservations en ligne depuis le 07/10 | 0 « Démo Gang4 » · 1 « Samuel - Gang4 » · 1 « Onboarding Gang4 » · 1 « 30 min avec Yacin » |
+| CUSTOMER par ancienneté du backfill | < 1 mois 11 · > 1 mois 55 · sans backfill 8 ; PROSPECT avec backfill terminé : 0 |
+| Fraîcheur (§8-J) | relances 19/10 08:46 · comms client 19/10 · notifications client 19/10 · demo batch 09/10 · trendtrack 30/09 · growth launch 16/10 |
+
 ---
 
 ## 7. Écarts et loupés détectés le 2026-10-15
@@ -351,23 +403,38 @@ Pour rendre les ❌ auditables : activer « Available in MCP » sur chaque workf
 
 1. **Réponses entrantes sans deal Attio** (§8-C) : Orus (16/09), GeoRide (17/09), Invoxia (18/09, 2 contacts), Dougs (21/09), Beem (25/09) ont répondu à une séquence Lemlist (sujets `Re: partnership ads …`, `Re: profils ads …`) et sont `a_toi_de_repondre` sans `deal_stage`. Soit la réponse n'était pas positive (alors disqualifier le candidat), soit un deal `Prospect identified` manque.
 2. **Prospects qui attendent une réponse de Gang4** (§8-C) : Mool (28 j, deal `Prospect identified`), The Bradery (20 j, `Qualified`, demande de cas chiffrés), Circle Sportswear (78 j, `Nurturing`), Nala Pour Elle / Goodman Marketing (105 j), Primal Supplements (105 j).
-3. **Démos bookées non rattachées à une marque** (`DemoBatchRequest.action='unresolved'`, §8-D) : Duroc (Marion Eudeline, 08/10), Socialdesk (Benjamin Durand, 07/10), ATM Gaming ES (Clara Arias, 22/09, entité ES d'un client), BPM (22/09, devenu CUSTOMER sans batch démo), Inori-works / Morphea (18/09), Anas Maati (16/09, email étudiant). Keobiz (24/09) est `asked` sans décision.
+3. **Démos bookées non rattachées à une marque** (`DemoBatchRequest.action='unresolved'`, §8-D) : Duroc (Marion Eudeline, 08/10), Socialdesk (Benjamin Durand, 07/10), ATM Gaming ES (Clara Arias, 22/09, entité ES d'un client), BPM (22/09, devenu CUSTOMER sans batch démo), Inori-works / Morphea (18/09), Anas Maati (16/09, email étudiant). Keobiz (24/09) est `asked` sans décision, ce qui bloque en silence toute future démo Keobiz (`pending_elsewhere`).
 4. **Go côté Supabase mais Attio en retard** (§8-B) : Lovys (CUSTOMER 14/09 + MetaIntegration, deal Attio `Qualified`), Gourmandiz (CUSTOMER 16/09, deal `Qualified`), bpm (CUSTOMER 22/09 + MetaIntegration, aucun deal Attio ouvert ni gagné), Reverso (CUSTOMER 01/10 + MetaIntegration, aucun deal Attio ouvert ni gagné).
 5. **22 marques CUSTOMER sans abonnement actif** (§8-A), donc "pas officiellement clientes" : Reverso, bpm, Gourmandiz, Lovys, Bricks, Araw, QRU, Les Commis, Mademoiselle Confettis (Attio `Deal Won`), Cygnes, Deejo (Attio `Deal Won`), Aloe Paris, Maju, MB Heritage, ENDRO Cosmétiques (Attio `Deal Won`), Réjeanne (Attio `Deal Won`), Poppins, Puissante, Mium lab (Attio `Deal Won`), Horace, SmartWorkout, Sync. À trier : vrais "en attente de CB" (Bricks, Araw, QRU, Les Commis, Cygnes, Aloe Paris…) vs facturés hors Stripe / agence (ENDRO, Mium lab, Mademoiselle Confettis via Hello Beauty…) vs à passer LOST.
 6. **Attio `Deal Won` sans abonnement actif** : Mademoiselle Confettis, Deejo, ENDRO, Réjeanne, Mium lab → soit activer un abonnement `source='manual'` dans l'admin, soit corriger le stage.
 7. **Calendly dormant mais toujours dans les prompts** : `demo_booked_via_calendly` ne se déclenche plus ; le vrai signal est l'événement Calendar `Démo Gang4 - Partnership Ad (<Nom>)` avec description `Réservé par`. À intégrer dans `meeting-expert` / `crm-sync` (backlog §10, non modifié aujourd'hui).
-8. **Gmail de Yacin non ingéré** alors que Yacin crée/mène des démos (Lovys, Keobiz, Bloon Paris, Caats, ATM Gaming) : ses échanges email avec les prospects sont invisibles pour `/sales-ops`.
-9. **Siège Attio de Samuel suspendu** (`c9935a42…`) : 13 deals lui appartiennent encore, tous créés automatiquement (acteur `system` : automatisation Attio ou n8n, à confirmer) ; les nouveaux deals automatiques continueront d'atterrir sur un siège suspendu.
+8. **Gmail de Yacin non ingéré par `/sales-ops`** alors que Yacin crée/mène des démos (Lovys, Keobiz, Bloon Paris, Caats, ATM Gaming). n8n l'ingère déjà (connexion existante) pour Relance Sync, Client Comms Sync et le Scanner : il manque seulement un accès pour `email-expert`.
+9. **Siège Attio de Samuel suspendu** (`c9935a42…`) : 13 deals lui appartiennent encore, tous créés automatiquement (acteur `system` : pas n8n, vérifié sur les 556 workflows ; workflow Attio ou intégration Lemlist → Attio, à confirmer) ; les nouveaux deals automatiques continueront d'atterrir sur un siège suspendu.
 10. **Campagne LinkedIn Samuel sans mailbox** (`cam_9HZHY6RJAcAfMQeHe`).
-11. **13 workflows n8n non auditables** via MCP (voir §5.1).
+11. ~~13 workflows n8n non auditables via MCP~~ : **résolu le 19/10**, lecture complète via l'API (inventaire `docs/N8N.md`).
 12. **Hygiène Attio** : ~728 companies sans `company_status`, ~1 270 sans `icp` ; attribut `owner_7` (select Samuel/Yacin) redondant avec `owner` ; `Temperature` peu utilisé.
 13. **Tables legacy actives** : 160 `strategic_recommendations` open/surfaced, 16 `agent_todos` open, 4 `relance_cards` → bruit pour tout futur agent, à archiver.
 14. **Incohérence admin** : changer le statut depuis `/admin/orga/:orgId/infos` ne lance pas la cascade (créas test non nettoyées, `OfferWhitelisting` non créée).
-15. **Nurturing sans campagne cible active** : le workflow n8n « 💆‍♀️ Nurturing Deals (Attio) → Lemlist » pousse les deals `Nurturing` (15 au snapshot) vers une campagne Lemlist, mais la seule campagne de nurturing connue, `Nurturing Test` (`cam_a8yhsMQ53Yuxia7ZR`), est **terminée**. À vérifier : ces 15 deals reçoivent-ils encore quelque chose ?
+15. **Nurturing sans campagne cible active** : le workflow n8n « 💆‍♀️ Nurturing Deals (Attio) → Lemlist » pousse les deals `Nurturing` (15 au snapshot) vers une campagne Lemlist, mais la seule campagne de nurturing connue, `Nurturing Test` (`cam_a8yhsMQ53Yuxia7ZR`), est **terminée**. Vérifié le 19/10 : la campagne est `ended`, le push tourne chaque jour à 15:33, il inclut des clients payants (Lunii, Skin & Out) et masque les refus de Lemlist (voir écart 26).
 16. **13 clients payants encore « ouverts » dans Attio** (16/10, requête §8-B) : Withings, Inga, Baobab Labs (`Qualified`), Lunii, Skin & Out (`Nurturing`), Morphea, Cut by Fred, Abby, Jho, Seoni, Limova, Cuure, La Marque En Moins (`Meta Connected`) ont un abonnement actif sur leur organisation. Cause structurelle : `crm-sync` ne met à jour une company que sur email/meeting frais (règle « fenêtre du run ») et sa requête de détection lit des colonnes inexistantes (`mi."businessClientId"`, `BusinessUser`). Vérifier `product` avant de passer Deal Won.
 17. **8 clients payants sans aucun deal Attio** : HomeExchange, AlloVoisins, Avatacar, May, Boku, Fempo, Ôdass Paris, WWWatch (arrivés via agences ou inbound direct, hors Lemlist).
 18. **Churn invisible** : Caats, OMA & ME, Pomponne sont `LOST` côté Supabase (abonnement annulé) mais `Deal Won` + `Customer` dans Attio ; 26 des 33 `Deal Lost` n'ont pas de `lost_reason`.
 19. **`BusinessClient.updated_at` ne date pas le go** : mise à jour de masse le 18/09/2026 sur ~486 marques ; utiliser `BackfillSession.created_at` (première connexion Meta) ou `OrganisationSubscription.created_at` comme dates de référence.
+
+**Écarts ajoutés le 19/10 après lecture complète de n8n** (détail et preuves dans `docs/N8N.md`)
+
+20. **Bascule CUSTOMER automatique non documentée** : Onboard Brand passe en CUSTOMER chaque nuit les PROSPECT dont le backfill Meta est terminé, et à chaque Launch Onboarding sans condition. CUSTOMER n'est donc pas la preuve d'un go commercial. Décision à prendre : est-ce voulu ?
+21. **Suppressions Attio nocturnes sans trace** : Lemwarm Delete People / Company supprime les people et companies liés aux emails de warm-up s'ils ont moins de 6 mois, y compris la première company du domaine de l'email (domaines génériques non exclus). Une company qui porte un deal peut disparaître.
+22. **Lemlist n'alimente que `people.lead_status`** : `company_status` n'est tenu par personne, les réponses (`warmed`) ne vont que dans Slack, et les leads sans `iDAttio` sont ignorés.
+23. **Signaux sales dispersés dans Slack** : réponses, intérêts, réservations et paiements arrivent dans `#n8n-alerts` ; batch démo et comptes rendus dans `#test-n8n` ; récap d'onboarding dans `#n8n-updates`. Aucun dans `#sales-ops`, aucun lu par `/sales-ops`.
+24. **Batch démo fragile** : un `asked` sans décision bloque les démos suivantes de la marque ; un échec de Launch après réception ne laisse aucune trace ; l'ancienne requête §8-D ratait ces cas (corrigée).
+25. **Sécurité n8n** : le serveur MCP qui expose la boîte Gmail de Lucie n'a aucune authentification ; plusieurs webhooks internes (dont des actions destructives ou payantes) sont publics sans authentification ; des clés Supabase `service_role`, un secret Stripe et un mot de passe proxy sont écrits en clair dans des workflows. Valeurs volontairement non reproduites ici.
+26. **Nurturing aveugle** : le push quotidien vise une campagne terminée, inclut des clients payants et ré-ajoute les leads dont la séquence est finie, au plus tôt 15 jours après le dernier ajout, sans alerte.
+27. **Sourcing neuf à l'arrêt** : le TrendTrack Radar est inactif depuis le 30/08 et le Media Ads Radar n'ajoute plus rien depuis le 30/09. Les campagnes vivent sur le stock existant.
+28. **Canal téléphone hors CRM** : la file Allo est remplie deux fois par jour depuis l'engagement Lemlist, sans trace dans Attio ni dans les relances.
+29. **Couverture d'erreurs trouée** : Onboard Brand et ses 5 sous-workflows, Prequalify, Prospect Product, Nurturing, Claap → Slack, les enrichissements 🧢 et la chaîne batch n'ont pas d'alerte d'erreur ; un run « success » ne prouve pas le résultat ; l'historique n8n ne couvre que ≈ 58 h.
+30. **Identités approximatives** : Employees from Ecommerce rapproche un contact Attio par nom seul (homonymes possibles) ; le webhook PROSPECT rattache une marque par nom, quel que soit le statut.
+31. **Réservations hors « Démo Gang4 » invisibles** : le notificateur et le Scanner ne reconnaissent que le titre « Démo Gang4 », alors que d'autres pages de réservation servent (« Samuel - Gang4 », « 30 min avec Yacin », « Onboarding Gang4 »). Aucune réservation « Démo Gang4 » depuis le 07/10.
 
 ---
 
@@ -407,12 +474,19 @@ order by case_type, priority_rank nulls last;
 ```
 Pour le cas 1 de §7 : filtrer `case_type='a_toi_de_repondre' and deal_stage is null`.
 
-**D. Démos bookées sans batch / sans marque reconnue**
+**D. Démos sans batch (corrigée le 19/10)** : couvre aussi `not_ready`, `launch_failed`, `pending_elsewhere` et les `auto_launched` ou `asked` restés sans batch.
 ```sql
 select event_summary, event_start::date, invitee_emails, action, decision, notes
 from public."DemoBatchRequest"
-where action in ('unresolved','asked') and (decision is null)
-order by event_start desc;
+where batch_run_id is null
+  and action not in ('batch_exists','skipped_duplicate')
+  and coalesce(decision,'') <> 'rejected'
+  and event_start >= now() - interval '14 days'
+order by event_start;
+-- bloquants silencieux, quelle que soit la date : un 'asked' sans décision fait passer
+-- toutes les démos suivantes de la marque en 'pending_elsewhere'
+select event_summary, event_start::date, business_client_id
+from public."DemoBatchRequest" where action='asked' and decision is null;
 ```
 
 **E. Prospects avec batch test récent (à croiser avec les deals Attio `Demo scheduled` / `Qualified`)**
@@ -449,6 +523,33 @@ Lecture : `paying_since` non nul → le deal Attio doit être `Deal Won` (vérif
 
 **H. Volume top-of-funnel Lemlist** : `get_campaigns_stats` sur les 4 campagnes actives (§1 étape 2) avec `startDate` = lundi de la semaine.
 
+**J. Fraîcheur des automatisations n8n** (l'historique n8n ne couvre que ≈ 58 h : on contrôle les tables qu'elles écrivent)
+```sql
+select 'relance (attendu < 26 h)' as signal, max(last_evaluated_at) as dernier from public."ProspectRelanceCandidate"
+union all select 'demo batch (comparer aux réservations)', max(created_at) from public."DemoBatchRequest"
+union all select 'comms client (attendu < 1 h)', max(created_at) from public."ClientCommunication"
+union all select 'notifications client (attendu < 10 min)', max(last_seen_at) from public.notification_batch
+union all select 'sourcing trendtrack', max(first_seen_at) from public.trendtrack_prospect
+union all select 'dernier lancement growth', max(launch_at) from public.growth_company;
+```
+
+**K. Lancements Growth bloqués ou en erreur**
+```sql
+select gc.company_name, left(gc.launch, 80) as launch, gc.launch_at::date, c.name as campaign
+from public.growth_company gc left join public.growth_campaign c on c.id = gc.campaign_id
+where (gc.launch = 'pending' and gc.launch_at < now() - interval '1 hour')
+   or (gc.launch is not null and gc.launch not in ('success','pending'))
+order by gc.launch_at desc nulls last;
+```
+
+**L. Erreurs n8n récentes des workflows du funnel** (API n8n, clé dans `N8N_API_KEY`, lecture seule)
+```bash
+curl -s -H "X-N8N-API-KEY: $N8N_API_KEY" \
+  "https://n8n.srv882539.hstgr.cloud/api/v1/executions?status=error&limit=100" \
+  | python3 -c "import json,sys,collections; d=json.load(sys.stdin)['data']; print(collections.Counter(e['workflowId'] for e in d).most_common())"
+```
+Comparer les ids aux workflows de §5.1. Le canal `#n8n-errors` donne la même information en temps réel, mais seulement pour les workflows branchés sur le Global Error Handler.
+
 ---
 
 ## 9. Références rapides
@@ -458,7 +559,8 @@ Lecture : `paying_since` non nul → le deal Attio doit être `Deal Won` (vérif
 - Attio lists : Lemlist - People `1c988325-b060-4952-ba84-934d696be6ea`, Lemlist - Companies `476cf19d-d05a-4b4b-be99-98c190e1c084`, Customers `187b5fb9-4041-4002-a861-fa2786dfecc0`, Q4 Ecommerce (Main Campaign) `61b5640a-4b3c-4a1a-9ed2-404ad54363c8`, 🔥 Campaign Attio 02/09/2026 `209b49da-d538-475a-a015-f19e09e4e19a`, 🌸 Campaign Trendtrack (Top ICP) 31/08/2026 `f0436a05-9d70-4f6d-8a1e-385cd9380aed`.
 - Lemlist webhooks → n8n (`https://n8n.srv882539.hstgr.cloud/webhook/<uuid>/webhook`) : `warmed`, `contacted`, `hooked`, `notInterested`, `interested`, `attracted`.
 - Claap workspace `JqwajNYNLd` ; Drive "Meet Recordings" Samuel `1WNKH1RS6AoCDisrIq8iU8iIRITaaaVar` ; Calendly Lucie `https://calendly.com/lucie-bonnet/gang4-call` (dormant).
-- Slack : `#sales-ops` `C0B5EV7AN4F`, `#sales-strategist` `C0B65JCMWLU`, `#gang4-growth-society` `C0C105Z7Q21`, `#test-n8n` `C09TCQB7CHG`.
+- Slack : `#sales-ops` `C0B5EV7AN4F`, `#sales-strategist` `C0B65JCMWLU`, `#gang4-growth-society` `C0C105Z7Q21`, `#test-n8n` `C09TCQB7CHG`, `#n8n-alerts` `C094VTQLX96`, `#n8n-updates` `C0A1RKZ462E`, `#n8n-errors` `C092P6PUV71`, `#fireflies-update` `C0AEJ22URN2`, `#app-visitors` `C0BU9C8C6UQ`.
+- n8n : `https://n8n.srv882539.hstgr.cloud`, API publique `/api/v1` (en-tête `X-N8N-API-KEY`, clé dans la variable d'environnement `N8N_API_KEY`, jamais dans le repo) ; inventaire `docs/N8N.md`.
 - Profils de test : `User` `ae2e4809-bb07-4909-9d9d-21aefb7ee77e` / `WhitelistClient` `85cd3638-9607-4cb5-b043-4df7c409b88c` ; `User` `df34b6e4-200a-4af4-b2b3-298d6c98aeda` / `WhitelistClient` `a27973ae-553a-41ef-9549-e5adcf7aebaa`.
 - Comptes : Samuel `samuel@gang4.io` (Lemlist `usr_jvieaT7NeQq6FuCiu`, Attio suspendu), Lucie `lucie.bonnet@gang4.io` (Lemlist `usr_v8gLz5WgZPqLuna8Z`, Attio admin, Calendly), Yacin `yacin@gang4.io` (super_admin admin, pas dans Lemlist/Attio), Alice `alice.morel@gang4.io` (calendrier partagé, rôle `agent` dans l'admin), Stéphane `stephane@gang4.io` (présent sur les calls Keobiz).
 
@@ -470,9 +572,12 @@ Lecture : `paying_since` non nul → le deal Attio doit être `Deal Won` (vérif
 
 - [ ] `meeting-expert` / `crm-sync` / README : remplacer le signal Calendly par la détection `Démo Gang4 - Partnership Ad (…)` + description `Réservé par` (Google Calendar appointment schedule).
 - [ ] `crm-sync` : lire `BusinessClient.status='CUSTOMER'` et `OrganisationSubscription.status='active'` (plus fiable que `public."Contract"`/`StripeIntegration`, tables non utilisées pour le B2B) pour `Meta Connected` / `Deal Won`.
-- [ ] `email-expert` : ajouter Gmail Yacin (via n8n, comme Lucie).
+- [ ] `email-expert` : ajouter Gmail Yacin via un serveur MCP n8n **authentifié** (la connexion Gmail de Yacin existe déjà dans n8n ; ne pas copier le MCP de Lucie, qui n'a pas d'authentification).
 - [ ] Nouveau contrôle hebdo (ou extension du strategist) : exécuter §8 A-E et poster les écarts dans `#sales-ops`.
-- [ ] n8n : activer « Available in MCP » sur les 13 workflows §5.1 puis compléter la fiche de chacun ici.
+- [x] n8n : lire les workflows du funnel (fait le 19/10 via l'API, `docs/N8N.md`).
+- [ ] n8n sécurité (§7-25) : authentification Bearer sur le MCP Gmail de Lucie ; authentification sur les webhooks internes ; rotation des clés écrites en clair et passage en credentials.
+- [ ] n8n fiabilité (§7-29) : brancher le Global Error Handler sur les workflows du funnel listés ; conserver les succès de Relance Sync et Upload ; allonger l'historique d'exécutions.
+- [ ] n8n décisions : bascule CUSTOMER automatique voulue ? (§7-20) ; garder Lemwarm Delete et sous quelles gardes ? (§7-21) ; désactiver le push Nurturing tant qu'aucune campagne n'est active ? (§7-26) ; le canal Allo fait-il partie du funnel ? (§7-28).
 - [ ] Attio : décider du sort du siège de Samuel (réactiver ou réassigner ses 13 deals) ; nettoyer `owner_7`.
 - [ ] Supabase `sales` : archiver `agent_todos`, `strategic_recommendations`, `relance_cards`.
 - [ ] Admin : faire passer la fiche `/admin/orga/:orgId/infos` par la cascade CUSTOMER, ou documenter que seul `/admin/business-clients/new` est autorisé pour le passage CUSTOMER.
@@ -486,7 +591,8 @@ Lecture : `paying_since` non nul → le deal Attio doit être `Deal Won` (vérif
 2. **Quoi** : mettre à jour la section concernée, puis le snapshot (§6) en rejouant les requêtes de §8 et les reports Attio (`run-basic-report` count par `stage`, `company_status`, `lead_status`), puis §7 (retirer les écarts résolus, ajouter les nouveaux).
 3. **Comment** : dans Claude Code sur ce repo, « mets à jour docs/FUNNEL.md : rejoue les contrôles §8 et rafraîchis §6/§7 » suffit ; l'agent lit ce fichier d'abord (pointeur dans `CLAUDE.md`).
 4. **Règles** : ne jamais écrire dans Attio / Supabase / Lemlist pour "corriger" un écart depuis ce document ; les corrections passent par `/sales-ops` (auditées dans `sales.applied_actions`) ou par un humain. Dater chaque snapshot. Marquer explicitement ce qui est déduit (« déduit », « à confirmer ») vs vérifié.
-5. **Journal** : ajouter une ligne en §12.
+5. **n8n** : pour rafraîchir `docs/N8N.md`, exporter les workflows via l'API (`GET /api/v1/workflows?limit=250`, paginer avec `cursor`) et les exécutions (`GET /api/v1/executions?workflowId=<id>`), avec la clé de `N8N_API_KEY`. Ne jamais copier de clé, de chemin de webhook ni de secret dans la doc.
+6. **Journal** : ajouter une ligne en §12.
 
 ---
 
@@ -494,6 +600,7 @@ Lecture : `paying_since` non nul → le deal Attio doit être `Deal Won` (vérif
 
 | Date | Auteur | Changement |
 |---|---|---|
+| 2026-10-19 | Claude (session Yacin) | Lecture complète de n8n via l'API (556 workflows, 94 lus et contre-vérifiés, contrôles en base et dans Lemlist/Calendar). Corrections §0, §1 (étapes 0, 2, 3, 4, 5, 6, 7, 8, 9, 11), §2, §3 (mapping Lemlist vérifié), §4, §5.1 réécrit, compléments §6, écarts 20-31, §8-D corrigée, §8-J/K/L ajoutées, §9-§11. Inventaire détaillé créé : `docs/N8N.md` (12 sections relues contre les JSON), script d'export `scripts/n8n_export.py`. |
 | 2026-10-16 | Claude (session Yacin) | Précisions de Yacin (sources multiples, siège Samuel non prioritaire, LinkedIn dans Lemlist). Audit par segment + recoupement Supabase/Attio : écarts 16-19 ajoutés, requête §8-I, deux chemins de création de deal documentés (étape 3), pointeur vers `docs/PROPOSITIONS-2026-10-16.md`. |
 | 2026-10-15 | Claude (session Yacin) | Relecture par panel d'agents de la page de synthèse (artifact « Funnel Gang4 360° ») : ajout de l'écart 15 (nurturing sans campagne active) et de l'item backlog associé. |
 | 2026-10-15 | Claude (session Yacin) | Création : cartographie complète (Trendtrack → Lemlist → Attio → Calendar/Claap → Admin → Meta → Stripe), snapshot chiffré, 14 écarts détectés, contrôles §8, backlog §10. Sources : repo, Attio, Supabase (`public`, `sales`, `stripe`), Lemlist, Google Calendar/Drive, Calendly, Claap, Fireflies, Slack, n8n (2 workflows lisibles sur 15), repo `SamuelGang4/admin-user-hop`, site gang4.io. |
