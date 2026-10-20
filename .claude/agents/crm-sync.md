@@ -383,7 +383,7 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
 |---|---|---|
 | `won` : abonnement actif (tout produit) ou facture Stripe payée ≤ 45 j | deal ouvert → `update_stage → Deal Won` ; aucun deal → `create_deal` en `Deal Won` (owner Lucie) + note « Arrivé hors funnel : paiement constaté le JJ/MM » ; `Deal Lost` / `Archived` **et** abonnement actif → `Deal Won` + note d'audit | → `Customer` |
 | `won` par facture seule (aucun abonnement actif) et company `Lost` dans Attio | rien | rien : décision humaine (ex. Aloe Paris) ; signale-le |
-| `past_due` (paiement en échec, plus de facture payée ≤ 45 j) | rien | rien ; signale-le avec la date |
+| `past_due` (paiement en échec, plus de facture payée ≤ 45 j) | rien | rien : un paiement en échec ne change jamais le statut client (Yacin, 20/10) ; signale-le avec la date |
 | `invoice_pending` (facture ouverte ≤ 45 j, rien de payé) | rien | rien |
 | `churn` : a payé, plus d'abonnement actif ni de facture payée ≤ 45 j, ou marque `LOST` dans l'Admin (T14) | rien (le deal reste `Deal Won`) | `Customer` → `Lost` |
 | `conflit` : marque `LOST` dans l'Admin mais abonnement actif | rien | rien ; signale-le (ex. Circular, En Cavale) |
