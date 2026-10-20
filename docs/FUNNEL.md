@@ -332,7 +332,7 @@ Lecture complète le 19/10 via l'API n8n (94 workflows lus et contre-vérifiés)
 
 | Commande / agent | Fréquence | Lit | Écrit | État |
 |---|---|---|---|---|
-| `/sales-ops` (`email-expert` + `meeting-expert` → `crm-sync` → `sales-ops-notifier`) | ~17:46 UTC du lundi au vendredi (103 runs depuis le 25/05/2026, 4 en erreur) ; 7 j/7 voulu (20/10), à régler par Yacin dans la routine | Gmail Samuel+Lucie, touches Gmail Yacin, inbox LinkedIn Lemlist, Calendar, Claap, Drive, Fireflies, Attio, Supabase (abonnements, factures Stripe) | Attio (deals, stages, Balle / date / next step, statut client, owner, notes `- auto`, tâches automatiques closes), `sales.*`, Slack `#sales-ops` | **actif**, règles du 20/10 |
+| `/sales-ops` (`email-expert` + `meeting-expert` → `crm-sync` → `sales-ops-notifier`) | ~17:46 UTC tous les jours depuis le 20/10 (planning changé par Yacin ; auparavant du lundi au vendredi, 103 runs depuis le 25/05/2026, 4 en erreur) | Gmail Samuel+Lucie, touches Gmail Yacin, inbox LinkedIn Lemlist, Calendar, Claap, Drive, Fireflies, Attio, Supabase (abonnements, factures Stripe) | Attio (deals, stages, Balle / date / next step, statut client, owner, notes `- auto`, tâches automatiques closes), `sales.*`, Slack `#sales-ops` | **actif**, règles du 20/10 |
 | `/sales-strategist` | hebdo (12 runs, dernier 22/06/2026) | Attio + Supabase | `sales.strategic_recommendations`, Slack `#sales-strategist` | dormant (160 recos `open/surfaced` obsolètes) |
 | `head-of-sales` | — | — | `sales.run_log` (4 runs en mai) | abandonné |
 | agent CS (`cs.*`) | — | — | — | dormant (1 run) |
@@ -439,10 +439,43 @@ Lecture complète le 19/10 via l'API n8n (94 workflows lus et contre-vérifiés)
 **Écarts ajoutés le 20/10**
 
 34. **Clients payés par facture, sans abonnement** : ENDRO (facture du 06/10 encore ouverte) et Mium lab (variable mensuel) paient par factures Stripe sans abonnement ; Aloe Paris a payé une facture unique le 13/10. Une règle fondée sur `OrganisationSubscription` seule les voit comme non clients : lire aussi `stripe.invoices` (étape 4).
-35. **Paiement en échec** : l'abonnement Partnership Ads de Hello Beauties, l'agence de Mademoiselle Confettis, est en `past_due` depuis le 18/10.
-36. **Fiches Attio en double** : Bene Bono a deux fiches, `benebono.fr` (créée par la synchro email, sans deal) et `benebono.co` (Deal Won) ; ATM Gaming aussi (`atmgaming.eu` avec Deal Won, `atmgaming.fr` sans deal). `/sales-ops` pointe sur la bonne fiche (correspondance dans `sales.processed_items`) ; la fusion reste un geste humain dans Attio. Autres doublons repérés au premier run du 20/10 : Belveo (`belveo.com` porte le deal Nurturing, `belveo.fr` le contact du RDV du 12/11), Terravita (fiche `terravitagroup.com` sans nom à côté de Terravita.fr), Horace (`horace.com` sans deal, `horace.co` porte le Deal Lost).
+35. **Paiement en échec** : l'abonnement Partnership Ads de Hello Beauties, l'agence de Mademoiselle Confettis, est en `past_due` depuis le 18/10. Décision de Yacin (20/10) : un paiement en échec ne change pas le statut client (règle écrite dans `crm-sync` §4b).
+36. **Fiches Attio en double** : Bene Bono a deux fiches, `benebono.fr` (créée par la synchro email, sans deal) et `benebono.co` (Deal Won) ; ATM Gaming aussi (`atmgaming.eu` avec Deal Won, `atmgaming.fr` sans deal). `/sales-ops` pointe sur la bonne fiche (correspondance dans `sales.processed_items`) ; la fusion reste un geste humain dans Attio. Autres doublons repérés au premier run du 20/10 : Belveo (`belveo.com` porte le deal Nurturing, `belveo.fr` le contact du RDV du 12/11), Terravita (fiche `terravitagroup.com` sans nom à côté de Terravita.fr), Horace (`horace.com` sans deal, `horace.co` porte le Deal Lost). **Résolu le 20/10 (soir)** : les 5 paires fusionnées par l'API Attio (fiche avec deal en principale), nouvelles fiches avec les deux domaines et tous les contacts ; correspondance `sales.processed_items` et 3 lignes `growth_company.attio_id` (Bene Bono, Terravita.fr, Horace) mises à jour vers les nouveaux identifiants.
+
+    **Nouveaux doublons repérés au rattrapage de 30 jours, non fusionnés** (la fiche citée en premier porte le deal) :
+    - Parfums Molinard : `molinard.com` / `molinard.fr` ;
+    - Gourmandiz : `gourmandiz.co` / `gourmandiz.eu`, sans nom ;
+    - Beem Energy : `beemenergy.fr` / `beemenergy.com` ;
+    - Madura : `madura.com` / `madura.fr` ;
+    - Tikamoon : la fiche du deal et celle du contact Vincent Pillerel ;
+    - HomeExchange : `homeexchange.fr`, cliente / `homeexchange.com`, Hors ICP.
 37. **Hello Beauties sans fiche à son nom** : le premier run de la réconciliation l'a rattachée, avec Mademoiselle Confettis, à la fiche Stargate Capital (`5456a20a…`, Customer, Deal Won « Mademoiselle Confettis »). Paiement en échec depuis le 18/10, dernier paiement le 23/09.
 38. **Circular et En Cavale** : `LOST` dans l'Admin mais abonnement encore actif (verdict `conflit` : signalé, rien écrit). Yacin (20/10) : ces abonnements se terminent bientôt, la réconciliation les passera alors en churn.
+
+**Écarts ajoutés le 20/10 au rattrapage de 30 jours** (remontées des experts du run `111641f7`)
+
+39. **Démos annulées invisibles** : le connecteur Google Calendar ne renvoie pas les événements annulés ou supprimés. Une démo annulée disparaît de la remontée au lieu d'apparaître `cancelled`, et son deal reste `Demo scheduled` jusqu'au « Clôturer ? » de 60 jours (R10). Seule trace : les emails « Rendez-vous annulé : Démo Gang4 » de la boîte de Samuel, que n8n `l0VaoraJx3j259Ao` ne pousse que dans Slack. Proposition : `crm-sync` relit par `get_event` l'`event_id` de `DemoBatchRequest` quand la démo d'un deal `Demo scheduled` est passée sans meeting remonté.
+40. **Agendas de Lucie et d'Alice vides** : ils sont lisibles, mais Lucie n'a aucun événement depuis le 17/09 et Alice depuis avril ; toutes les démos du mois sont dans les agendas de Samuel et de Yacin. Le contrôle 3b ne le voit pas, puisqu'il ne lit que `calendars_missing`. À confirmer par Yacin : Alice est-elle encore attendue, et Lucie tient-elle ses rendez-vous ailleurs ?
+41. **Séquence de prospection envoyée à un client payant** : « tu as gagné Lorna » est partie le 05/10 vers lorna@cuure.com, alors que Cuure est client. Les campagnes Lemlist n'excluent pas les clients (même défaut que le nurturing, écart 26).
+42. **Changements de contact perdus** : des auto-réponses annoncent un départ et nomment un remplaçant, sans que personne ne mette à jour Lemlist ou Attio. La séquence continue donc vers une adresse morte, et le remplaçant n'est jamais contacté. Cas vus sur 30 jours :
+    - Smoon → Elise Guisard ;
+    - Sodastream → Julien Sebban ;
+    - Eclo Beauty → Marine Archer, nouvelle CEO ;
+    - Balibaris → Nathalie Haddad ;
+    - Laurence Bras → margaux.ext@laurencebras.com ;
+    - Raidlight → dorianr@raidlight.com ;
+    - Iroko : nouvelle adresse d'Hélène Campionnet.
+43. **Signaux de churn sans destinataire** : `/sales-ops` les écarte comme customer success, mais aucun autre processus ne les reçoit. La réconciliation ne voit le churn qu'à la fin de l'abonnement. Cas vus sur 30 jours :
+    - May Santé : « on va couper l'abonnement », 06/10 ;
+    - Rosegold : performances jugées mauvaises, 01/10 ;
+    - En Cavale : demande de pause, 24/09 ;
+    - Cherico : fin de contrat ;
+    - Little Cigogne : facture de septembre de 1 587 € impayée, carte Spendesk refusée.
+44. **Claap imparfait** :
+    - **Externe non marqué** (HomeExchange 24/09, Tediber 25/09, Little Cigogne) : le filtre `hasExternalSpeaker` rate ces meetings. `meeting-expert` les rattrape par un listing sans filtre quand un événement d'agenda n'a pas de correspondance, mais un meeting vu seulement dans Claap serait perdu.
+    - **Intervenants inversés** (Little Cigogne) : le résumé IA attribue à Samuel les actions du client.
+45. **Délivrabilité et plainte** : en 30 jours, au moins 14 rebonds, 3 « boîte pleine » sur catchall@capcar.fr et 2 challenges Mailinblack (Les Trois Chênes, Ladrôme). Une réponse « Possible d'arrêter le harcèlement ? » est arrivée le 01/10 de passagedudesir.com, après « tu as gagné Oscar ». Reste à vérifier dans Lemlist que ces leads sont bien sortis des séquences.
+46. **Warm-up non étiqueté** : 11 fils Lemwarm sont passés sans le label `Lemwarmup` chez Samuel du 10 au 20/10. **Corrigé le 20/10** : `email-expert` exclut aussi par le sujet (`-subject:lemwarmup`).
 
 32. **Workflow Attio de création de deal fragile** : il ne s'est déclenché ni pour Magimix ni pour Orus (contacts `Replied - Interested` sans deal) ; il affecte les deals au siège suspendu de Samuel ; il crée à chaque deal une tâche « Add Next Step Task for … Deal » à échéance fixe 29/04/2025, assignée à Samuel et Lucie, jamais close (Gourmandiz, Payfit, Dream Machine, Parfums Molinard, Lovys, Ops Clean…) ; les 12 tâches ouvertes de ce type ont été marquées faites le 20/10 (non supprimées), le workflow continuera d'en créer. Correctif retenu : `/sales-ops` devient le filet (contrôle quotidien des contacts `Replied - Interested` sans deal ouvert sur leur société, société résolue par le domaine de l'email), étape 4 du plan. **En place le 20/10** (`crm-sync` §4c et §4d).
 33. **Contacts rattachés à la mauvaise société** : la fiche Même Cosmetics (`0054bf8d…`) porte 35 contacts de plusieurs marques, dont Orus, Célims et Primal Supplements. Un deal créé depuis un de ces contacts atterrit sur la mauvaise société. À nettoyer pendant la migration (étape 3).
@@ -595,6 +628,10 @@ Comparer les ids aux workflows de §5.1. Le canal `#n8n-errors` donne la même i
 - [ ] Admin : faire passer la fiche `/admin/orga/:orgId/infos` par la cascade CUSTOMER, ou documenter que seul `/admin/business-clients/new` est autorisé pour le passage CUSTOMER.
 - [ ] Lemlist / n8n : décider du sort du push « Nurturing Deals (Attio) → Lemlist » (séquence LinkedIn sans message, clients payants inclus) : exclure les clients, le couper, ou le remplacer par une vraie séquence de nurturing. Décision du 20/10 : pas de sujet pour l'instant, on n'y touche pas.
 
+- [ ] `crm-sync` (§7-39) : détecter les démos annulées. Quand la démo d'un deal `Demo scheduled` est passée sans meeting remonté, relire par `get_event` l'`event_id` de `DemoBatchRequest` (ou lire les emails « Rendez-vous annulé : Démo Gang4 »).
+- [ ] Lemlist (§7-41) : exclure les clients payants des campagnes de prospection (liste d'exclusion ou contrôle avant ajout). Rien n'a été modifié dans Lemlist.
+- [ ] `email-expert` / `crm-sync` (§7-42) : remonter les remplaçants annoncés par les auto-réponses (nouveau contact) pour les créer dans Attio et les proposer à Lucie, au lieu de les classer OOO.
+- [ ] Customer success (§7-43) : donner un destinataire aux signaux de churn des emails clients (résumé hebdo dans `#sales-ops` ou un canal CS), à décider par Yacin.
 ---
 
 ## 11. Comment tenir ce document à jour
@@ -612,8 +649,11 @@ Comparer les ids aux workflows de §5.1. Le canal `#n8n-errors` donne la même i
 
 | Date | Auteur | Changement |
 |---|---|---|
+| 2026-10-20 | Claude (session Yacin) | `/sales-ops 30` terminé (run `111641f7`, clos à 23:37 UTC, repris après un redémarrage du conteneur) : 1 deal créé (Beem Energy, Prospect identified), 17 notes mensuelles, 2 contacts créés et 5 rattachés à leur deal, 2 ICP (Beem Energy Medium Ecommerce, Dougs Hors ICP), aucun stage changé, réconciliation conforme, 0 erreur ; cursor `lemlist/team` créé. Écart 36 : 6 nouveaux doublons signalés. Routine `/sales-ops` désormais 7 j/7 (planning changé par Yacin) : §5 et `sales-ops.md` à jour. |
+| 2026-10-20 | Claude (session Yacin) | Rattrapage `/sales-ops 30` (run `111641f7`) : les 5 experts ont tourné (3 tranches emails, 2 tranches meetings, aucune source manquante) ; écarts 39 à 46 ajoutés depuis leurs remontées (démos annulées invisibles, agendas de Lucie et d'Alice vides, séquence envoyée à un client, remplaçants perdus, signaux de churn sans destinataire, Claap imparfait, délivrabilité, warm-up non étiqueté) et 4 propositions au backlog §10. `email-expert` exclut aussi le warm-up par le sujet ; la clôture de `crm-sync` (§8) ne remet plus `run_log.error` à null, pour garder la trace des sources manquantes. |
 | 2026-10-20 | Claude (session Yacin) | Étape 3 appliquée (`docs/MIGRATION-ATTIO-2026-10-20.md` §8) : nouvelle règle client = au moins un abonnement actif, tout produit ; agences hors pipeline (liste « Agencies ») ; écarts 16 et 17 résolus, 18 en partie ; écarts 34 et 35 ajoutés. |
 | 2026-10-20 | Claude (session Yacin) | Étape 3 : proposition de migration des 62 deals ouverts rédigée (`docs/MIGRATION-ATTIO-2026-10-20.md`), non appliquée. Constats nouveaux : 9 clients payants sans deal dont Kimo Sofa, abonnement Hello Beauties en défaut de paiement depuis le 18/10, point Tikamoon du 16/10 refusé, 23 contacts d'autres marques sur la fiche Même Cosmetics. |
+| 2026-10-20 | Claude (session Yacin) | Corrections demandées par Yacin, par l'API Attio : 5 doublons fusionnés (Bene Bono, ATM Gaming, Belveo, Terravita, Horace) ; deals Meta Connected créés pour Reverso, SmartWorkout et BPM (CUSTOMER + Meta, sans paiement) ; Lovys en Deal Lost (Not the right offer) ; raisons de perte posées sur Gohyav (No more contact) et Epycure (Not the right offer) ; 3 tâches « Add Lost Reason » fermées. Écarts 35 et 36 mis à jour. |
 | 2026-10-20 | Claude (session Yacin) | Premier run des règles du 20/10 (`/sales-ops 3`, run `37b9e5ad`) : 5 notes mensuelles, 7 Balle / date dont 5 « Clôturer ? » (R10), 1 contact créé, 2 contacts rattachés, 2 ICP, aucun deal ni stage ; réconciliation produit conforme (aucune company à modifier) ; message posté dans `#sales-ops`. En session interactive, les outils MCP Attio et les `UPDATE` Supabase demandent une validation : le run a écrit dans Attio par l'API REST et clôturé `run_log` par un upsert. Écarts 36 et 37 précisés. |
 | 2026-10-20 | Claude (session Yacin) | Étape 4 appliquée avec le go de Yacin : `/sales-ops` corrigé (T4 à T18, R2 à R10, filet `Replied - Interested`, hygiène quotidienne, contrôle des sources) et fusionné dans `main` ; correspondance marques → companies chargée dans `sales.processed_items` (76 marques) ; §1, §3, §5, §7 (7, 8, 21, 32, écarts 36 à 38) et §10 mis à jour ; Lemwarm Delete lissé (lots de 10 par seconde). |
 | 2026-10-20 | Claude (session Yacin) | §7-21 : run manuel de Lemwarm Delete à 18:14 relu (garde-fous OK, limite de débit d'Attio sur les suppressions). |

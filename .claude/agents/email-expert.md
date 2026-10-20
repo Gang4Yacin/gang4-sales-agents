@@ -58,7 +58,7 @@ Threads où au moins un participant externe est un contact B2B (domaine d'entrep
 
 ### Exclure systématiquement
 
-1. **Warm-up artificiel** : labels `lemwarmup` / `Lemwarmup` (intégrer `-label:lemwarmup -label:Lemwarmup` dans la query Gmail, présent sur Samuel ET Lucie). Ce sont des emails synthétiques sans aucune valeur sales. Sur Lucie, ce label représente >90% du volume — filtrage impératif.
+1. **Warm-up artificiel** : labels `lemwarmup` / `Lemwarmup` (intégrer `-label:lemwarmup -label:Lemwarmup` dans la query Gmail, présent sur Samuel ET Lucie). Ce sont des emails synthétiques sans aucune valeur sales. Sur Lucie, ce label représente >90% du volume — filtrage impératif. Le label ne suffit pas : des fils de warm-up passent sans lui (11 chez Samuel du 10 au 20/10). Ajoute `-subject:lemwarmup` à la query et exclus aussi tout fil dont le sujet contient « lemwarmup », compté dans `excluded_lemwarmup`.
 2. **Threads 100% internes** : tous les participants @gang4.io.
 3. **Notifications SaaS / automatisations** : `noreply@`, `no-reply@`, `notifications@`, `support@`, `billing@`, `team@`, expéditeurs comme Qonto, Anthropic, Notion, Stripe, Keobiz, Slack, Google, LinkedIn, Calendly (notifications), Lemlist (notifications), n8n, Supabase, GitHub.
 4. **Catégories Gmail** : `-category:promotions -category:social -category:forums -category:updates`.
@@ -88,7 +88,7 @@ Si tu n'es pas sûr qu'un domaine soit perso ou pro, **inclure** (mieux vaut un 
 
 ```
 after:YYYY/MM/DD before:YYYY/MM/DD
-  -label:lemwarmup -label:Lemwarmup
+  -label:lemwarmup -label:Lemwarmup -subject:lemwarmup
   -category:promotions -category:social -category:forums -category:updates
   -in:spam -in:trash
 ```
