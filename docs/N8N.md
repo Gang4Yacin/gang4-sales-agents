@@ -16,8 +16,8 @@
 
 - **Aucun workflow ne crée ni ne modifie de deal Attio**, n'écrit `companies.company_status`, n'écrit
   `OrganisationSubscription`, ne signale une connexion Meta ou ne détecte un churn (recherche texte sur les 556).
-  Le go et le paiement n'arrivent dans Attio que par `/sales-ops`. Les deals viennent de `/sales-ops` ou d'une
-  automatisation hors n8n (workflow Attio ou intégration Lemlist → Attio, `docs/FUNNEL.md` §1 étape 3).
+  Le go et le paiement n'arrivent dans Attio que par `/sales-ops`. Les deals viennent de `/sales-ops` ou du
+  workflow Attio qui crée un deal quand un contact passe à Interested (`docs/FUNNEL.md` §1 étape 3).
 - **n8n écrit dans Attio** seulement `people.lead_status` (Lemlist Triggers), des créations de people et
   companies (Upload Attio - Lemlist), et des **suppressions** nocturnes (Lemwarm Delete).
 - **n8n peut passer une marque en CUSTOMER** : Onboard Brand le fait chaque nuit après le backfill Meta,
@@ -204,7 +204,7 @@ Lemlist pousse 6 hooks d'équipe vers n8n, sans filtre de campagne. L'événemen
 | Update Lemlist Data from Gsheet (`KEU7hq75DyZ97tIu`) | manuel | Pousse la variable de lead `averageNbads` depuis un Google Sheet. | Lemlist (variable de lead, campagne `cam_wAAk8TjhjiJHL8bHY`) | — | aucune | inactif, dernière modification le 08/09/2025, candidat à l'archivage |
 
 **À retenir**
-- **Seul lead_status est écrit.** `cbUq` n'écrit que `people.lead_status`, avec 5 option ids codés en dur (vérifié). Il n'écrit ni `companies.company_status` ni `growth_company.attio_status`. Aucun workflow n8n ne crée de deal : le deal créé au marquage « intéressé » vient d'une automatisation hors n8n (workflow Attio ou intégration Lemlist vers Attio, à identifier).
+- **Seul lead_status est écrit.** `cbUq` n'écrit que `people.lead_status`, avec 5 option ids codés en dur (vérifié). Il n'écrit ni `companies.company_status` ni `growth_company.attio_status`. Aucun workflow n8n ne crée de deal : le deal créé au marquage « intéressé » vient du workflow Attio (confirmé par Yacin le 20/10).
 - **Le statut ne recule jamais.** Opened n'écrase que vide ou Contacted. Interacted n'écrase que les statuts jusqu'à Opened. Les deux Replied n'écrasent que les statuts jusqu'à Interacted ou l'autre Replied. Demo completed, Customer, Lost et les autres statuts avancés ne sont jamais écrasés (vérifié).
 - **`iDAttio` est obligatoire.** Le Code node écarte sans trace les événements `bot` et les leads sans variable `iDAttio`. Un lead ajouté à la main ou par CSV dans Lemlist ne remonte donc jamais dans Attio. La variable est posée en amont, vraisemblablement par 🤑 Upload Attio - Lemlist (`cpA7MxZO6Sx5nO75`, déduit). Une exécution en succès ne prouve pas qu'une écriture a eu lieu.
 - **Toute source d'intérêt compte.** interested et notInterested regroupent email, LinkedIn, Aircall, API et manuel (vérifié). Un agent qui marque un lead par l'API Lemlist met donc aussi à jour Attio et poste dans #n8n-alerts.
@@ -312,7 +312,7 @@ Ce groupe prend le relais après la démo. Claap et Fireflies appellent chacun l
 
 **À retenir**
 
-- **Nurturing vers campagne terminée.** La campagne `cam_a8yhsMQ53Yuxia7ZR` (« Nurturing Test ») est `ended` (API Lemlist, 19/10), mais le workflow tourne chaque jour et y ajoute les nouveaux contacts sans vérifier son état. Ses appels HTTP sont en `neverError` : un run « success » ne prouve ni ajout ni envoi, et si l'export Lemlist échoue, tous les contacts sont retentés en ajout.
+- **Nurturing vers une séquence LinkedIn sans message.** La campagne `cam_a8yhsMQ53Yuxia7ZR` (« Nurturing Test ») ne contient que trois actions LinkedIn : invitation sans note, visite du profil, like du dernier post. Elle est marquée `ended`, mais Lemlist accepte les ajouts et les traite : en octobre, 21 leads lancés, 11 touchés, 6 invitations acceptées, aucun message ni réponse ; 9 contacts retirés puis ré-ajoutés le 18/10, 4 le 19/10 (vérifié le 20/10 dans Lemlist et dans les exécutions). Ses appels HTTP sont en `neverError` : un run « success » ne prouve rien à lui seul, et si l'export Lemlist échoue, tous les contacts sont retentés en ajout.
 - **Cycle du nurturing.** Les 15 j (codés en dur) se comptent depuis `nurturingAddedAt`, la date du dernier ajout : un lead `done` au-delà est retiré puis ré-ajouté au run suivant, et sa séquence repart de zéro. Ni `lead_status` ni `company_status` ne sont contrôlés, donc des clients payants en `Nurturing` (Lunii, Skin & Out, FUNNEL §7-16) sont poussés, et un contact déjà ajouté n'est jamais retiré quand son deal quitte `Nurturing`.
 - **Règles du board.** Une identité n'entre qu'avec un meeting confirmé, ou avec une réponse plus un envoi de notre part sur 400 j, ou une réponse venue de Lemlist ; l'inbound pur est refusé. Les cas sont `a_toi_de_repondre` (≥ 7 j), `demo_sans_suite` (≥ 14 j, aucun meeting prévu) et `conversation_retombee` (≥ 30 j), avec un seul candidat par entreprise (le plus récent ; les collègues actifs à 7 j près sont gardés), hors CUSTOMER et hors stages Deal Won, Meta Connected, Demo scheduled et Deal Lost (`Nurturing` reste éligible).
 - **Statuts manuels écrasés.** Un `resolu` posé à la main dans `/admin/relances` repasse en `a_relancer` au run suivant si le cas persiste ; un `relance` vieux de 30 j et un snooze échu sont rouverts, un `disqualifie` jamais. L'auto-résolution ne ferme que des lignes `a_relancer`.
@@ -406,4 +406,5 @@ Hors funnel ou inactifs : 📊 Stripe → rapport mensuel des paiements (Keobiz)
 
 | Date | Auteur | Changement |
 |---|---|---|
+| 2026-10-20 | Claude (session Yacin) | Push Nurturing précisé (séquence LinkedIn sans message, toujours active) ; deals « system » attribués au workflow Attio, confirmé par Yacin. |
 | 2026-10-19 | Claude (session Yacin) | Création. Export complet via l'API (556 workflows), lecture et contre-vérification des 94 workflows du funnel en 12 groupes, recoupements Supabase / Lemlist / Calendar / Slack, rédaction par groupe puis relecture contre les JSON sources. |

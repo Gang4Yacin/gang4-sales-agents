@@ -1,6 +1,6 @@
 # Propositions — boucher les trous du funnel et rendre le pipeline Attio actionnable
 
-> **Statut : proposition, rien n'a été modifié.** Rédigé le 2026-10-16 à partir de `docs/FUNNEL.md`,
+> **Statut : proposition, rien n'a été modifié. Plan recentré du 20/10 juste en dessous.** Rédigé le 2026-10-16 à partir de `docs/FUNNEL.md`,
 > d'un audit par segment (5 auditeurs + 1 réfutateur par trou, 27 trous confirmés sur 41) et d'un panel
 > de 3 propositions de pipeline notées par 3 juges. Les chiffres sont ceux du 16/10/2026.
 >
@@ -12,6 +12,35 @@
 > **Mise à jour du 2026-10-19** : n8n a été lu en entier via l'API (556 workflows, 94 lus et contre-vérifiés,
 > inventaire `docs/N8N.md`). La **Partie 0** ci-dessous dit ce que cela change ; les parties 1 et 2 restent
 > valables, avec les ajustements signalés « (19/10) ».
+
+---
+
+## Décisions du 20/10 et plan recentré (à lire en premier)
+
+### Réponses de Yacin sur les trous
+
+| Trou | Décision |
+|---|---|
+| T4, T5, T6, T9, T10, T11, T12, T13, T15, T16, T18 | Validés tels que proposés. T10 = le pipeline « Balle & Date » de la Partie 2. |
+| T7 | Validé, **sans** ajouter la question « Site web de votre marque » au formulaire de réservation. |
+| T14 | Validé. Le churn se lit sur les abonnements : une organisation qui avait un abonnement et n'en a plus aucun actif est en churn, sans attendre un passage manuel en LOST dans l'Admin. |
+| T2 | Sorti du plan : pas prioritaire, l'information est dans Attio. |
+| T3 | Sorti du plan : Yacin vérifie l'audience avant chaque lancement de campagne. |
+| T8 | Sorti du plan : Duroc est rattaché à La Marque En Moins (maison mère), Socialdesk est une agence. Seule action restante : clôturer la demande Keobiz en attente depuis le 24/09, qui bloque ses futures démos. |
+| T1, T17 | Réexpliqués le 20/10, décision en attente. |
+| T22 (bascule CUSTOMER) | Pas un trou : manuelle depuis l'Admin ou automatique par le cron Onboard Brand, c'est voulu. |
+| T23 à T28 (hygiène n8n) | Hors plan pour l'instant : canaux Slack, alertes d'erreur, chaîne batch démo, radar Trendtrack, homonymes, Allo. |
+
+### Plan, étape par étape
+
+Chaque étape est validée avant de passer à la suivante. Rien n'est modifié sans accord.
+
+1. **Protéger les données (n8n, ≈ 30 min)** : authentification sur le serveur MCP qui lit la boîte Gmail de Lucie (T19) ; Lemwarm Delete coupé ou empêché de supprimer une fiche liée à un deal (T20) ; push Nurturing sans les clients payants, ou coupé (T21).
+2. **Préparer Attio (≈ 20 min, Yacin)** : créer les deux champs et les cinq vues de la Partie 2 ; mettre Lucie en owner dans le workflow Attio qui crée les deals au statut Interested ; archiver `owner_7` et réassigner à Lucie les deals du siège de Samuel.
+3. **Remettre les deals à jour (≈ 1 h 30, Lucie + Yacin)** : migration M1 à M8 de la Partie 2 (payants en Deal Won, deals manquants, alignements, une date et une prochaine action sur chaque deal ouvert) ; clôturer la demande Keobiz.
+4. **Corriger `/sales-ops`** : T4, T5, T6, T7, T9, T11, T12, T13, T14, T15, T16, T18, routine 7 jours sur 7, Gmail de Yacin. Diff relu par Yacin, un run de test, puis `/sales-ops 30`.
+5. **Contrôle hebdo (T17)** : si validé.
+6. **Deals et leads qui s'endorment** : la vue « Aujourd'hui » et les relances, traitées une par une.
 
 ---
 
