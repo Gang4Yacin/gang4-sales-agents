@@ -136,7 +136,8 @@ sa réponse :
 
 ## Planification
 
-La routine « Sales Ops daily » lance `/sales-ops` **tous les jours** à 17:45 UTC, week-end compris
-(T18 : une réponse du samedi ne doit pas attendre le lundi). Ses connecteurs doivent inclure Lemlist
-(inbox LinkedIn) en plus de Gmail, Calendar, Drive, Claap, Fireflies, Calendly, Attio, Supabase, Slack
-et du Gmail de Lucie.
+La routine « Sales Ops daily » doit lancer `/sales-ops` **tous les jours** à 17:45 UTC, week-end compris
+(T18 : une réponse du samedi ne doit pas attendre le lundi) ; au 20/10 elle tourne encore du lundi au
+vendredi, son planning se change dans l'interface des routines. Ses connecteurs incluent Lemlist
+(inbox LinkedIn, ajouté le 20/10) en plus de Gmail, Calendar, Drive, Claap, Fireflies, Calendly, Attio,
+Supabase, Slack et du Gmail de Lucie.
