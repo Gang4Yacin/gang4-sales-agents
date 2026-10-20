@@ -570,9 +570,10 @@ fenêtre (pas `window_end` arbitrairement).
 ### 8. Clôture du run
 ```sql
 update sales.run_log
-set ended_at = now(), summary = '<summary_json>'::jsonb, error = null
+set ended_at = now(), summary = '<summary_json>'::jsonb
 where id = '<run_id>';
 ```
+Ne touche pas à `error` : il porte les sources manquantes écrites par `/sales-ops` (étape 3b).
 `summary` (minimum) :
 ```json
 {
