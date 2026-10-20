@@ -158,7 +158,7 @@ Et **Magimix** : Solène Fort s'est dite intéressée le 25/02, sans deal créé
 - **Supabase** : la demande de batch Keobiz du 24/09 est clôturée (`decision = rejected`).
 - **Écarts constatés au passage** : la vente de Wecasa Wellness et celle d'ATM Gaming ES sont rattachées aux deals Wecasa et Atm Gaming existants. Les comptes Gang4 et « test integration » sont exclus. Sur les 36 Deal Lost, 26 n'ont toujours pas de raison : ce sont des deals anciens, hors périmètre de la migration.
 
-Les valeurs d'avant de chaque modification sont gardées dans un journal hors repo, avec les identifiants Attio. Cela permet de revenir en arrière ligne par ligne.
+Attio garde l'historique de chaque champ, avec la valeur d'avant, son auteur et sa date : c'est la référence pour revenir en arrière. Un journal détaillé des appels, avec les identifiants Attio, existe aussi dans la session de travail, hors repo, et disparaît avec elle.
 
 ## Journal
 
