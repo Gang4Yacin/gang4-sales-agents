@@ -606,6 +606,7 @@ Comparer les ids aux workflows de §5.1. Le canal `#n8n-errors` donne la même i
 
 | Date | Auteur | Changement |
 |---|---|---|
+| 2026-10-20 | Claude (session Yacin) | Étape 3 : proposition de migration des 62 deals ouverts rédigée (`docs/MIGRATION-ATTIO-2026-10-20.md`), non appliquée. Constats nouveaux : 9 clients payants sans deal dont Kimo Sofa, abonnement Hello Beauties en défaut de paiement depuis le 18/10, point Tikamoon du 16/10 refusé, 23 contacts d'autres marques sur la fiche Même Cosmetics. |
 | 2026-10-20 | Claude (session Yacin) | Lemwarm Delete : garde-fous publiés dans n8n à 16:25 avec l'accord de Yacin (§7-21), contrôle programmé après le run de 20:28. |
 | 2026-10-20 | Claude (session Yacin) | Clé API Attio fournie par Yacin : champs deals `balle_dans_le_camp` et `prochaine_action_le` créés (§9), vides jusqu'à l'étape 3 ; la variante tâches est abandonnée. Les vues restent impossibles par API. `CLAUDE.md` pointe vers `ATTIO_API_KEY`. |
 | 2026-10-20 | Claude (session Yacin) | Étape 2 à la demande de Yacin : 11 deals ouverts du siège de Samuel réassignés à Lucie, 12 tâches « Add Next Step Task » au 29/04/2025 marquées faites (§7-9, §7-32). Champs et vues : impossibles par API (le MCP Attio n'a pas d'outil d'attribut ni de vue ; l'API Attio liste les vues sans pouvoir en créer), variante tâches retenue pour rester à 100 % automatisable. |
