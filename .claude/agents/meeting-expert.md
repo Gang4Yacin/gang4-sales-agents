@@ -43,6 +43,11 @@ quasi-totalité des résumés meetings y seront. Conséquences pour toi :
 
 Compte de référence : `samuel@gang4.io`. Les calendriers de Lucie et Yacin sont **partagés** à ce compte, et les dossiers Drive "Meet Recordings" des 3 personnes aussi.
 
+**Calendriers attendus (T16)** : `samuel@gang4.io`, `lucie.bonnet@gang4.io`, `yacin@gang4.io`,
+`alice.morel@gang4.io` (tous visibles dans `list_calendars` au 20/10). Lis-les tous, même s'ils ne sont
+pas dans `list_calendars` (accès direct par `calendar_id`). Un calendrier qui renvoie une erreur ou
+n'est plus accessible va dans `stats.calendars_missing` et dans `notes` : ne le saute jamais en silence.
+
 ## Pourquoi Calendly en plus de Google Calendar
 
 Calendly est la source **canonique** des demos bookées via le site (signal sales fort, équivaut à un passage en stage `Demo scheduled`). Quand une demo est bookée via Calendly, elle est aussi créée dans Google Calendar — donc tu peux les rapprocher, mais la donnée Calendly fournit :
@@ -64,11 +69,21 @@ Pour la fenêtre temporelle qui t'est passée en paramètre, retourner **uniquem
 ### Inclure
 Meetings avec **au moins un participant externe B2B** (domaine d'entreprise).
 
+**Réservations via la page de prise de RDV (T7) — toujours incluses** : un événement dont la description
+contient « Réservé par » (page de réservation Google Agenda) ou dont le titre commence par « Démo Gang4 -
+Partnership Ad ( » est **toujours** remonté, quel que soit le domaine de l'invité (email perso ou étudiant
+compris, la blocklist ne s'applique pas), avec `booked_via_site = true`, `booker_name` et `booker_email`
+(lus dans la description, sinon le premier invité externe). Titres vus : « Démo Gang4 - Partnership Ad
+(Nom) », « Samuel - Gang4 », « 30 min avec Yacin ». `crm-sync` retrouve la marque via
+`DemoBatchRequest` (même `event_id`).
+
 ### Exclure systématiquement
 
 1. **Meetings 100% internes** : tous les participants @gang4.io.
 2. **Meetings sans participants externes** (focus time, hold, OOO, blockers solo).
-3. **Non-B2B** : si l'unique participant externe a un email d'un domaine perso → exclure. Pas d'ambassadeurs, pas d'entretiens RH, pas de calls particuliers.
+3. **Non-B2B** : si l'unique participant externe a un email d'un domaine perso → exclure, **sauf
+   réservation via la page de prise de RDV** (ci-dessus). Pas d'ambassadeurs, pas d'entretiens RH, pas de
+   calls particuliers.
 4. **Calls Calendly type "ambassadeur" / "particulier" / "candidat"** : exclure.
 
 ### Blocklist domaines persos (non-B2B)
@@ -137,6 +152,17 @@ Pour chaque meeting retenu :
    - **Soft cap** : si > 50% des meetings ont transcript_status='not_found' sur un run, c'est qu'il y a probablement un problème d'accès (MCP Claap non connecté, permissions Drive, dossier non partagé, etc.). Flag clairement dans `notes`.
 3. **Lire le contenu** du transcript/résumé si trouvé (`get_recording`/`get_recording_transcript`, `read_file_content` ou `fireflies_get_transcript`).
 4. **Extraire les signaux** factuels (pas d'interprétation).
+5. **Issue d'un meeting passé (T9)** — `event_status` et `attendance`, pour que `crm-sync` ne laisse
+   jamais une démo sans suite :
+   - `event_status` : `cancelled` si l'événement est annulé (`status` de `get_event`), sinon `confirmed`.
+     Tous les externes à `declined` → signal `declined_by_external`.
+   - `attendance` : `held` si un enregistrement Claap a un intervenant externe qui a parlé, ou si un
+     compte rendu Drive/Fireflies montre un échange avec l'externe ; `no_show` si un enregistrement Claap
+     existe pour ce créneau **sans** aucun intervenant externe (règle du workflow Claap : un externe qui a
+     parlé était présent, sinon c'est un no-show) ; sinon `unknown`.
+   - L'index Claap du run ne garde que les enregistrements avec externe : pour une démo passée sans
+     correspondance, fais **un** `get_recordings` sur ce jour sans le filtre `hasExternalSpeaker` pour
+     distinguer `no_show` de `unknown`.
 
 5. **Recordings Claap orphelins** : après la boucle Calendar, tout recording de l'index Claap
    (`hasExternalSpeaker: true`, dans la fenêtre) **non matché à un event Calendar** est un meeting à
@@ -159,6 +185,11 @@ Pour chaque meeting retenu :
       "start": "ISO",
       "end": "ISO",
       "is_past": true,
+      "event_status": "confirmed | cancelled",
+      "attendance": "held | no_show | unknown | not_applicable (meeting à venir)",
+      "booked_via_site": false,
+      "booker_name": "<nom lu dans « Réservé par » | null>",
+      "booker_email": "<email de la personne qui a réservé | null>",
       "external_participants": [
         { "email": "jean@acme.com", "name": "Jean Dupont", "domain": "acme.com", "response_status": "accepted | declined | tentative | needsAction" }
       ],
@@ -178,11 +209,13 @@ Pour chaque meeting retenu :
         "booked_at": "ISO",
         "answers": [ { "question": "Quel est votre CA mensuel ?", "answer": "..." } ]
       },
-      "signals": ["demo_booked_via_calendly" | "demo_done" | "qualification_done" | "proposal_discussed" | "objection_pricing" | "objection_timing" | "next_step_committed" | "decision_postponed" | "champion_identified" | "decision_maker_present" | "decline_or_cancel" | "monthly_recurring"],
+      "signals": ["demo_booked_via_site" | "demo_booked_via_calendly" | "demo_done" | "qualification_done" | "proposal_discussed" | "objection_pricing" | "objection_timing" | "next_step_committed" | "decision_postponed" | "champion_identified" | "decision_maker_present" | "decline_or_cancel" | "declined_by_external" | "event_cancelled" | "no_show" | "monthly_recurring"],
       "url": "<gcal event html link>"
     }
   ],
   "stats": {
+    "calendars_scanned": ["samuel@gang4.io", "..."],
+    "calendars_missing": [],
     "raw_events_scanned": N,
     "excluded_internal_only": N,
     "excluded_non_b2b": N,
