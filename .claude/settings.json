@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "mcp__cd391ece-20bb-4241-bb67-f716f167fcaf__*",
+      "mcp__Attio__*",
       "mcp__1ba71441-716c-448a-80a0-ab402ac0b5a1__*",
       "mcp__1f44ba85-c021-49ad-98e4-9452b16978e4__*",
       "mcp__0dd48a09-96fd-4ca6-847d-34663b92d3f8__*",
@@ -14,6 +15,11 @@
       "WebSearch",
       "Bash(curl:*)",
       "Bash(git:*)"
+    ],
+    "ask": [
+      "mcp__Attio__delete-task",
+      "mcp__Attio__delete-comment",
+      "mcp__Attio__merge-records"
     ]
   }
 }

@@ -30,10 +30,15 @@ lire Gmail/Drive/Calendar/Attio/Claap/Fireflies ; faire un Agent call.
 
 ### 1. Décider de poster ou non
 Lis le rapport `crm-sync`. **Tu postes UNIQUEMENT s'il y a au moins une action sales réelle** :
-≥1 deal créé, ≥1 stage mis à jour, ou ≥1 note mise à jour.
+≥1 deal créé, ≥1 stage ou statut client mis à jour, ou ≥1 note mise à jour — **ou** une source
+attendue manquante.
 - **Rien de tout ça** → ne poste pas. Retourne `"skipped: rien de nouveau"`.
-- **Run en erreur** (`run_log.error` non null) → poste un message d'alerte court
-  (`:rotating_light: *Run Sales Ops échoué* — <résumé erreur>`) et stop.
+- **Sources manquantes** (`run_log.error` commence par `sources:`) → le run a continué : poste le
+  message normal précédé d'une seule ligne
+  `:warning: Sources manquantes : <source> (<raison>) · <source> (<raison>)` ; sans aucune action,
+  poste cette ligne seule.
+- **Run en erreur** (`run_log.error` non null et ne commençant pas par `sources:`) → poste un message
+  d'alerte court (`:rotating_light: *Run Sales Ops échoué* — <résumé erreur>`) et stop.
 - **Anti-doublon** : lis les ~10 derniers messages du canal via `slack_read_channel`. Si un message
   strictement équivalent (même run, mêmes actions) est déjà visible avec timestamp < 30 min → 
   `"skipped: duplicate within 30min window"`.
@@ -56,10 +61,11 @@ company.
 _<N> deals créés · <M> stages · <K> notes_
 
 :large_green_circle: *Deals créés*            ← OMETTRE si 0
-• *<lien Attio|Nom complet>* — <démo planifiée JJ/MM | réponse positive <personne>> → <stage>
+• *<lien Attio|Nom complet>* — <démo planifiée JJ/MM | réponse de <personne> | paiement constaté | marqué intéressé> → <stage>
 
 :chart_with_upwards_trend: *Pipeline*          ← OMETTRE si 0
-• *<lien Attio|Nom complet>* — <stage avant> → <stage après>
+• *<lien Attio|Nom complet>* — <stage avant> → <stage après> [(rouvert)]
+• *<lien Attio|Nom complet>* — client → Lost (plus d'abonnement actif)      ← churn, lien vers la company
 
 :memo: *Notes mises à jour*                    ← OMETTRE si 0
 • <Nom complet> · <Nom complet> · <Nom complet>
@@ -74,8 +80,9 @@ _<N> deals créés · <M> stages · <K> notes_
   N'invente jamais une action absente du rapport.
 - **Concis** : une demi-phrase par ligne. La section `Notes` liste juste les noms séparés par ` · `
   (pas de détail par note).
-- Aucune mention de customers, de non-B2B, ou d'items écartés. Aucune stat technique (emails scannés…).
-  Pas de « voici », « voilà », « merci ».
+- Aucune mention de customers (sauf les lignes Deal Won et churn de la réconciliation produit), de
+  non-B2B, ou d'items écartés. Aucune stat technique (emails scannés…), pas de ligne pour les mises à
+  jour de Balle / date / next step, d'owner ou de tâches. Pas de « voici », « voilà », « merci ».
 - **1 message par run.**
 
 ### Liens Attio (chaque entreprise des sections `Deals créés` et `Pipeline` doit être un lien)
