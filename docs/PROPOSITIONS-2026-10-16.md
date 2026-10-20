@@ -30,13 +30,16 @@
 | T1, T17 | Réexpliqués le 20/10, décision en attente. |
 | T22 (bascule CUSTOMER) | Pas un trou : manuelle depuis l'Admin ou automatique par le cron Onboard Brand, c'est voulu. |
 | T23 à T28 (hygiène n8n) | Hors plan pour l'instant : canaux Slack, alertes d'erreur, chaîne batch démo, radar Trendtrack, homonymes, Allo. |
+| T21 (push Nurturing) | Pas de sujet pour l'instant (Yacin, 20/10) : on n'y touche pas. M8 sera revu à l'étape 3. |
+| Page Admin « Relances prospects » | Mise de côté : on l'adaptera une fois les trous bouchés et le pipeline Attio revu. |
+| Workflow Attio de création de deal | Pas robuste (Yacin, 20/10) : non déclenché pour Magimix et Orus, deals sur le siège de Samuel, tâches à échéance fixe au 29/04/2025 (FUNNEL §7-32, §7-33). `/sales-ops` devient le filet à l'étape 4. |
 
 ### Plan, étape par étape
 
 Chaque étape est validée avant de passer à la suivante. Rien n'est modifié sans accord.
 
-1. **Protéger les données (n8n, ≈ 30 min)** : authentification sur le serveur MCP qui lit la boîte Gmail de Lucie (T19) ; Lemwarm Delete coupé ou empêché de supprimer une fiche liée à un deal (T20) ; push Nurturing sans les clients payants, ou coupé (T21).
-2. **Préparer Attio (≈ 20 min, Yacin)** : créer les deux champs et les cinq vues de la Partie 2 ; mettre Lucie en owner dans le workflow Attio qui crée les deals au statut Interested ; archiver `owner_7` et réassigner à Lucie les deals du siège de Samuel.
+1. **Protéger les données (n8n, ≈ 30 min)** : authentification sur le serveur MCP qui lit la boîte Gmail de Lucie (T19) ; Lemwarm Delete coupé ou empêché de supprimer une fiche liée à un deal (T20) ; ~~push Nurturing sans les clients payants, ou coupé (T21)~~ retiré le 20/10. **État au 20/10** : Lemwarm Delete mesuré utile, correctif de garde-fous prêt, application bloquée par la protection de la session tant que Yacin n'a pas donné un feu vert explicite ; MCP de Lucie : deux réglages à faire par Yacin, dans cet ordre, connecteur claude.ai puis n8n (FUNNEL §7-25).
+2. **Préparer Attio (≈ 20 min, Yacin)** : créer les deux champs et les cinq vues de la Partie 2 ; mettre Lucie en owner dans le workflow Attio qui crée les deals au statut Interested ; archiver `owner_7` et réassigner à Lucie les deals du siège de Samuel. **Question de Yacin (20/10) : faisable à 100 % sans lui ?** Pas tel quel : le MCP Attio ne crée ni champ ni vue et ne modifie pas les workflows Attio. Variante proposée, faisable à 100 % par Claude : une tâche Attio datée par deal ouvert, assignée à Lucie, qui porte la prochaine action (la page Tâches d'Attio, triée par échéance, sert de vue des actions du jour et des retards), `next_step_description` gardé pour le détail, réassignation à Lucie des deals du siège de Samuel et clôture des tâches automatiques au 29/04/2025. `owner_7` reste en place, il ne gêne pas. Recommandation : les champs et les vues, ≈ 15 min une seule fois, toi ou Lucie, avec une checklist ; ils sont plus simples à tenir sans erreur par `crm-sync` (une écriture par deal, contre trois appels pour remplacer une tâche, et aucune confusion avec les tâches de Lucie ou du workflow Attio). Choix de Yacin attendu.
 3. **Remettre les deals à jour (≈ 1 h 30, Lucie + Yacin)** : migration M1 à M8 de la Partie 2 (payants en Deal Won, deals manquants, alignements, une date et une prochaine action sur chaque deal ouvert) ; clôturer la demande Keobiz.
 4. **Corriger `/sales-ops`** : T4, T5, T6, T7, T9, T11, T12, T13, T14, T15, T16, T18, routine 7 jours sur 7, Gmail de Yacin. Diff relu par Yacin, un run de test, puis `/sales-ops 30`.
 5. **Contrôle hebdo (T17)** : si validé.
