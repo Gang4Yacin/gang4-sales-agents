@@ -332,7 +332,7 @@ Lecture complète le 19/10 via l'API n8n (94 workflows lus et contre-vérifiés)
 
 | Commande / agent | Fréquence | Lit | Écrit | État |
 |---|---|---|---|---|
-| `/sales-ops` (`email-expert` + `meeting-expert` → `crm-sync` → `sales-ops-notifier`) | ~17:46 UTC du lundi au vendredi (103 runs depuis le 25/05/2026, 4 en erreur) ; 7 j/7 voulu (20/10), à régler par Yacin dans la routine | Gmail Samuel+Lucie, touches Gmail Yacin, inbox LinkedIn Lemlist, Calendar, Claap, Drive, Fireflies, Attio, Supabase (abonnements, factures Stripe) | Attio (deals, stages, Balle / date / next step, statut client, owner, notes `- auto`, tâches automatiques closes), `sales.*`, Slack `#sales-ops` | **actif**, règles du 20/10 |
+| `/sales-ops` (`email-expert` + `meeting-expert` → `crm-sync` → `sales-ops-notifier`) | ~17:46 UTC tous les jours depuis le 20/10 (planning changé par Yacin ; auparavant du lundi au vendredi, 103 runs depuis le 25/05/2026, 4 en erreur) | Gmail Samuel+Lucie, touches Gmail Yacin, inbox LinkedIn Lemlist, Calendar, Claap, Drive, Fireflies, Attio, Supabase (abonnements, factures Stripe) | Attio (deals, stages, Balle / date / next step, statut client, owner, notes `- auto`, tâches automatiques closes), `sales.*`, Slack `#sales-ops` | **actif**, règles du 20/10 |
 | `/sales-strategist` | hebdo (12 runs, dernier 22/06/2026) | Attio + Supabase | `sales.strategic_recommendations`, Slack `#sales-strategist` | dormant (160 recos `open/surfaced` obsolètes) |
 | `head-of-sales` | — | — | `sales.run_log` (4 runs en mai) | abandonné |
 | agent CS (`cs.*`) | — | — | — | dormant (1 run) |
@@ -441,6 +441,14 @@ Lecture complète le 19/10 via l'API n8n (94 workflows lus et contre-vérifiés)
 34. **Clients payés par facture, sans abonnement** : ENDRO (facture du 06/10 encore ouverte) et Mium lab (variable mensuel) paient par factures Stripe sans abonnement ; Aloe Paris a payé une facture unique le 13/10. Une règle fondée sur `OrganisationSubscription` seule les voit comme non clients : lire aussi `stripe.invoices` (étape 4).
 35. **Paiement en échec** : l'abonnement Partnership Ads de Hello Beauties, l'agence de Mademoiselle Confettis, est en `past_due` depuis le 18/10. Décision de Yacin (20/10) : un paiement en échec ne change pas le statut client (règle écrite dans `crm-sync` §4b).
 36. **Fiches Attio en double** : Bene Bono a deux fiches, `benebono.fr` (créée par la synchro email, sans deal) et `benebono.co` (Deal Won) ; ATM Gaming aussi (`atmgaming.eu` avec Deal Won, `atmgaming.fr` sans deal). `/sales-ops` pointe sur la bonne fiche (correspondance dans `sales.processed_items`) ; la fusion reste un geste humain dans Attio. Autres doublons repérés au premier run du 20/10 : Belveo (`belveo.com` porte le deal Nurturing, `belveo.fr` le contact du RDV du 12/11), Terravita (fiche `terravitagroup.com` sans nom à côté de Terravita.fr), Horace (`horace.com` sans deal, `horace.co` porte le Deal Lost). **Résolu le 20/10 (soir)** : les 5 paires fusionnées par l'API Attio (fiche avec deal en principale), nouvelles fiches avec les deux domaines et tous les contacts ; correspondance `sales.processed_items` et 3 lignes `growth_company.attio_id` (Bene Bono, Terravita.fr, Horace) mises à jour vers les nouveaux identifiants.
+
+    **Nouveaux doublons repérés au rattrapage de 30 jours, non fusionnés** (la fiche citée en premier porte le deal) :
+    - Parfums Molinard : `molinard.com` / `molinard.fr` ;
+    - Gourmandiz : `gourmandiz.co` / `gourmandiz.eu`, sans nom ;
+    - Beem Energy : `beemenergy.fr` / `beemenergy.com` ;
+    - Madura : `madura.com` / `madura.fr` ;
+    - Tikamoon : la fiche du deal et celle du contact Vincent Pillerel ;
+    - HomeExchange : `homeexchange.fr`, cliente / `homeexchange.com`, Hors ICP.
 37. **Hello Beauties sans fiche à son nom** : le premier run de la réconciliation l'a rattachée, avec Mademoiselle Confettis, à la fiche Stargate Capital (`5456a20a…`, Customer, Deal Won « Mademoiselle Confettis »). Paiement en échec depuis le 18/10, dernier paiement le 23/09.
 38. **Circular et En Cavale** : `LOST` dans l'Admin mais abonnement encore actif (verdict `conflit` : signalé, rien écrit). Yacin (20/10) : ces abonnements se terminent bientôt, la réconciliation les passera alors en churn.
 
@@ -641,6 +649,7 @@ Comparer les ids aux workflows de §5.1. Le canal `#n8n-errors` donne la même i
 
 | Date | Auteur | Changement |
 |---|---|---|
+| 2026-10-20 | Claude (session Yacin) | `/sales-ops 30` terminé (run `111641f7`, clos à 23:37 UTC, repris après un redémarrage du conteneur) : 1 deal créé (Beem Energy, Prospect identified), 17 notes mensuelles, 2 contacts créés et 5 rattachés à leur deal, 2 ICP (Beem Energy Medium Ecommerce, Dougs Hors ICP), aucun stage changé, réconciliation conforme, 0 erreur ; cursor `lemlist/team` créé. Écart 36 : 6 nouveaux doublons signalés. Routine `/sales-ops` désormais 7 j/7 (planning changé par Yacin) : §5 et `sales-ops.md` à jour. |
 | 2026-10-20 | Claude (session Yacin) | Rattrapage `/sales-ops 30` (run `111641f7`) : les 5 experts ont tourné (3 tranches emails, 2 tranches meetings, aucune source manquante) ; écarts 39 à 46 ajoutés depuis leurs remontées (démos annulées invisibles, agendas de Lucie et d'Alice vides, séquence envoyée à un client, remplaçants perdus, signaux de churn sans destinataire, Claap imparfait, délivrabilité, warm-up non étiqueté) et 4 propositions au backlog §10. `email-expert` exclut aussi le warm-up par le sujet ; la clôture de `crm-sync` (§8) ne remet plus `run_log.error` à null, pour garder la trace des sources manquantes. |
 | 2026-10-20 | Claude (session Yacin) | Étape 3 appliquée (`docs/MIGRATION-ATTIO-2026-10-20.md` §8) : nouvelle règle client = au moins un abonnement actif, tout produit ; agences hors pipeline (liste « Agencies ») ; écarts 16 et 17 résolus, 18 en partie ; écarts 34 et 35 ajoutés. |
 | 2026-10-20 | Claude (session Yacin) | Étape 3 : proposition de migration des 62 deals ouverts rédigée (`docs/MIGRATION-ATTIO-2026-10-20.md`), non appliquée. Constats nouveaux : 9 clients payants sans deal dont Kimo Sofa, abonnement Hello Beauties en défaut de paiement depuis le 18/10, point Tikamoon du 16/10 refusé, 23 contacts d'autres marques sur la fiche Même Cosmetics. |
