@@ -136,8 +136,33 @@ Et **Magimix** : Solène Fort s'est dite intéressée le 25/02, sans deal créé
 2. Chaque changement est consigné dans le journal ci-dessous, avec la valeur d'avant pour pouvoir revenir en arrière.
 3. Bilan à Yacin : ce qui a été fait, ce qui a échoué, ce qui reste.
 
+## 8. Appliqué le 20/10, après le « go migration » de Yacin
+
+**Décisions de Yacin sur les points à trancher**
+- Règle générale : une marque qui a **au moins un abonnement actif, quel que soit le produit**, est cliente. Cut by Fred, qui paie Social Proof, passe donc en Deal Won.
+- Les **agences** sont traitées à part : Coudac et We Love Digital sortent du pipeline des marques (Archived) ; Coudac rejoint la liste Attio « Agencies », où figuraient déjà Reach et We Love Digital. We Love Digital attend toujours une réponse à son message du 22/09.
+- **Aloe Paris** a payé une facture le 13/10, mais ne continue pas : deal en Deal Won, société en `Lost`.
+- **Deejo** est en cours d'onboarding : son deal revient de Deal Won à Meta Connected, balle Gang4, 21/10.
+- **ENDRO** n'a pas d'abonnement Stripe mais paie par factures : quatre factures payées jusqu'au 02/09, celle du 06/10 est encore ouverte. Le deal reste Deal Won.
+- **Mium lab** paie un variable chaque mois, par factures : douze payées, dont la dernière le 06/10. Le deal reste Deal Won.
+- **Réjeanne** est perdue : dernière facture payée le 17/04. Le deal reste Deal Won pour l'historique et la société passe en `Lost`.
+- **Poppins** passe en Deal Lost · No more contact et **Orus** n'a pas de deal, comme proposé.
+
+**Ce qui a été écrit**
+- **Deals ouverts** : 62 deals mis à jour, plus Deejo. Les 36 deals ouverts du pipeline ont maintenant une balle, une date, une action courte et Lucie comme owner : balle chez Gang4 pour 14, chez le prospect pour 18, rendez-vous calé pour 4. 29 actions sont dues le 21/10.
+- **Deal Won** : 15 deals ouverts passent en Deal Won, soit les 13 prévus plus Cut by Fred et Aloe Paris. 11 deals sont créés directement en Deal Won, avec une note « Arrivé hors funnel » : AlloVoisins, Avatacar, Boku, Fempo, HomeExchange, Kimo Sofa, May, Ôdass Paris, WWWatch, et, avec la nouvelle règle, Fleurus Presse et Tediber, qui paient Social Proof. 7 sociétés sont créées pour ces deals, les 4 autres existaient déjà.
+- **Magimix** : deal créé en Prospect identified, balle Gang4, 21/10.
+- **Fermetures** : 9 deals en Archived, dont les deux agences, 1 en Hors ICP (Célims) et 3 en Deal Lost avec leur raison : Aroma-Zone, Ultra Premium Direct et Poppins. Les trois tâches « Add Lost Reason » que le workflow Attio a créées pour eux sont fermées.
+- **Sociétés** : 19 statuts changés. Les sociétés clientes passent en `Customer` ; Caats, Oma & Me, Pomponne, Réjeanne et Aloe Paris passent en `Lost`.
+- **Contacts** : les 23 contacts d'autres marques rattachés à Même Cosmetics sont replacés sur leur société, qui existait déjà dans chaque cas. Théo Barroso, Nathan H. et Baptiste sont ajoutés aux deals Gourmandiz, MB Heritage et Primal Supplements. Novoma est relié à sa société.
+- **Supabase** : la demande de batch Keobiz du 24/09 est clôturée (`decision = rejected`).
+- **Écarts constatés au passage** : la vente de Wecasa Wellness et celle d'ATM Gaming ES sont rattachées aux deals Wecasa et Atm Gaming existants. Les comptes Gang4 et « test integration » sont exclus. Sur les 36 Deal Lost, 26 n'ont toujours pas de raison : ce sont des deals anciens, hors périmètre de la migration.
+
+Les valeurs d'avant de chaque modification sont gardées dans un journal hors repo, avec les identifiants Attio. Cela permet de revenir en arrière ligne par ligne.
+
 ## Journal
 
 | Date | Auteur | Changement |
 |---|---|---|
 | 2026-10-20 | Claude (session Yacin) | Proposition rédigée, non appliquée. |
+| 2026-10-20 | Claude (session Yacin) | Migration appliquée après le « go » de Yacin, avec ses décisions (§8). |
