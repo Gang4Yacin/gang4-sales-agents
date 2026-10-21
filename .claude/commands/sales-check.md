@@ -89,8 +89,8 @@ from public."ProspectRelanceCandidate"
 where status = 'a_relancer' and (snooze_until is null or snooze_until < now())
 order by case_type, priority_rank nulls last;
 ```
-- `a_toi_de_repondre` : ne te fie pas au classement de n8n, qui ignore les réponses envoyées depuis
-  l'inbox Lemlist (18 faux positifs sur 23 au 21/10). Garde un cas seulement si aucune touche sortante
+- `a_toi_de_repondre` : ne te fie pas au classement de n8n, qui compare au jour près et ignore les
+  réponses envoyées le jour même (18 faux positifs sur 23 au 21/10, FUNNEL §7-47). Garde un cas seulement si aucune touche sortante
   (toutes sources, `lemlist` compris) ne suit le dernier message entrant, et si ce message a plus de 2
   jours :
   ```sql
