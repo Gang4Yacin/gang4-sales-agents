@@ -170,5 +170,11 @@ Puis présente à l'utilisateur le message posté et son lien.
 - Jamais de silence : un contrôle qui n'a pas pu tourner apparaît en « Non vérifié ».
 
 ## Planification
-Tâche planifiée « Sales Check hebdo » : chaque vendredi matin (heure de Paris), dans une nouvelle
-session, avec les connecteurs Supabase, Attio, Slack, n8n et Lemlist.
+
+Routine claude.ai « Sales Check hebdo », à créer dans l'interface des routines : une routine créée par un
+agent n'emporte ni le repo ni les connecteurs. Elle se règle comme « Sales Ops daily » :
+- prompt « Lance /sales-check » ;
+- chaque vendredi à 8:44, heure de Paris ;
+- même repo `gang4-sales-agents` et mêmes connecteurs, au minimum Supabase et Attio ;
+- pour les erreurs n8n (C3), le connecteur n8n ou la variable `N8N_API_KEY` dans l'environnement ;
+  sans l'un ni l'autre, C3 apparaît en « Non vérifié ».
