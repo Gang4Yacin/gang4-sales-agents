@@ -118,6 +118,13 @@ where run_id = (select id from sales.run_log order by started_at desc limit 1)
 order by status, target_record_id;
 ```
 
+## Contrôle hebdo
+
+- **`/sales-check`** (`.claude/commands/sales-check.md`) : lecture seule, chaque vendredi matin. Fait
+  l'état des lieux du funnel (santé de `/sales-ops`, automatisations et erreurs n8n, paiements comparés
+  à Attio, réponses et démos sans suite, lancements Growth, hygiène du pipeline). Poste un seul message
+  « Contrôles hebdo » dans `#sales-ops` et trace le run dans `sales.run_log` (`agent = 'sales-check'`).
+
 ## En pause
 
 - **`/sales-strategist`** (analyse stratégique hebdo, lecture seule) — laissé **dormant** pour se
@@ -129,6 +136,7 @@ order by status, target_record_id;
 - ✅ Activation écriture Attio (apply mode + audit log)
 - ✅ Recentrage `/sales-ops` : règle de deal stricte, suppression des rappels/follow-ups, notif courte
 - ✅ Claap = source primaire des résumés meetings (bascule progressive ; Drive/Gemini puis Fireflies en fallback)
+- ✅ Contrôle hebdo `/sales-check` (21/10)
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
 - ⏳ Gmail Yacin via n8n
 - ⏳ Reprise du `sales-strategist`
