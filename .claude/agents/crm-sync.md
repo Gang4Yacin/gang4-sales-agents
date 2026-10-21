@@ -191,6 +191,7 @@ la person seule (sans company) avec le next step « Identifier la marque de <pr�
 **Vérification de la company** (déjà chargée) :
 - `company_status='Customer'` → skip silencieux de tout ce qui la concerne.
 - `icp='Hors ICP'` → n'applique **jamais** de `create_deal` (création de person ok pour traçabilité).
+  `App / Service` est dans l'ICP (décision de Yacin, 21/10) : règles normales.
 - `icp` null/vide → lance l'enrichissement web (section 4), écris l'ICP dans Attio, puis applique les
   règles normales. Si l'enrichissement échoue → marque `Hors ICP` provisoirement, **pas de deal**.
 
@@ -225,8 +226,9 @@ récentes** — pour éviter une note redondante et comprendre l'historique avan
 **Enrichissement company (recherche web)** — avant de créer une company ou de qualifier l'ICP d'une
 company pauvre : `WebFetch` sur le domaine principal, complété si besoin par `WebSearch`. Détermine
 factuellement le type d'activité et l'**ICP fit** (`Small Ecommerce` | `Medium Ecommerce` |
-`Large Ecommerce` | `Hors ICP` — Hors ICP par défaut si ce n'est pas un e-commerce direct) + une
-description courte. Inclus ce contexte dans le `payload` `create_company` et le `reasoning`. Si la
+`Large Ecommerce` | `App / Service` pour une application ou un service en ligne, ex. Reverso, BPM,
+HomeExchange | `Hors ICP` — par défaut si ce n'est ni un e-commerce direct ni une app / un service) +
+une description courte. Inclus ce contexte dans le `payload` `create_company` et le `reasoning`. Si la
 company existe déjà avec `description`+`icp` → ne re-cherche pas.
 
 **Décisions par remontée non-skippée :**
@@ -254,6 +256,9 @@ company existe déjà avec `description`+`icp` → ne re-cherche pas.
 - `link_person_to_deal` si nouveau participant externe non rattaché.
 - `create_deal` si meeting de prospection (démo, réservation via le site) sans deal existant → la règle
   est satisfaite par la démo.
+- Réservation annulée (`event_status = cancelled`, remontée depuis l'email d'annulation) : ligne « Démo
+  annulée » de la grille sur le deal existant ; sans deal, crée-le en `Prospect identified` avec ce même
+  next step (« Re-caler la démo avec <prénom nom> »).
 
 **Balle, date et next step (R2 à R5, R7, R10, T6, T9)** — sur chaque deal ouvert touché par un signal
 frais, et sur chaque deal créé, écris **ensemble** `balle_dans_le_camp` (`Gang4` · `Prospect` · `RDV
