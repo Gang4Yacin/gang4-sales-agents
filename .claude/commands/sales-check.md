@@ -79,7 +79,8 @@ marque, lis sa company Attio (`attio_company_id`) et le deal de cette company, p
 - `meta_no_sub` → deal ouvert au moins en `Meta Connected` (un deal fermé n'est pas un écart) ;
 - marque sans `attio_company_id` → « non rattachée ».
 `conflit`, `past_due` et `invoice_pending` ne sont jamais des écarts (décisions de Yacin, déjà signalées
-par `/sales-ops`). Un écart ici = ce que la réconciliation quotidienne aurait dû corriger.
+par `/sales-ops`), pas plus qu'un `won` par facture seule sur une company `Lost` : c'est une facture de
+rattrapage, le client reste perdu (Yacin, 21/10). Un écart ici = ce que la réconciliation quotidienne aurait dû corriger.
 
 ### C5. Réponses et démos sans suite (§8-C, §8-D)
 ```sql
