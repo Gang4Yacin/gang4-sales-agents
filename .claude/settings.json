@@ -9,6 +9,8 @@
       "mcp__Attio__create-note",
       "mcp__Attio__update-note",
       "mcp__Attio__update-task",
+      "mcp__n8n",
+      "mcp__n8n__*",
       "mcp__1ba71441-716c-448a-80a0-ab402ac0b5a1__*",
       "mcp__1f44ba85-c021-49ad-98e4-9452b16978e4__*",
       "mcp__0dd48a09-96fd-4ca6-847d-34663b92d3f8__*",
