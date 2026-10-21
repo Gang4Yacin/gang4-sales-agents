@@ -56,7 +56,7 @@ Dans **un seul message**, fais 2 appels Agent en parallèle :
   l'inbox Lemlist), format JSON attendu (un objet par source).
 - `subagent_type='meeting-expert'` — brief : fenêtre, sources (**Claap en premier** — workspace Gang4,
   bascule en cours — puis Calendar + Drive + Calendly si dispo + Fireflies en dernier fallback),
-  calendriers attendus (samuel@, lucie.bonnet@, yacin@, alice.morel@gang4.io), format JSON attendu.
+  calendriers attendus (samuel@, lucie.bonnet@, yacin@gang4.io), format JSON attendu.
 
 Chacun retourne un bloc JSON normalisé.
 
@@ -68,7 +68,7 @@ Un run « réussi » ne doit pas cacher une source muette. Sources attendues :
 | Gmail samuel@gang4.io, Gmail lucie.bonnet@gang4.io | `available: false`, MCP absent, ou `raw_threads_scanned = 0` sur une fenêtre qui contient un jour ouvré |
 | Touches Gmail yacin@gang4.io (`ProspectTouch`) | requête en erreur, ou aucune touche `gmail:yacin` ingérée depuis 96 h |
 | Inbox LinkedIn Lemlist | MCP Lemlist absent, erreur, ou `linkedinSync` ni `synced` ni `recent` |
-| Calendriers samuel@, lucie.bonnet@, yacin@, alice.morel@gang4.io | présent dans `calendars_missing` |
+| Calendriers samuel@, lucie.bonnet@, yacin@gang4.io (Alice n'est plus attendue depuis le 21/10) | présent dans `calendars_missing` |
 | Claap | MCP absent, ou plus de 50 % des démos passées sans compte rendu (`transcripts_missing`) |
 
 Fraîcheur des tables n8n dont dépendent les touches (FUNNEL §8-J, extrait) :

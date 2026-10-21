@@ -217,7 +217,7 @@ Lot 2 = la semaine suivante. Lot 3 = quand Growth le demande.
 
 #### T16 — Sources attendues non vérifiées (transverse)
 - **Preuve** : `sales-ops.md` ne liste pas les sources attendues ; les cursors `fireflies` et `drive_doc` sont figés au 28/09 sans que le run soit en erreur ; un calendrier qui cesse d'être partagé passerait inaperçu.
-- **Correction retenue** : (sales-ops, S) dans `sales-ops.md`, inscrire la liste attendue (calendriers samuel@, lucie.bonnet@, yacin@, alice.morel@ à confirmer ; Gmail samuel@, lucie.bonnet@, yacin@ une fois branché ; Claap) et écrire `run_log.error` quand une source attendue renvoie 0 item, un MCP est indisponible ou plus de 50 % des transcripts manquent. Le notifier poste alors l'alerte courte prévue.
+- **Correction retenue** : (sales-ops, S) dans `sales-ops.md`, inscrire la liste attendue (calendriers samuel@, lucie.bonnet@, yacin@ (alice.morel@ retiré le 21/10, décision de Yacin) ; Gmail samuel@, lucie.bonnet@, yacin@ une fois branché ; Claap) et écrire `run_log.error` quand une source attendue renvoie 0 item, un MCP est indisponible ou plus de 50 % des transcripts manquent. Le notifier poste alors l'alerte courte prévue.
 
 #### T17 — Aucun contrôle périodique des écarts (transverse)
 - **Correction retenue** : (sales-ops, M) une commande `/sales-check` en lecture seule, hebdomadaire (vendredi), qui rejoue les requêtes §8 A, C, D, F, I (+ Hygiène Attio) et poste un seul message « Contrôles hebdo » dans #sales-ops : N écarts, une ligne chacun, lien Attio. Pas de rappel, pas de CTA ; c'est un état des lieux. Remplace avantageusement le strategist dormant pour ce besoin.
