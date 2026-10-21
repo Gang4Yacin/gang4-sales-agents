@@ -125,6 +125,14 @@ order by status, target_record_id;
   à Attio, réponses et démos sans suite, lancements Growth, hygiène du pipeline). Poste un seul message
   « Contrôles hebdo » dans `#sales-ops` et trace le run dans `sales.run_log` (`agent = 'sales-check'`).
 
+## Top 3 du jour
+
+- **`/sales-focus`** (`.claude/commands/sales-focus.md`) : chaque matin à 8:30 (Paris). Choisit les 3 actions
+  sales / growth qui feront le plus avancer le chiffre et le pipeline (argent qui attend, prospect qui attend
+  Gang4, rendez-vous, levier commun à plusieurs deals, machine en panne), vérifie les derniers emails, puis
+  écrit le calcul dans Supabase (`SalesFocusRun`, `SalesFocusAction`). La page admin `/admin/sales-actions`
+  l'affiche au-dessus de la réplique de la vue Attio « Aujourd'hui », avec une vérification à date par action.
+
 ## En pause
 
 - **`/sales-strategist`** (analyse stratégique hebdo, lecture seule) — laissé **dormant** pour se
@@ -137,6 +145,7 @@ order by status, target_record_id;
 - ✅ Recentrage `/sales-ops` : règle de deal stricte, suppression des rappels/follow-ups, notif courte
 - ✅ Claap = source primaire des résumés meetings (bascule progressive ; Drive/Gemini puis Fireflies en fallback)
 - ✅ Contrôle hebdo `/sales-check` (21/10)
+- ✅ Top 3 du jour `/sales-focus` (21/10) ; page admin `/admin/sales-actions` en construction
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
 - ⏳ Gmail Yacin via n8n
 - ⏳ Reprise du `sales-strategist`
