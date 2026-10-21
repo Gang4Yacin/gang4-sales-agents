@@ -6,6 +6,8 @@ vue 360° du funnel (étapes, signaux de vérité par système, correspondance d
 Supabase / Stripe, automatisations n8n, requêtes de contrôle, écarts connus). Pour le détail de ce que fait
 chaque workflow n8n (déclencheur, écritures, canal Slack, alerte d'erreur, santé), lire **`docs/N8N.md`**.
 La clé API n8n est dans la variable d'environnement `N8N_API_KEY`, la clé API Attio (création de champs et d'options, que le connecteur MCP ne sait pas faire) dans `ATTIO_API_KEY` ; ne jamais les copier dans le repo.
+n8n se modifie directement (API ou outils MCP n8n), sans demander à Yacin (décision du 21/10) ; les outils n8n sont
+autorisés dans `.claude/settings.json`.
 
 Quand une information du funnel change (nouvel outil, workflow n8n, stage Attio, règle d'agent),
 mettre à jour `docs/FUNNEL.md` et son journal (§12), et `docs/N8N.md` si un workflow n8n change
