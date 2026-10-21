@@ -79,7 +79,8 @@ marque, lis sa company Attio (`attio_company_id`) et le deal de cette company, p
 - `meta_no_sub` → deal ouvert au moins en `Meta Connected` (un deal fermé n'est pas un écart) ;
 - marque sans `attio_company_id` → « non rattachée ».
 `conflit`, `past_due` et `invoice_pending` ne sont jamais des écarts (décisions de Yacin, déjà signalées
-par `/sales-ops`). Un écart ici = ce que la réconciliation quotidienne aurait dû corriger.
+par `/sales-ops`), pas plus qu'un `won` par facture seule sur une company `Lost` : c'est une facture de
+rattrapage, le client reste perdu (Yacin, 21/10). Un écart ici = ce que la réconciliation quotidienne aurait dû corriger.
 
 ### C5. Réponses et démos sans suite (§8-C, §8-D)
 ```sql
@@ -88,10 +89,26 @@ from public."ProspectRelanceCandidate"
 where status = 'a_relancer' and (snooze_until is null or snooze_until < now())
 order by case_type, priority_rank nulls last;
 ```
-- `a_toi_de_repondre` dont le dernier message entrant a plus de 2 jours : une ligne par société (le
-  prospect attend Gang4), la plus récente d'abord, « sans deal » si `deal_stage` est vide. Écarte les
-  agences (liste Attio « Agencies »), les domaines persos et les deals fermés (`Deal Won`, `Deal Lost`,
-  `Hors ICP`, `Archived`). Après les 5 premières : « + N autres, dont M de plus de 90 jours » ;
+- `a_toi_de_repondre` : ne te fie pas au classement de n8n, qui ignore les réponses envoyées depuis
+  l'inbox Lemlist (18 faux positifs sur 23 au 21/10). Garde un cas seulement si aucune touche sortante
+  (toutes sources, `lemlist` compris) ne suit le dernier message entrant, et si ce message a plus de 2
+  jours :
+  ```sql
+  select c.prospect_name, coalesce(c.company_name, c.company_domain) as societe, c.deal_stage, c.last_inbound_at
+  from public."ProspectRelanceCandidate" c
+  where c.status = 'a_relancer' and c.case_type = 'a_toi_de_repondre'
+    and (c.snooze_until is null or c.snooze_until < now())
+    and c.last_inbound_at < now() - interval '2 days'
+    and not exists (select 1 from public."ProspectTouch" t
+                    where lower(t.prospect_email) = lower(c.prospect_email)
+                      and t.direction = 'outbound' and t.occurred_at > c.last_inbound_at)
+  order by c.last_inbound_at desc;
+  ```
+  Lis le dernier message entrant (`ProspectTouch.snippet`) : un refus, un remerciement ou un « je vous
+  recontacte » n'attend pas de réponse, ce n'est pas un écart. Une ligne par société, la plus récente
+  d'abord, « sans deal » si `deal_stage` est vide ; écarte les agences (liste Attio « Agencies »), les
+  domaines persos et les deals fermés (`Deal Won`, `Deal Lost`, `Hors ICP`, `Archived`). Après les 5
+  premières : « + N autres, dont M de plus de 90 jours » ;
 - `demo_sans_suite` et `conversation_retombee` : une ligne de synthèse chacun (nombre, les 3 plus
   prioritaires) ;
 - démos sans batch : les deux requêtes de §8-D, une ligne par démo.
