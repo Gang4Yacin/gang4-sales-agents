@@ -92,7 +92,22 @@ vue deux fois devient une règle : applique-la partout et cite-la dans `resume`,
 - **Agenda** : rendez-vous externes des 48 prochaines heures.
 - **Comptes rendus** : Claap (workspace Gang4) pour les démos et points récents, utile pour les récaps.
 
+Deux appels ont échoué le 22/10 ; voici leur forme (essayée le 22/10) :
+- Gmail de Lucie (`Get_many_messages_in_Lucie_Gmail`) : les huit paramètres sont obligatoires, par exemple
+  `{"q": "newer_than:2d -label:lemwarmup", "limit": 25, "returnAll": false, "simple": true, "readStatus": "both",
+  "receivedAfter": "<il y a 48 h, ISO>", "receivedBefore": "<maintenant, ISO>", "sender": ""}`.
+- Google Calendar (`list_events`) : `calendarId` = l'adresse de l'agenda (`samuel@gang4.io`, …), `startTime` et
+  `endTime` à l'heure de Paris sans `Z` ni décalage (`2026-10-23T08:30:00`). `timeMin` et `timeMax` n'existent pas.
+
+Un appel en erreur se corrige et se relance une fois ; une source restée muette est citée dans `resume`.
+
 ## Étape 3 — Candidats (un par deal)
+- **Balle Gang4 à échéance**, le point de départ : chaque deal ouvert dont `balle_dans_le_camp` vaut `Gang4` et dont
+  `prochaine_action_le` est aujourd'hui, passée ou vide. Attio dit déjà que Gang4 doit agir, et
+  `next_step_description` dit quoi : chacun est candidat d'office, et chacun reçoit un verdict, retenu ou écarté avec
+  sa raison (étape 8 et `resume`). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
+  oublié Goodvest (Aurélie Briche-Heinry absente à la démo du 22/09, à recaler), Hindbag et Circle Sportswear
+  (relances).
 - **Argent qui attend** : go donné et Meta connecté sans abonnement avec un signal récent, facture
   ouverte, go sans accès Business Manager.
 - **Prospect qui attend Gang4** : son dernier message appelle une réponse, ou un livrable promis après un
@@ -192,7 +207,8 @@ from run, (values
 
 ## Étape 8 — Restituer
 Affiche les cartes en markdown court (rang, deal, pourquoi, je propose, objet de l'email), puis une ligne
-« + N autres candidats » avec les 2 ou 3 suivants en un mot chacun.
+« + N autres candidats » avec les 2 ou 3 suivants en un mot chacun, puis chaque deal Balle Gang4 à échéance non
+retenu, avec sa raison en quelques mots (la même liste va dans `resume`).
 
 ## Règles strictes
 - `N` cartes au plus (3 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
