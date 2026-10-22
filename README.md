@@ -130,8 +130,11 @@ order by status, target_record_id;
 - **`/sales-focus`** (`.claude/commands/sales-focus.md`) : chaque matin à 8:30 (Paris). Choisit les 3 deals où
   une action de Gang4 compte le plus aujourd'hui (un deal par carte), vérifie les derniers emails, et prépare
   pour chacun le contenu prêt : l'email à envoyer ou le document à produire. Le calcul va dans Supabase
-  (`SalesFocusRun`, `SalesFocusAction`). Sur la page admin `/admin/sales-actions`, « Valider » crée le
-  brouillon Gmail (ou le Google Doc) par le flow n8n « Préparer l'action » ; l'envoi reste manuel.
+  (`SalesFocusRun`, `SalesFocusAction`). Sur la page admin `/admin/sales-actions`, « Voir la source » montre
+  l'extrait au survol, l'email se modifie ou se réécrit sur consigne, et « Valider » crée le brouillon Gmail
+  (ou le Google Doc) par le flow n8n « Préparer l'action » ; l'envoi reste manuel.
+- **`docs/STYLE-EMAILS.md`** : la manière d'écrire de Gang4 (règles et situations), suivie par `/sales-focus`
+  avec les vrais envois de la même boîte et les corrections de Yacin gardées en base.
 
 ## En pause
 
@@ -145,7 +148,7 @@ order by status, target_record_id;
 - ✅ Recentrage `/sales-ops` : règle de deal stricte, suppression des rappels/follow-ups, notif courte
 - ✅ Claap = source primaire des résumés meetings (bascule progressive ; Drive/Gemini puis Fireflies en fallback)
 - ✅ Contrôle hebdo `/sales-check` (21/10)
-- ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10)
+- ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10), v3 avec source au survol, email modifiable ou réécrit sur consigne et guide de style (22/10)
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
 - ⏳ Gmail Yacin via n8n
 - ⏳ Reprise du `sales-strategist`
