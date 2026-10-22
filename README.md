@@ -129,7 +129,8 @@ order by status, target_record_id;
 
 - **`/sales-focus`** (`.claude/commands/sales-focus.md`) : chaque matin à 8:30 (Paris). Choisit les 3 deals où
   une action de Gang4 compte le plus aujourd'hui (un deal par carte), vérifie les derniers emails, et prépare
-  pour chacun le contenu prêt : l'email à envoyer ou le document à produire. Le calcul va dans Supabase
+  pour chacun le contenu prêt : l'email à envoyer, le document à produire (plan d'étude de cas, étude, script
+  d'appel) ou le plan d'action. Le calcul va dans Supabase
   (`SalesFocusRun`, `SalesFocusAction`). Sur la page admin `/admin/sales-actions`, « Voir la source » montre
   l'extrait au survol, l'email se modifie ou se réécrit sur consigne, et « Valider » crée le brouillon Gmail
   (ou le Google Doc) par le flow n8n « Préparer l'action » ; l'envoi reste manuel.

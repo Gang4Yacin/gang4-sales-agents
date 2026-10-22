@@ -43,7 +43,9 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 - **Lien d'agenda** : celui que l'expéditeur a envoyé en dernier.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
 - **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, un client, une fonctionnalité ou une
-  promesse vient d'un email, d'un compte rendu ou de la base. Sinon, il n'est pas dans l'email.
+  promesse vient d'un email, d'un compte rendu ou de la base. Sinon, il n'est pas dans l'email ; s'il est
+  indispensable (le prix d'une offre promise, par exemple), il reste marqué `[à compléter : …]` pour que Yacin le
+  remplisse.
 - **Fil** : réponse dans le fil (« Re: <objet du fil> ») dès qu'un fil existe avec la bonne personne. Nouveau fil
   seulement s'il n'y en a pas : après une démo réservée en ligne, le seul fil est souvent la confirmation.
 
@@ -55,9 +57,12 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 | **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase. | Recaler, avec le lien d'agenda. |
 | **Récap après une démo ou un appel** | Merci en une phrase. Ce qui a été dit, tel que dans le compte rendu : besoins, prochaines étapes, qui fait quoi. | La prochaine étape, datée si elle l'a été. |
 | **Gang4 a besoin d'informations** (accès, marques visées, éléments pour lancer) | Pourquoi on en a besoin, en une phrase. | La liste courte de ce qu'il faut, ou un court appel pour le faire ensemble. |
-| **Le prospect pose une question** | La réponse d'abord, précise, avec ce qu'on sait. Si elle demande un chiffre qu'on n'a pas, la carte ne propose pas d'email et la routine le note dans `resume`. | Seulement si elle fait avancer le deal. |
+| **Le prospect pose une question** | La réponse d'abord, précise, avec ce qu'on sait. Si elle demande un chiffre qu'on n'a pas encore (cas chiffré, étude de cas), la carte propose d'abord le plan de l'étude (`/sales-focus`, étape 6). | Seulement si elle fait avancer le deal. |
 | **Mauvais contact, qui renvoie vers une autre personne** | La carte prépare l'email à la bonne personne, dans un nouveau fil. Il cite qui l'a recommandée (« <Prénom> m'a conseillé de t'écrire »), puis donne le contexte en deux phrases. Le merci à la personne qui a redirigé tient en une ligne dans son fil. Elle n'est en copie que si les envois passés le font. | Un premier échange. |
 | **Go donné, Meta à connecter ou accès Business Manager à donner** | Le go en une phrase (sa date), puis l'étape suivante précise et ce qu'elle débloque. | Donner l'accès, ou un court appel pour le faire ensemble. |
+| **Offre promise** | L'offre telle que discutée (compte rendu de la démo), avec les conditions réelles : offres déjà envoyées par la même boîte, modèle de facturation en base. Ce qui manque reste `[à compléter : …]`. | Un oui, ou un court appel pour la caler. |
+| **Références clients demandées** | Deux ou trois marques clientes du même secteur ou de la même taille, avec un résultat chiffré quand on l'a. Jamais leurs coordonnées : une mise en relation que l'équipe organise. | L'étape suivante (l'accès, le test). |
+| **Étude de cas à envoyer** | Le résultat clé en une phrase et pourquoi il répond à sa question. L'étude est jointe en PDF, à la main. | Un retour, ou un créneau. |
 | **Facture ouverte** | Factuel et neutre : facture, montant et date tels qu'en base, lien de paiement s'il existe. | Le règlement, ou la question qui le bloque. |
 | **Conversation chaude qui retombe** (intérêt clair, puis rien depuis 10 jours ou plus) | L'intérêt exprimé, avec ses mots à lui, puis l'étape suivante concrète. | Un créneau. |
 
