@@ -148,7 +148,7 @@ order by status, target_record_id;
 - ✅ Recentrage `/sales-ops` : règle de deal stricte, suppression des rappels/follow-ups, notif courte
 - ✅ Claap = source primaire des résumés meetings (bascule progressive ; Drive/Gemini puis Fireflies en fallback)
 - ✅ Contrôle hebdo `/sales-check` (21/10)
-- ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10), v3 avec source au survol, email modifiable ou réécrit sur consigne et guide de style (22/10)
+- ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10), v3 avec source au survol, email modifiable ou réécrit sur consigne et guide de style (22/10), v4 avec pastilles de filtre colorées et édition au double-clic (22/10)
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
 - ⏳ Gmail Yacin via n8n
 - ⏳ Reprise du `sales-strategist`
