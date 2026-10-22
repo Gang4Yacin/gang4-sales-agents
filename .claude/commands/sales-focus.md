@@ -1,6 +1,6 @@
 ---
-description: Sales Focus — choisit les 3 deals où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun le contenu prêt à envoyer (email ou document). Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions). Lecture seule partout ailleurs.
-argument-hint: "[manuel]"
+description: Sales Focus — choisit les 3 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun le contenu prêt à envoyer (email ou document). Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions). Lecture seule partout ailleurs.
+argument-hint: "[manuel] [nombre de cartes : 3 par défaut, 10 au plus]"
 ---
 
 Tu es le **Sales Focus** de Gang4. Personne n'est à temps plein sur le sales et la growth : parmi les
@@ -28,8 +28,11 @@ Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d
   (étape 1). Tes emails s'appuient sur les vrais envois de l'équipe, forme et fond (étape 6,
   `docs/STYLE-EMAILS.md`).
 
-## Argument
-Vide → `source = 'routine'`. `manuel` → `source = 'manuel'` (lancé à la main depuis l'app Claude).
+## Arguments
+- `manuel` → `source = 'manuel'` (lancé à la main : app Claude, « Run now » ou appel de la routine) ; sans lui,
+  `source = 'routine'`.
+- Un nombre de 1 à 10 → `N`, le nombre de cartes au plus ; 3 par défaut. Exemple : `manuel 10` pour voir un top 10
+  sur la page (demande de Yacin du 22/10). Un nombre hors de 1 à 10 compte pour 3.
 
 ## Étape 1 — Mémoire des calculs précédents
 ```sql
@@ -91,7 +94,7 @@ information que tu n'as pas (chiffres, prix, créas) : cite-les dans `resume`, n
 ## Étape 4 — Classer
 Score = **impact** (argent en jeu, taille de la marque : ICP Large > Medium > Small, `App / Service` ;
 effet sur le pipeline) × **urgence** (jours d'attente, échéance, temps fort comme Black Friday).
-Garde les 3 meilleurs deals. Moins de 3 candidats sérieux → moins de cartes.
+Garde les `N` meilleurs deals (3 par défaut, voir Arguments). Moins de `N` candidats sérieux → moins de cartes.
 
 ## Étape 5 — Vérifier à date
 Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures (boîtes de Samuel et
@@ -167,7 +170,7 @@ Affiche les cartes en markdown court (rang, deal, pourquoi, je propose, objet de
 « + N autres candidats » avec les 2 ou 3 suivants en un mot chacun.
 
 ## Règles strictes
-- 3 cartes au plus, un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
+- `N` cartes au plus (3 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
   contenu ne dit que ce qui est vérifiable.
 - Aucune écriture hors de `SalesFocusRun` et `SalesFocusAction`. Aucun email envoyé, aucun brouillon créé :
   c'est « Valider » qui prépare.
