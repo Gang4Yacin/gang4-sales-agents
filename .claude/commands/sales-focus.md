@@ -42,6 +42,7 @@ order by r.computed_at desc;
 - `faite` (validée, brouillon ou document préparé) : le deal ne revient qu'avec un fait nouveau postérieur
   à la préparation (réponse du prospect, rendez-vous, paiement).
 - `ouverte` sans geste : reste candidate, avec la même `cle` si c'est la même action.
+- Ignore les lignes de test (`cle` qui commence par `test:`).
 
 ## Étape 2 — Lire l'état
 - **Attio** (lecture) : les deals ouverts (`Prospect identified`, `Demo scheduled`, `Qualified`,
