@@ -48,19 +48,33 @@ order by r.computed_at desc;
   évite les propositions du même genre ailleurs.
 - `faite` (validée, brouillon ou document préparé) : le deal ne revient qu'avec un fait nouveau postérieur
   à la préparation (réponse du prospect, rendez-vous, paiement).
-- `ouverte` sans geste : reste candidate, avec la même `cle` si c'est la même action.
+- `ouverte` sans geste : reste candidate, avec la même `cle` si c'est la même action. Si Yacin a modifié la carte
+  (`contenu_initial` posé), tu reprends son contenu tel quel (étape 6) : ton calcul remplace le précédent sur la page
+  et effacerait ses changements.
 - Ignore les lignes de test (`cle` qui commence par `test:`).
 
-Puis les **corrections de Yacin** des 60 derniers jours : ses consignes de réécriture et l'écart entre ce que tu
-avais proposé (`contenu_initial`) et ce qui a été retenu (`contenu`).
+Les cartes du dernier calcul, encore ouvertes, que Yacin a modifiées (à la main ou sur consigne) :
 ```sql
-select a.deal_nom, r.computed_at::date as jour, a.statut,
-       (select string_agg(m->>'consigne', ' | ') from jsonb_array_elements(a.modifications) m
-         where m->>'consigne' is not null) as consignes,
-       a.contenu_initial->>'corps' as propose, a.contenu->>'corps' as retenu
-from public."SalesFocusAction" a join public."SalesFocusRun" r on r.id = a.run_id
-where a.contenu_initial is not null and r.computed_at > now() - interval '60 days' and a.cle not like 'test:%'
-order by r.computed_at desc
+select a.cle, a.deal_nom, a.contenu, a.contenu_initial, a.modifications
+from public."SalesFocusAction" a
+where a.run_id = (select id from public."SalesFocusRun" order by computed_at desc limit 1)
+  and a.statut = 'ouverte' and a.contenu_initial is not null and a.cle not like 'test:%';
+```
+
+Puis les **corrections de Yacin** des 60 derniers jours : ses consignes de réécriture et l'écart entre ce que tu
+avais proposé (`contenu_initial`) et ce qui a été retenu (`contenu`). Une carte reprise d'un calcul à l'autre n'y
+compte qu'une fois, dans sa dernière version.
+```sql
+select deal_nom, jour, statut, consignes, propose, retenu from (
+  select distinct on (a.cle, a.contenu_initial) a.deal_nom, r.computed_at::date as jour, a.statut,
+         (select string_agg(m->>'consigne', ' | ') from jsonb_array_elements(a.modifications) m
+           where m->>'consigne' is not null) as consignes,
+         a.contenu_initial->>'corps' as propose, a.contenu->>'corps' as retenu
+  from public."SalesFocusAction" a join public."SalesFocusRun" r on r.id = a.run_id
+  where a.contenu_initial is not null and r.computed_at > now() - interval '60 days' and a.cle not like 'test:%'
+  order by a.cle, a.contenu_initial, r.computed_at desc
+) c
+order by jour desc
 limit 20;
 ```
 Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même longueur visée. Une correction
@@ -103,6 +117,12 @@ carte par la candidate suivante. Exemple du 22/10 : Payfit écarté, Samuel avai
 9:43.
 
 ## Étape 6 — Préparer le contenu
+**Carte que Yacin a modifiée** (étape 1, même `cle`) : si l'étape 5 ne trouve rien de nouveau, reprends tels quels son
+`contenu`, son `contenu_initial` et ses `modifications` (étape 7), sans rien réécrire ; seuls `pourquoi` et `source`
+changent si un fait daté s'ajoute. Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
+écris un nouveau contenu, sans `contenu_initial` ni `modifications`, et dis-le dans `resume` : ses corrections restent
+des leçons (étape 1).
+
 **Email** (le cas courant), `contenu` =
 `{"type": "email", "boite": "samuel|lucie|yacin", "a": [...], "cc": [...], "objet": "...", "corps": "...", "gmail_thread_id": "..."}`
 - `boite` : la boîte qui porte la conversation (Samuel : connecteur Gmail ; Lucie : Gmail de Lucie ; Yacin
@@ -139,16 +159,21 @@ with run as (
   returning id
 )
 insert into public."SalesFocusAction"
-  (run_id, rang, titre, pourquoi, quoi_faire, attio_deal_id, deal_nom, source_url, source, contenu, cle,
-   attio_deal_ids, attio_company_ids, domaines)
+  (run_id, rang, titre, pourquoi, quoi_faire, attio_deal_id, deal_nom, source_url, source, contenu,
+   contenu_initial, modifications, cle, attio_deal_ids, attio_company_ids, domaines)
 select run.id, v.rang, v.titre, v.pourquoi, v.quoi_faire, v.deal, v.deal_nom, v.source_url, v.source::jsonb,
-       v.contenu::jsonb, v.cle, array[v.deal], array[v.company], v.domaines::text[]
+       v.contenu::jsonb, v.contenu_initial::jsonb, coalesce(v.modifications::jsonb, '[]'::jsonb), v.cle,
+       array[v.deal], array[v.company], v.domaines::text[]
 from run, (values
   (1, '<titre>', '<pourquoi>', '<je propose>', '<deal_id>', '<nom du deal>', '<company_id>', '<url>',
-   '<source json>', '<contenu json>', 'deal:<deal_id>:<verbe>', '{<domaine>}')
-  -- , (2, …), (3, …)
-) as v(rang, titre, pourquoi, quoi_faire, deal, deal_nom, company, source_url, source, contenu, cle, domaines);
+   '<source json>', '<contenu json>', null, null, 'deal:<deal_id>:<verbe>', '{<domaine>}')
+  -- , (2, …), jusqu'à N
+) as v(rang, titre, pourquoi, quoi_faire, deal, deal_nom, company, source_url, source, contenu, contenu_initial,
+       modifications, cle, domaines);
 ```
+- `rang` : de 1 à `N`, sans trou (la base refuse au-delà de 10).
+- `contenu_initial` et `modifications` : `null` pour une carte neuve ; pour une carte que Yacin a modifiée, ceux de
+  l'étape 1, tels quels (étape 6).
 - `titre` : verbe en tête, 80 caractères au plus.
 - `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui).
 - `quoi_faire` : ce que tu proposes, en une phrase de 160 caractères au plus.
