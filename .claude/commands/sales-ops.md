@@ -152,9 +152,10 @@ La routine « Sales Ops daily » doit lancer `/sales-ops` **tous les jours** à 
 (T18 : une réponse du samedi ne doit pas attendre le lundi) ; c'est le cas depuis le 20/10 (planning
 changé par Yacin dans l'interface des routines). Ses connecteurs incluent Lemlist
 (inbox LinkedIn, ajouté le 20/10) en plus de Gmail, Calendar, Drive, Claap, Fireflies, Calendly, Attio,
-Supabase, Slack et du Gmail de Lucie. Le Gmail de Yacin (connecteur personnalisé, nom conseillé « yacin-gmail »,
-sur le workflow n8n « (Claude) Get Yacin's Gmail » `3ELGb9CCbQEX48DZ` du 24/10 ; son adresse ne s'écrit jamais
-dans le repo) est à ajouter par Yacin à la routine ; sans lui, sa boîte est lue en repli dans `ProspectTouch`
+Supabase, Slack et du Gmail de Lucie (« lucie-gmail », ex « lucie-gmail-MCP-bearer »). Le Gmail de Yacin
+(« yacin-gmail », workflow n8n « (Claude) Get Yacin's Gmail » `3ELGb9CCbQEX48DZ`) est ajouté à la routine depuis le
+24/10. Les deux connecteurs exigent un jeton depuis le 24/10 (header gardé par claude.ai) ; adresses et jetons ne
+s'écrivent jamais dans le repo. Sans celui de Yacin, sa boîte est lue en repli dans `ProspectTouch`
 (étape 3b). Les appels Allo se lisent par Attio (notes de l'intégration Allo) ;
 le connecteur Allo, à ajouter dans l'interface des routines, n'apporte que les appels qu'Allo n'a
 rattachés à aucune fiche.
