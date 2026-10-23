@@ -54,8 +54,14 @@ postérieure. Avant de toucher au stage, à la Balle, à la date ou au next step
      `docs/MIGRATION-ATTIO-2026-10-20.md` (lis-les avant de commencer) ;
    - ou son état diffère de la dernière ligne agent qui le pose (requête ci-dessous) : quelqu'un l'a changé à la
      main dans Attio. Attio ne donne pas la date d'entrée dans un stage ; seul l'audit dit qui a posé quoi.
-2. **Agent** : l'état actuel est celui de la dernière ligne `applied` d'un run `sales-ops` ou `sales-check`, ou
-   d'une note « Clôture du deal - auto » qui ne cite pas Yacin, et aucune décision humaine n'est plus récente.
+2. **Agent** : l'état actuel vient d'un agent ou d'une session Claude, et aucune décision humaine n'est plus
+   récente :
+   - la dernière ligne `applied` d'un run `sales-ops` ou `sales-check` le pose ;
+   - ou une note « - auto » d'une session Claude (« Clôture du deal », « Correction du stage », « Création du
+     deal »…) le pose sans citer Yacin ;
+   - ou la Balle, la date et le next step sont ceux du tableau de `docs/MIGRATION-ATTIO-2026-10-20.md`
+     (migration du 20/10 par une session Claude : les champs Balle et date ont été créés ce jour-là). Exemples :
+     Bricks, Nowa No Water, Wopilo, SmartWorkout.
    Les notes mensuelles « Sales <Mois> <Année> - auto » ne comptent jamais. L'auteur affiché dans Attio ne
    prouve rien : `/sales-ops` y écrit sous le nom de Lucie.
 ```sql
@@ -73,7 +79,9 @@ where a.target_record_id = any (array['<deal_ids>']::text[]) and a.status = 'app
 order by a.target_record_id, a.created_at desc;
 ```
 Sur une décision humaine, sans fait du prospect ni promesse de Gang4 postérieurs, tu peux seulement : remplir un
-champ vide, poser une `lost_reason` vide, rattacher un contact, mettre l'owner Lucie. Exemples : Aroma-Zone en
+champ vide, poser une `lost_reason` vide, rattacher un contact, mettre l'owner Lucie. **Une promesse de Gang4 non
+tenue l'emporte toujours sur la Balle et le next step** (règle de Yacin du 23/10 : une promesse non tenue met la
+Balle chez Gang4), jamais sur le stage : applique la puce « promesse » de C4, même sur une décision humaine. Exemples : Aroma-Zone en
 `Nurturing` jusqu'au 11/01/2027 sans démo, Novoma laissé en `Deal Lost`, « Poppins - Partnership Ads » créé sans
 réponse entrante, Goodvest et Pimpant remis en `Demo scheduled` le 21/10.
 
@@ -367,7 +375,8 @@ réconciliation produit qui le fait).
 - Next step contredit par un échange plus récent → réécris-le d'après cet échange.
 - Contact qui a échangé avec Gang4 dans les 90 jours mais n'est pas rattaché au deal → rattache-le
   (`associated_people`, en gardant les contacts en place) ; crée la personne si elle n'existe pas. Jamais une
-  adresse `@gang4.io`.
+  adresse `@gang4.io`. Tu ne modifies pas la fiche d'une personne existante (adresses, nom, poste) : une adresse
+  manquante va dans la note d'audit du deal, pas dans Attio.
 - Deal ouvert sur le siège suspendu de Samuel (`c9935a42-b833-4935-aedc-a5802d3a5234`) → owner Lucie.
 - Tâches automatiques d'Attio : « Add Next Step Task for … » → fermée ; « Add Lost Reason for … » → fermée si le
   deal a déjà une raison de perte.
@@ -452,7 +461,8 @@ RAS : <contrôles sans correction, en mots simples>
   17/06, la relance prévue n'était pas partie » ; « Bookinou — passé en Demo scheduled : rendez-vous confirmé
   par Lucie pour le 26/10 » ; « Magimix — Lara Viatour (Lavafields) rattachée au deal ».
 - Ajoute une ligne seulement si besoin : « ⚠️ Non corrigé (n) : <deal> — <raison> » pour un échec Attio ;
-  « Non vérifié : <source> (<raison>) » pour un connecteur absent ou en erreur, jamais pour un travail sauté ;
+  « Non vérifié : <source> (<raison>) » pour un connecteur de la table Outils absent ou en erreur, jamais pour un
+  travail sauté ni pour une source hors de cette table ;
   « ⚠️ /sales-ops n'a pas tourné le JJ/MM » si `sales.run_log` montre un jour sans run depuis le 20/10 (la
   routine tourne tous les jours à 17:45 UTC).
 - Rien d'autre : pas de volume, pas de n8n, pas de Lemlist, pas de sourcing, pas de « à trancher ».
