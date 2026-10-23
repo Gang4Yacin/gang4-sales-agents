@@ -79,8 +79,16 @@ returning id;
    Compare avec l'état lu en 1 : deals **fermés depuis** (stage passé à `Deal Lost`, `Archived` ou `Hors ICP`),
    gagnés, créés, changés de stage. Sans photo (premier run), prends les deals fermés dans la fenêtre d'après
    `sales.applied_actions` (`action_type = 'update_stage'`) et les notes « Clôture » ou « Revue de la fermeture ».
-3. **Le dossier de chaque deal à examiner** (deals ouverts, deals fermés depuis la photo, et sociétés des
-   signaux de C1). Rassemble tout, sur toute la durée du deal :
+3. **Le dossier complet de chaque deal à examiner : étape obligatoire, en `essai` aussi.** C'est elle qui
+   trouve ce que `/sales-ops` rate : sans elle, le contrôle ne vaut rien. Un run qui la saute, ou qui ne la fait
+   que pour une partie des deals, est un échec : ne le présente jamais comme « partiel » ni en « Non vérifié »,
+   fais-la. Deals à examiner : **tous** les deals ouverts, les deals fermés depuis la photo, et les sociétés des
+   signaux de C1 (environ 100 dossiers).
+
+   Répartis-les entre des sous-agents `general-purpose` lancés **en parallèle, dans un seul message**, 10 deals
+   chacun. Chaque sous-agent lit `.claude/commands/sales-check.md` (étapes 2 et 3) et `.claude/agents/crm-sync.md`
+   (grille Balle / date / next step), reste **en lecture seule** (aucune écriture nulle part) et rassemble, pour
+   chacun de ses deals, sur toute la durée du deal :
    - les touches de `ProspectTouch` du domaine de la société **et** des adresses de tous ses contacts, quel que
      soit leur domaine :
      ```sql
@@ -91,21 +99,20 @@ returning id;
         or lower(prospect_email) = any (array['<emails des contacts>'])
      order by occurred_at;
      ```
-   - les notes Attio du deal, **de la société et de chaque contact** (`search-notes-by-metadata`, puis
-     `get-note-body`) : appels Allo (« Answered » = décroché, avec son résumé ; « Voicemail » = non joint),
-     récaps mensuels de `/sales-ops`, notes de clôture ;
-   - les emails et réunions synchronisés dans Attio, et, s'ils sont connectés, le fil Gmail ou le compte rendu
-     Claap qui tranche un doute.
-   Dans ce dossier, repère : le **dernier signal du prospect** (message entrant, appel décroché, démo tenue,
-   réponse LinkedIn), la **dernière action de Gang4**, et toute **promesse de Gang4** (« je t'envoie »,
-   « je reviens vers toi », action d'un compte rendu) avec la preuve qu'elle a été tenue ou non.
+   - les notes Attio du deal, **de la société et de chaque contact** : `search-notes-by-metadata` avec
+     `parent_record_object` (`deals`, `companies`, `people`) et `parent_record_id`, puis `get-note-body` sur
+     chaque note utile : appels Allo (« Allo Outbound Call - Answered » = décroché, avec son résumé ;
+     « Voicemail » = non joint), récaps mensuels de `/sales-ops`, notes de clôture et de revue ;
+   - les emails synchronisés dans Attio (`search-emails-by-metadata` avec `domain` et
+     `participant_email_addresses`, puis `get-email-content` sur le dernier échange), les réunions
+     (`search-meetings`) et, s'ils sont connectés, le fil Gmail ou le compte rendu Claap qui tranche un doute.
 
-   Pour tenir dans ton contexte, répartis les dossiers entre des sous-agents `general-purpose` lancés en
-   parallèle (15 deals chacun, dans un seul message). Brief de chacun : la liste des deals (id, nom, stage,
-   Balle, date, next step, société, contacts), la date du jour, les règles des contrôles C1 à C5 ci-dessous, la
-   consigne « lecture seule, n'écris rien nulle part », et le format de retour : pour chaque deal, le dernier
-   signal du prospect, la dernière action de Gang4, les promesses en cours, puis les corrections proposées
-   (champ, avant → après, fait daté et source) ou « RAS ». C'est toi qui vérifies leurs preuves et qui écris.
+   Format de retour de chaque sous-agent, pour chaque deal : le **dernier signal du prospect** (message entrant,
+   appel décroché, démo tenue, réponse LinkedIn, avec date et source), la **dernière action de Gang4**, chaque
+   **promesse de Gang4** (« je t'envoie », « je reviens vers toi », action d'un compte rendu) avec la preuve
+   qu'elle a été tenue ou non, les contacts qui ont échangé sans être rattachés au deal, puis les corrections
+   proposées (contrôle, champ, avant → après, fait daté et source) ou « RAS ». Toi, tu relis leurs preuves,
+   tu tranches et tu écris. Un sous-agent qui échoue est relancé une fois sur ses deals.
 
 ## Étape 3 — Les cinq contrôles, et ce que tu corriges
 Pour chaque correction, garde le fait daté et sa source : ils vont dans la note d'audit et dans le message.
@@ -180,6 +187,14 @@ signaux postérieurs à la fermeture :
 **Garde-fou (R5)** : une date mise à la main **plus tard** que celle que tu calcules, avec la même Balle, reste
 en place (quelqu'un a repoussé exprès), sauf message entrant du prospect depuis. Identique → rien.
 
+**Aucun doute ne reste ouvert.** Un doute se lève en lisant plus (la réunion dans `search-meetings` ou
+`ProspectTouch`, le fil d'emails, la note du contact). S'il reste, applique la correction la plus prudente et
+écris le doute dans la note d'audit. Exemples : Balle « RDV calé » avec un rendez-vous à venir mais stage
+`Prospect identified` → `Demo scheduled` si c'est un rendez-vous avec le prospect, sinon Balle et next step
+corrigés ; deal sans contact → rattache la personne qui a échangé avec Gang4 depuis le domaine de la société ;
+contact rattaché à deux sociétés → garde le deal de la société de son domaine email et retire-le de l'autre
+deal seulement s'il n'y a jamais échangé.
+
 ## Étape 4 — Écrire (sauf `essai`)
 Comme `crm-sync` §6 : pour chaque correction, insère d'abord la ligne d'audit, puis fais l'appel Attio, puis
 mets la ligne à jour (`applied`, `failed` avec le message, ou `skipped`).
@@ -220,7 +235,8 @@ RAS : <contrôles sans correction, en mots simples>
   rouvert en Prospect identified : Florence avait annoncé un déploiement le 17/06, la relance prévue n'était pas
   partie » ; « Magimix — Lara Viatour (Lavafields) rattachée au deal ».
 - Ajoute une ligne seulement si besoin : « ⚠️ Non corrigé (n) : <deal> — <raison> » pour un échec Attio ;
-  « Non vérifié : <source> (<raison>) » pour une source absente ; « ⚠️ /sales-ops n'a pas tourné le JJ/MM »
+  « Non vérifié : <source> (<raison>) » pour un connecteur absent ou en erreur, jamais pour un travail
+  sauté ; « ⚠️ /sales-ops n'a pas tourné le JJ/MM »
   si `sales.run_log` montre un jour sans run (la routine tourne tous les jours à 17:45 UTC).
 - Rien d'autre : pas de volume, pas de n8n, pas de Lemlist, pas de sourcing, pas de « à trancher ».
 - Poste toujours, même sans correction (« ✅ Rien à corriger cette semaine »).
