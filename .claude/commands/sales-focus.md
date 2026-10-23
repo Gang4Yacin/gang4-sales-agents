@@ -308,10 +308,12 @@ cartes.
 Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures dans les boîtes de Samuel,
 de Lucie et de Yacin, et l'agenda. Après une démo ou un call, cherche ce que Yacin a envoyé au prospect depuis le
 meeting : `Get_many_messages_in_Yacin_Gmail` avec `q` = `in:sent to:<domaine>`, `receivedAfter` = le début du
-meeting, `receivedBefore` = maintenant ; fais de même chez Samuel et Lucie. Une action déjà faite ou une situation
-qui a changé remplace la carte par la candidate suivante. Exemples : le 22/10, Payfit écarté, Samuel avait répondu
-à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor proposait d'« envoyer le récap de la
-démo » que Yacin avait envoyé le 23/10 à 16:54, sa boîte n'étant lue que par `ProspectTouch` (jusqu'à 10:38).
+meeting, `receivedBefore` = maintenant, et les autres paramètres de l'étape 2 (`readStatus: "both"`, `sender: ""`,
+`returnAll: false`, `limit` petit, `simple: true`), tous obligatoires ; fais de même chez Samuel et Lucie. Une
+action déjà faite ou une situation qui a changé remplace la carte par la candidate suivante. Exemples : le 22/10,
+Payfit écarté, Samuel avait répondu à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor
+proposait d'« envoyer le récap de la démo » que Yacin avait envoyé le 23/10 à 16:54, sa boîte n'étant lue que par
+`ProspectTouch` (jusqu'à 10:38).
 
 **On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
 ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
@@ -542,8 +544,8 @@ Affiche les cartes en markdown court (rang, deal, pourquoi, je propose, objet de
 retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Ajoute une ligne par « Pas pertinent »
 traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`. Une source
 manquante a sa ligne, elle aussi dans `resume` ; pour la boîte de Yacin en repli : « Boîte de Yacin : repli
-ProspectTouch, retard jusqu'à 24 h (outil Get_many_messages_in_Yacin_Gmail absent) ». Termine par la ligne Slack
-de l'étape 8 : « Slack : <lien du message> », ou « Slack : non posté (<erreur>) ».
+ProspectTouch, retard jusqu'à 24 h (outil Get_many_messages_in_Yacin_Gmail absent ou en erreur) ». Termine par
+la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : non posté (<erreur>) ».
 
 ## Règles strictes
 - `N` cartes au plus (3 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque

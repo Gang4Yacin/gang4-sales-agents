@@ -250,11 +250,13 @@ returning id;
      promet quelque chose ;
    - **la boîte de Yacin**, lue en direct d'abord : Attio ne la synchronise pas, et Yacin anime des démos, envoie
      des récaps et des invitations. `Get_many_messages_in_Yacin_Gmail`, un appel par domaine de la société,
-     `q` = `from:<domaine> OR to:<domaine>`, `receivedAfter` = la création du deal (90 jours au plus pour un
-     candidat), `receivedBefore` = maintenant, `simple: true`, puis `simple: false` sur les messages qui
-     promettent ou tiennent quelque chose. Repli si l'outil est absent ou en erreur : ses touches de la requête
-     `ProspectTouch` ci-dessus (`source = 'gmail:yacin'`), sans corps et avec jusqu'à 24 h de retard (chargées
-     vers 10:46). Une invitation agenda envoyée par yacin@ après un meeting est un signe de suivi ;
+     avec les huit paramètres, tous obligatoires (sinon l'appel échoue) : `q` = `from:<domaine> OR
+     to:<domaine>`, `readStatus: "both"`, `receivedAfter` = la création du deal (90 jours au plus pour un
+     candidat, ISO), `receivedBefore` = maintenant (ISO), `sender: ""`, `returnAll: false`, `limit: 25`,
+     `simple: true`, puis `simple: false` sur les messages qui promettent ou tiennent quelque chose. Repli si
+     l'outil est absent ou en erreur : ses touches de la requête `ProspectTouch` ci-dessus
+     (`source = 'gmail:yacin'`), sans corps et avec jusqu'à 24 h de retard (chargées vers 10:46). Une
+     invitation agenda envoyée par yacin@ après un meeting est un signe de suivi ;
    - **les réunions** : les lignes `channel_kind = 'meeting'` de la requête `ProspectTouch` (démos à venir
      comprises), les emails qui confirment ou annulent un rendez-vous, les comptes rendus en notes, Google
      Calendar et Claap. Un rendez-vous peut être rangé sous l'adresse d'un organisateur d'un autre domaine
@@ -354,7 +356,8 @@ réconciliation produit qui le fait).
 **Deal fermé par un agent** : relis son dossier entier.
 - **Rouvre** quand l'une de ces conditions est vraie :
   - le prospect avait montré de l'intérêt et c'est Gang4 qui devait agir (promesse non tenue, question sans
-    réponse, rappel promis, démo à recaler) ;
+    réponse, rappel promis, démo à recaler). Une promesse « à vérifier » (étape 2.4, boîte de Yacin en repli)
+    rouvre avec le next step « Vérifier que <ce qui a été promis le JJ/MM> est parti », jamais « Envoyer » ;
   - un signal de création de deal est postérieur à la fermeture ;
   - le motif de fermeture est contredit par les faits (« 60 jours sans signal » alors qu'un appel décroché avec
     résumé ou un message date de moins de 60 jours ; « Hors ICP » posé à cause d'un contact alors que la marque
@@ -543,7 +546,7 @@ Puis présente le message et son lien.
   domaine perso.
 - **Jamais d'invention** : chaque correction s'appuie sur un fait daté et sa source, cités dans la note et dans
   `reasoning`. Sans preuve, pas de correction. Jamais l'absence d'un envoi affirmée sur une boîte non lue à jour
-  (C4).
+  (C3, C4).
 - Toute écriture passe d'abord par `sales.applied_actions` (avec le `run_id`).
 - Aucun email, aucun brouillon, rien dans Lemlist ni n8n. Un seul message Slack.
 
