@@ -171,7 +171,10 @@ returning id;
    les contacts `lead_status = Replied - Interested` (`list-records` sur `people`), et les appels Allo
    décrochés des 90 derniers jours, absents de `ProspectTouch` : `search-notes-by-metadata` sans parent,
    `created_at_gt` = il y a 90 jours, `limit: 100`, pages suivantes tant que la page est pleine ; garde les
-   titres « Allo … Answered » ou « Allo Inbound … » et leurs parents `companies` (exemple : Laboratoires
+   titres « Allo … Answered » ou « Allo Inbound … » et la société de leur contact (parent `people`, attribut
+   `company` de sa fiche), sinon leur parent `companies` quand il est seul (Maju, 31/08) ; jamais un parent
+   `companies` différent de la société du contact (Même Cosmetics porte à tort les appels d'Aloe Paris et
+   de Célims) (exemple : Laboratoires
    Vinci, appel de 9 min du 08/09, Vincent Wahala veut voir des exemples, aucun deal). Ces domaines vont aux
    sous-agents (point 4), par lots de 15, avec le même brief. Pour un candidat, le sous-agent commence par
    l'identité : société avec un deal ouvert (déjà dans les dossiers), cliente, agence, `icp` = `Hors ICP`, ou
@@ -219,14 +222,17 @@ returning id;
    - **les notes** du deal, de la société et de chaque contact : `search-notes-by-metadata` avec
      `parent_record_object` (`deals`, `companies`, `people`), `parent_record_id` et `limit: 100` ; ajoute 100 à
      `offset` tant que la page est pleine. Une note Allo peut exister jusqu'à trois fois (société, deal, contact ;
-     même titre, même minute) : compte-la une fois. Lis avec `get-note-body` les appels Allo, les comptes rendus
+     même identifiant `cll-…` dans le lien « Recording » en fin de note, à quelques secondes d'écart, parfois sur
+     deux minutes) : compte-la une fois. Lis avec `get-note-body` les appels Allo, les comptes rendus
      de réunion (titre « <réunion> on AAAA-MM-JJ »), les récaps « Sales <Mois> <Année> - auto » et les notes de
      clôture, de revue, de création, de réouverture et de décision ;
    - **les appels Allo** : la durée est entre parenthèses dans le titre. Un « Allo Outbound Call - Answered »
-     compte comme signal du prospect **seulement si** son résumé (« ## Résumé ») rapporte un échange : réponse,
-     demande, rendez-vous, refus. Un « Answered » de quelques secondes, dont la note ne contient que le lien
-     d'enregistrement ou dit « sans information claire sur la suite », se traite comme un « Voicemail » : c'est
-     une relance de Gang4 non jointe, qui compte dans les 3 relances de C4 (hors email) ;
+     compte comme signal du prospect **seulement si** son compte rendu (« ## Résumé », ou « ## Détails » seul
+     pour un appel court) rapporte un échange : réponse, demande, rendez-vous, refus. Un « Answered », quelle
+     que soit sa durée (47 s chez Meltonic le 09/09), dont la note ne contient que le lien d'enregistrement ou
+     dit messagerie, « sans information claire sur la suite », « aucune discussion de fond », se traite comme
+     un « Voicemail » : c'est une relance de Gang4 non jointe, qui compte dans les 3 relances de C4 (hors
+     email ; plusieurs appels à la même personne le même jour = une relance) ;
    - **les emails** synchronisés dans Attio : `search-emails-by-metadata` une fois par domaine de la société,
      puis une fois avec `participant_email_addresses` = les contacts d'un autre domaine, `limit: 100`. Suis
      `next_cursor` **tant que `has_more` est vrai** : une page vide n'est pas la dernière. Lis le `summary` de
@@ -303,7 +309,8 @@ rouvre jamais.
   `Prospect identified` → `Demo scheduled`, Balle `RDV calé`, date du rendez-vous.
 - **`Nurturing` sans aucune démo tenue** → `Prospect identified`, en gardant la date de reprise (pas sur une
   décision humaine : Aroma-Zone).
-- **Refus explicite du prospect** (`negative`) sur un deal ouvert → `Deal Lost` avec la raison de ses mots (T12),
+- **Refus explicite et écrit du prospect** (`negative` ; un refus au téléphone ne ferme pas, comme dans
+  `crm-sync`) sur un deal ouvert → `Deal Lost` avec la raison de ses mots (T12),
   **seulement si** toutes ces conditions sont réunies : ce refus est le dernier signal du prospect ; il ferme la
   porte à toute l'offre, pas à un format, un appel ou une date (« pas les statics », « pas de call cette
   semaine ») ; aucune promesse de Gang4 ne lui est postérieure ; il est postérieur à la dernière réouverture ou
@@ -363,6 +370,9 @@ réconciliation produit qui le fait).
   réponse d'absence), et aucune promesse de Gang4 en attente. Sinon, mets en next step la relance qui manque
   (« Appeler <prénom> », « Écrire à <remplaçant> »), Balle Gang4, aujourd'hui. Comme `/sales-ops`, tu ne fermes
   jamais un deal sur un simple silence.
+- « Clôturer ? — refus au téléphone » posé par `/sales-ops` (`rule = R3-appel-refus`) : ne le remplace pas par
+  la relance qui manque et ne passe pas le deal en `Deal Lost`. Il ne change que sur un fait du prospect
+  postérieur au refus ou sur une promesse de Gang4 faite après cet appel (puce « promesse » ci-dessus).
 - Next step « Clôturer ? » posé par `/sales-ops` (dernière ligne `update_next_step` `applied` avec `rule =
   R10`) sur un deal qui ne remplit pas ces conditions : s'il remplaçait une décision humaine, remets la Balle et
   le next step d'avant (champ `before` de cette ligne), date aujourd'hui ; sinon, mets la relance qui manque.

@@ -193,32 +193,56 @@ Pour chaque meeting retenu :
 
 7. **Appels Allo** (une seule passe par run, après les meetings). Les appels de Samuel (seul compte Allo
    au 23/10) arrivent dans Attio en notes titrées « Allo Outbound Call - <issue> - <appelant> (<durée>) »
-   ou « Allo Inbound Call - … ». Les comptes rendus des vrais échanges y sont (« ## Résumé », « ## Détails »,
-   « ## Conclusion & prochaines étapes ») : la revue du 23/10 a montré qu'en les ignorant, on ferme des
-   deals vivants (Maju : appel de 3 min du 31/08, prospect « hyper chaud », noté sur la société seulement).
-   - **Lister** : `search-notes-by-metadata` sans filtre de parent, `created_at_gt = <window_start>`,
-     `created_at_lt = <window_end>`, `limit: 100`, `offset` + 100 tant que la page est pleine. Garde les
-     notes dont le titre commence par « Allo ».
-   - **Dédoublonner** : un appel donne deux ou trois notes (contact, société, deal), même titre, à quelques
-     secondes d'écart. La clé est l'identifiant `cll-…` du lien « Recording: https://web.withallo.com/summary/
-     cll-… » en fin de note ; à défaut, titre + minute. Garde **tous** les parents (`parent_record` :
-     objet `people` `9f824707…`, `companies` `7bed3fe6…` ou `deals` `f991e7fb…`) et lis le corps une
-     seule fois (`get-note-body`).
+   ou « Allo Inbound Call - … ». Les comptes rendus des vrais échanges y sont : la revue du 23/10 a montré
+   qu'en les ignorant, on ferme des deals vivants (Maju : appel de 3 min du 31/08, prospect « hyper
+   chaud », noté sur la société seulement).
+   - **Lister** : `search-notes-by-metadata` sans filtre de parent, `created_at_gt` = `window_start` moins
+     24 h (la note arrive quelques minutes après l'appel, et deux fenêtres peuvent se toucher ; `crm-sync`
+     écarte les appels déjà traités grâce à `processed_items`), `created_at_lt = <window_end>`,
+     `limit: 100`, `offset` + 100 tant que la page est pleine. Garde les notes dont le titre commence par
+     « Allo ».
+   - **Dédoublonner** : lis le corps de chaque note « Allo » (`get-note-body`, quelques lignes) et
+     regroupe-les par l'identifiant `cll-…` du lien « Recording: https://web.withallo.com/summary/cll-… »
+     en fin de note : c'est la clé de l'appel. Un appel donne deux ou trois notes (contact, société,
+     deal), parfois à cheval sur deux minutes (31/08 : 13:48:54 et 13:49:02) ; deux appels de même titre
+     peuvent se suivre au power dialer, donc ni le titre ni la minute ne suffisent. Garde **tous** les
+     parents (`parent_record` : objet `people` `9f824707…`, `companies` `7bed3fe6…` ou `deals`
+     `f991e7fb…`).
    - **Classer `outcome`** :
-     - `conversation` : « Answered » (ou « Inbound ») dont le corps a un « ## Résumé », ou dont le résumé
-       d'une ligne rapporte un échange avec le prospect (intérêt, question, demande d'envoi ou de rappel,
-       rendez-vous, refus). Un appel entrant décroché est toujours une `conversation` ;
-     - `no_answer` : « Voicemail », « Missed », « Hung up », « No answer », ou « Answered » de quelques
-       secondes dont le résumé dit messagerie, répondeur, message laissé, sans réponse, indisponible,
-       fermeture, « sans information claire ». C'est une relance téléphonique de Gang4, jamais un signal du
-       prospect.
-   - **Pour une `conversation`**, lis le compte rendu et remplis : `summary` (3 à 6 lignes factuelles),
-     `prospect_reply_kind` (même vocabulaire que `email-expert` : `positive` · `question` · `objection` ·
-     `later` · `negative` · `unknown` ; en cas de doute entre `later` et `negative`, `later`),
-     `gang4_promises` (ce que Gang4 s'engage à faire, lu dans « Conclusion & prochaines étapes » : envoyer
-     des créas, une offre, rappeler…), `callback_date` (rappel demandé ou convenu, en date ISO ; « la
-     semaine du 21 » → le lundi de cette semaine) et `external_person` (nom lu dans le titre du résumé ou
-     les parents).
+     - `conversation` : appel décroché dont le compte rendu (« ## Résumé », « ## Détails » seul ou une
+       ligne), quelle que soit sa durée, rapporte un échange avec le prospect : intérêt, question, demande
+       d'envoi ou de rappel, rendez-vous, refus. Un prospect qui décroche et demande qu'on le rappelle est
+       une `conversation` ;
+     - `no_answer` (appel **sortant**) : « Voicemail », « Missed », « Hung up », « No answer », ou
+       « Answered », quelle que soit la durée (47 s chez Meltonic le 09/09), dont la note ne contient que
+       le lien « Recording: » (Hugo Calmant, 06/10, 4 s) ou dont le compte rendu dit messagerie, répondeur,
+       standard, message laissé, sans réponse, indisponible, fermeture, « aucune discussion de fond »,
+       « trop bref », « sans information claire ». C'est une relance téléphonique de Gang4, jamais un
+       signal du prospect ;
+     - `missed_inbound` : appel **entrant** non décroché (« Allo Inbound Call - Missed », messagerie) :
+       le prospect a appelé, c'est un signal du prospect.
+   - **Pour une `conversation`**, lis le compte rendu et remplis :
+     - `summary` : 3 à 6 lignes factuelles ;
+     - `prospect_reply_kind` : même vocabulaire que `email-expert` (`positive` · `question` · `objection` ·
+       `later` · `negative` · `unknown`). En cas de doute entre `later` et `negative`, `later`. Un report
+       (« en consultation, rappelez-moi demain » : Alexis Vanbesselaere, Meltonic, 08/09) ou un barrage (« je
+       ne prends pas d'appels commerciaux, écrivez-moi » : Prune Aubry, We Are Jolies, 08/09) sans intérêt
+       exprimé pour l'offre → `later`, jamais `positive` ni `question` ;
+     - `prospect_requests` : ce que le prospect demande lui-même, après avoir entendu l'offre (exemples,
+       créas, offre, tarif, documentation, démo, rappel pour en parler), même s'il émet une réserve
+       (« on a déjà une agence, mais envoyez-moi des exemples ») ; vide si c'est Gang4 qui propose et
+       que le prospect ne fait qu'accepter pour raccrocher ;
+     - `gang4_promises` : ce que Gang4 s'engage à faire (envoyer des créas, une offre, une documentation,
+       rappeler…). Lis la section « ## Conclusion… » quel que soit son intitulé (« Conclusion & prochaines
+       étapes » : Vinci, 08/09 ; « Conclusion et prochaines étapes » : Maju, 31/08 ; « Conclusion & étapes
+       suivantes » : Novoma, 31/08) ; pour un appel court sans « ## Résumé », lis les puces de
+       « ## Détails », dont « Prochaine étape » (Inga, 31/08 : « Envoi d'un e-mail récapitulant la
+       proposition ») ;
+     - `callback_date` : rappel demandé ou convenu, en date ISO (« la semaine du 21 » → le lundi de cette
+       semaine) ;
+     - `external_person` : le nom de la fiche `people` parente (`get-records-by-ids`). Le compte rendu
+       Allo écorche les noms (« Jean-Claude » pour Anas Maati le 16/09) : prends le nom du résumé seulement
+       s'il n'y a pas de parent `people`.
    - **Allo, s'il est connecté** (complément) : `allo_search_conversation_items` (`type: CALL`,
      `date_from` / `date_to` = la fenêtre, `size: 100`). Pour chaque appel dont l'identifiant `cll-…`
      n'est dans aucune note Attio : garde-le seulement si c'est un vrai échange (`result = ANSWERED`,
@@ -228,7 +252,8 @@ Pour chaque meeting retenu :
      les valeurs vides ou de gabarit : « null », « name_val », « emails ») et `parents: []`. `crm-sync` le
      rattachera par le numéro ou la société.
    - Compte-les dans `stats` (`allo_notes_scanned`, `calls_found`, `calls_conversation`,
-     `calls_no_answer`, `allo_unmatched`) et écris dans `notes` si Allo était connecté ou non.
+     `calls_no_answer`, `calls_missed_inbound`, `allo_unmatched`) et écris dans `notes` si Allo était
+     connecté ou non.
 
 ## Format de sortie
 
@@ -278,14 +303,15 @@ Pour chaque meeting retenu :
       "direction": "outbound | inbound",
       "caller": "Samuel Balthazard",
       "duration": "3 min",
-      "outcome": "conversation | no_answer",
+      "outcome": "conversation | no_answer | missed_inbound",
       "parents": [ { "object": "people | companies | deals", "record_id": "<uuid>" } ],
       "note_ids": ["<uuid de chaque note Attio de cet appel>"],
-      "external_person": "Julien Jané | null",
+      "external_person": "Julien Jané (nom de la fiche people parente) | null",
       "contact_number": "+33… | null (appel Allo sans note Attio seulement)",
       "allo_company": "<société lue par Allo | null>",
       "summary": "Résumé factuel en 3-6 lignes | null si no_answer",
       "prospect_reply_kind": "positive | question | objection | later | negative | unknown | null",
+      "prospect_requests": ["Voir des exemples de créas avant un call"],
       "gang4_promises": ["Envoyer des exemples de créas par email"],
       "callback_date": "AAAA-MM-JJ | null",
       "source": "attio_note | allo",
@@ -313,6 +339,7 @@ Pour chaque meeting retenu :
     "calls_found": N,
     "calls_conversation": N,
     "calls_no_answer": N,
+    "calls_missed_inbound": N,
     "allo_unmatched": N
   },
   "notes": "Calendriers parcourus, MCP Claap dispo ou non, soucis d'accès Drive, MCP Calendly dispo ou non, Allo connecté ou non, anomalies."

@@ -58,14 +58,20 @@ Tu crées un `create_deal` **UNIQUEMENT** si au moins un de ces signaux est pré
    - Hors deal : `reply_kind = negative` (refus explicite), `unknown` (extrait illisible), OOO,
      désinscription.
 
-2 bis. **Appel Allo décroché où le prospect demande une suite** (signal frais, `calls[]` de
-   `meeting-expert`) : `outcome = conversation` et `prospect_reply_kind` ∈ `positive`, `question` (il veut
-   des exemples, une offre, une démo, être rappelé pour en parler) ; ou appel entrant du prospect.
+2 bis. **Appel Allo où le prospect demande une suite** (signal frais, `calls[]` de `meeting-expert`) :
+   - un appel décroché (`outcome = conversation`) où le prospect montre de l'intérêt pour l'offre ou
+     demande quelque chose sur elle : `prospect_reply_kind` ∈ `positive`, `question`, ou une demande de sa
+     part dans `prospect_requests` (exemples, créas, offre, tarif, documentation, démo, rappel pour en
+     parler) même avec une réserve (« on a déjà une agence, mais envoyez-moi des exemples ») ;
+   - ou un appel entrant du prospect (`missed_inbound`, ou `conversation` qui n'est pas un refus), hors
+     règle COLD INBOUND (numéro inconnu d'Attio) ;
    - → stage `Prospect identified`.
-   - *Exemple légitime : Laboratoires Vinci (Vincent Wahala, 08/09, 9 min : « curieux, veut voir des
-     exemples avant un call »).*
-   - Hors deal : appel sans réponse (`no_answer`), `later` ou `objection` au téléphone sur un appel de
-     prospection (« rappelez plus tard », « pas le temps »), refus au téléphone.
+   - *Exemple légitime : Laboratoires Vinci (Vincent Wahala, 08/09, 9 min : curieux, veut voir des
+     exemples avant un call).*
+   - Hors deal : appel sans réponse (`no_answer`) ; report ou barrage sans intérêt exprimé (« rappelez-moi
+     demain », « je suis en consultation » : Meltonic, 08/09 ; « je ne prends pas d'appels commerciaux,
+     écrivez-moi » : We Are Jolies, 08/09) ; envoi ou rappel seulement proposé par Gang4 ; refus au
+     téléphone.
 
 3. **Paiement** (réconciliation produit, section 4b, hors fenêtre) : marque payante sans deal → deal
    créé directement en `Deal Won`.
@@ -271,26 +277,41 @@ company existe déjà avec `description`+`icp` → ne re-cherche pas.
   next step (« Re-caler la démo avec <prénom nom> »).
 
 **Appel Allo** (`calls[]` de `meeting-expert`) :
-- **Rattachement** : les `parents` de l'appel donnent la personne, la société et parfois le deal. Sans
-  parent (appel lu dans Allo seulement) : personne par `list-records` sur `people`, filtre
-  `{"attribute": "phone_numbers", "op": "contains", "value": "<9 derniers chiffres de contact_number>"}`,
-  puis société par `allo_company` (`search-records`, comme la résolution company). Introuvable → skip,
-  ligne dans « Notes ».
+- **Déjà traité** : d'abord `select external_id, status from sales.processed_items where source = 'allo' and
+  external_id = any(array['<cll-…>', …]);`. Un appel déjà présent avec un statut autre que `failed` est
+  ignoré (aucune action, aucune note) : les fenêtres de `/sales-ops` se chevauchent et `meeting-expert`
+  relit 24 h de plus. Un appel absent, ou en `failed`, est un signal frais au sens de la règle « fenêtre
+  du run », même s'il précède un peu `window_start`.
+- **Rattachement** : la personne est le parent `people`. La société est celle de sa fiche (attribut
+  `company`, `get-records-by-ids`), pas le parent `companies` quand il diffère : l'intégration Allo range
+  des appels sous une autre société (ceux d'Aloe Paris et de Célims sont sous Même Cosmetics, 6 appels du
+  16/09 au 08/10) ; ligne dans « Notes ». Le deal est le parent `deals` s'il appartient à cette société,
+  sinon le deal de cette société (section 2). Si la fiche n'a pas de société, ou si l'appel n'a qu'un
+  parent `companies` (Maju, 31/08), prends ce parent. Sans aucun parent (appel lu dans Allo seulement) :
+  personne par `list-records` sur `people`, filtre `{"attribute": "phone_numbers", "op": "contains",
+  "value": "<9 derniers chiffres de contact_number>"}`, puis sa société ; `allo_company` (`search-records`)
+  seulement si la personne est introuvable. Introuvable → skip, ligne dans « Notes ».
 - Company `Customer`, agence, domaine perso → skip comme pour un email (un appel client relève du customer
   success).
-- `upsert_monthly_note` sur le deal (section `### Appels`), pour les `conversation` comme pour les
-  `no_answer` d'un deal existant.
+- `upsert_monthly_note` sur le deal (section `### Appels`), pour tous les appels d'un deal existant.
 - `conversation` → `update_next_step` selon les lignes « appel » de la grille ci-dessous ;
   `link_person_to_deal` si la personne appelée n'est pas rattachée au deal.
 - `create_deal` si la règle 2 bis est satisfaite et qu'aucun deal ouvert n'existe (deal `Deal Lost` →
   réouverture T11, section Stages), avec la personne appelée en contact.
 - **Un appel ne ferme jamais un deal** : un refus au téléphone (`prospect_reply_kind = negative`) sur un deal
-  ouvert donne seulement Balle `Gang4`, aujourd'hui, « Clôturer ? — refus au téléphone le JJ/MM
-  (<ses mots>) » ; la fermeture reste un geste de Lucie.
-- `no_answer` → aucun changement de Balle, de date ni de next step, sauf si le next step en place est un
-  appel à passer à cette personne (« Appeler… », « Rappeler… ») : il devient « Relancer <prénom nom> par
-  email (appel sans réponse le JJ/MM) », Balle `Gang4`, J+1. Un appel sans réponse compte comme une
-  relance hors email pour R10.
+  ouvert donne seulement Balle `Gang4`, aujourd'hui, « Clôturer ? — refus au téléphone le JJ/MM (<ses
+  mots>) », `rule = "R3-appel-refus"`, à la place des autres lignes « appel » de la grille. Une action que le
+  compte rendu de ce même appel prête à Gang4 s'ajoute à la fin (« ; promis : <action> »). La fermeture
+  reste un geste de Lucie.
+- `missed_inbound` → ligne « Appel entrant du prospect » de la grille ; sans deal, règle 2 bis.
+- `no_answer` (appel sortant) → aucun changement de Balle, de date ni de next step, sauf si le next step en
+  place est un rappel posé par une ligne « appel » de la grille, au texte identique (« Rappeler <prénom nom>
+  (convenu le JJ/MM) » ou « Rappeler <prénom nom> (appel entrant du JJ/MM) ») : il devient « Relancer
+  <prénom nom> par email (appel sans réponse le JJ/MM) », Balle `Gang4`, J+1. Les autres next steps qui
+  demandent un appel ne changent pas : ils peuvent porter une promesse ou une décision de Yacin (Maju :
+  « Appeler Julien : caler l'intro et le test avec Sarah… »). Un appel sans réponse n'est pas un signal du
+  prospect : il n'entre pas dans `outbound_count_since_last_inbound`, ne repousse pas le calcul R10 et ne
+  pose jamais « Clôturer ? » (Samuel rappelle en rafale : 4 appels en 4 min au même contact le 31/08).
 
 **Balle, date et next step (R2 à R5, R7, R10, T6, T9)** — sur chaque deal ouvert touché par un signal
 frais, et sur chaque deal créé, écris **ensemble** `balle_dans_le_camp` (`Gang4` · `Prospect` · `RDV
@@ -305,22 +326,22 @@ une date qui tombe un samedi ou un dimanche passe au lundi.
 | Message entrant du prospect, sans réponse de Gang4 après (R3, T6) | Gang4 | aujourd'hui (toujours, même si une date plus lointaine est en place) | « Répondre à <prénom nom> (message du JJ/MM) » ; réponse positive → « Proposer un créneau démo à <prénom nom> (réponse du JJ/MM) » |
 | Notre message est le dernier, sans réponse (R3) | Prospect | envoi + 7 j | « Relancer <prénom nom> — relance n/3 » (n = `outbound_count_since_last_inbound`) |
 | Date donnée dans un message (`date_mentioned`, R3) | qui doit revenir | cette date | ce qui a été promis, ou « Relancer <prénom nom> (retour annoncé le JJ/MM) » |
-| Événement futur avec un externe du deal (R4, prime sur les lignes email) | RDV calé | date de l'événement | « Démo du JJ/MM avec <prénom nom> » ou « RDV du JJ/MM : <objet> » |
+| Événement futur avec un externe du deal (R4, prime sur les lignes email et appel) | RDV calé | date de l'événement | « Démo du JJ/MM avec <prénom nom> » ou « RDV du JJ/MM : <objet> » |
 | Démo tenue avec compte rendu → `Qualified` (R2, T9) | Gang4 | J+1 | « Envoyer le récap / la proposition à <prénom nom> » |
 | Démo passée sans compte rendu ni message entrant (`attendance = unknown`, T9) | Gang4 | aujourd'hui | « Confirmer la tenue de la démo du JJ/MM et faire le récap » |
 | Démo annulée, déclinée par l'externe ou no-show (T9) | Gang4 | J+2 | « Re-caler la démo avec <prénom nom> » |
 | Appel décroché où Gang4 promet un envoi ou une action (`gang4_promises`, R3-appel) | Gang4 | J+1 | « Envoyer à <prénom nom> <ce qui a été promis> (appel du JJ/MM) » |
 | Appel décroché avec un rappel convenu ou demandé (`callback_date`, R3-appel) | Gang4 | cette date | « Rappeler <prénom nom> (convenu le JJ/MM) » ; avec une promesse aussi, la promesse d'abord, à J+1 |
 | Appel décroché où le prospect pose une question ou demande quelque chose, sans promesse notée (R3-appel) | Gang4 | aujourd'hui | « Répondre à <prénom nom> (appel du JJ/MM) : <sa demande> » |
-| Appel entrant du prospect (R3-appel) | Gang4 | aujourd'hui | « Rappeler <prénom nom> (appel entrant du JJ/MM) », sauf si l'appel a eu lieu (conversation) : lignes ci-dessus |
+| Appel entrant du prospect, manqué (`missed_inbound`, R3-appel) | Gang4 | aujourd'hui | « Rappeler <prénom nom> (appel entrant du JJ/MM) » ; décroché : lignes ci-dessus |
 | 3e relance sans réponse (`outbound_count_since_last_inbound ≥ 3`, R10) | Gang4 | aujourd'hui | « Clôturer ? — N j sans réponse » (la fermeture reste un geste de Lucie) |
 
 **R5 — garde-fous** : ces trois champs ne s'écrivent que sur signal frais, à la création d'un deal, ou
 par les sections 4b à 4d ; hors de ces cas, ils appartiennent à Lucie. Lis les valeurs en place avant
 d'écrire : identiques → skip ; date en place **postérieure** à la date calculée avec la même Balle →
-skip (Lucie a repoussé exprès), sauf message entrant (R3). Ne touche jamais aux trois champs d'un deal
+skip (Lucie a repoussé exprès), sauf message entrant (R3) ou appel décroché (lignes R3-appel, refus au téléphone). Ne touche jamais aux trois champs d'un deal
 fermé ni d'une agence. Trace en `update_next_step` avec
-`payload = {"next_step": "...", "balle": "...", "date": "AAAA-MM-JJ", "rule": "R3-entrant | R3-sortant | R3-date | R3-appel | R4 | T9-cr | T9-sans-cr | T9-annulee | R10 | R2 | R6 | hygiene", "before": {"next_step": "...", "balle": "...", "date": "..."}}`.
+`payload = {"next_step": "...", "balle": "...", "date": "AAAA-MM-JJ", "rule": "R3-entrant | R3-sortant | R3-date | R3-appel | R3-appel-refus | R4 | T9-cr | T9-sans-cr | T9-annulee | R10 | R2 | R6 | hygiene", "before": {"next_step": "...", "balle": "...", "date": "..."}}`.
 
 > **Note (ne pas créer de note orpheline)** : `upsert_monthly_note` est autorisé seulement si la cible
 > a un deal (existant ou créé ce run) OU est une company **déjà engagée** dans Attio. Une company
@@ -480,13 +501,18 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
    **Appels Allo** (`ProspectTouch` ne les contient pas) : pour chaque deal retenu par ce calcul, avant
    d'écrire, `search-notes-by-metadata` sur le deal, sa société et ses contacts (`limit: 100`), garde les
    notes « Allo … » postérieures au dernier signal calculé et lis-les (`get-note-body`) :
-   - un appel décroché avec un compte rendu où le prospect s'exprime (« ## Résumé ») est un signal du
-     prospect : il remplace le dernier signal calculé ; à moins de 60 jours, pas de « Clôturer ? » ;
-   - si ce compte rendu contient une promesse de Gang4 (« Conclusion & prochaines étapes » : envoyer,
-     rappeler) sans envoi de Gang4 après (`ProspectTouch` sortant), pas de « Clôturer ? » : Balle `Gang4`,
-     aujourd'hui, « Envoyer à <prénom nom> <ce qui a été promis> (appel du JJ/MM) », `rule = "R3-appel"` ;
-   - un appel sans réponse (« Voicemail », ou « Answered » de quelques secondes sans compte rendu) n'est
-     pas un signal du prospect : il compte seulement comme relance de Gang4.
+   - un appel décroché dont le compte rendu (« ## Résumé », ou « ## Détails » seul, quelle que soit la
+     durée) rapporte un échange avec le prospect (intérêt, question, demande d'envoi ou de rappel,
+     rendez-vous, refus ; Meltonic, 08/09, 46 s, « ## Détails » seul : Alexis Vanbesselaere demande qu'on
+     le rappelle), ou un appel entrant du prospect, est un signal du prospect : il remplace le dernier
+     signal calculé ; à moins de 60 jours, pas de « Clôturer ? » ;
+   - si ce compte rendu contient une promesse de Gang4 (section « ## Conclusion… » quel que soit son
+     intitulé, ou puce « Prochaine étape » des « ## Détails » : envoyer, rappeler) sans envoi de Gang4
+     après (`ProspectTouch` sortant), pas de « Clôturer ? » : Balle `Gang4`, aujourd'hui, « Envoyer à
+     <prénom nom> <ce qui a été promis> (appel du JJ/MM) », `rule = "R3-appel"` ;
+   - un appel sortant où le prospect n'a pas parlé (« Voicemail », ou « Answered » dont la note n'a que le
+     lien d'enregistrement ou dit messagerie, standard, « aucune discussion de fond », « trop bref »,
+     quelle que soit la durée) n'est pas un signal du prospect et ne change rien au calcul.
    Exceptions, vérifiées seulement pour les deals retenus par ce calcul :
    - le dernier `update_next_step` `applied` du deal vient d'un run `sales-check` de moins de 30 jours
      (`sales.applied_actions` joint à `sales.run_log`, `agent = 'sales-check'`) : le contrôle hebdo a relu
@@ -526,8 +552,8 @@ values
    '<payload_json>'::jsonb, '<reasoning>', '<source_refs_json>'::jsonb, 'pending')
 returning id;
 ```
-`source_refs` contient toujours `{ "source": "gmail|gcal|drive_doc|claap|fireflies|lemlist|prospect_touch|supabase|attio", "external_id": "...", "url": "..." }`
-(`supabase` pour la réconciliation produit, `attio` pour le filet et l'hygiène).
+`source_refs` contient toujours `{ "source": "gmail|gcal|drive_doc|claap|fireflies|lemlist|allo|prospect_touch|supabase|attio", "external_id": "...", "url": "..." }`
+(`supabase` pour la réconciliation produit, `attio` pour le filet et l'hygiène). Un appel remonté par `meeting-expert` : `allo`, `external_id` = `cll-…`, `url` = le lien withallo ; une note Allo relue en §4d.3 : `attio`, `external_id` = `note_id`.
 Pour un meeting remonté avec `transcript.source='claap'`, `external_id` = le `recordingId` Claap
 (et si `event_id` est null — meeting vu uniquement via Claap — la source de l'item est `claap`).
 
@@ -693,10 +719,15 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
 - Si hésitation entre deux stages → choisis le **moins avancé**. (Pas de todo d'arbitrage.)
 - **Réouverture d'un `Deal Lost` (T11)** : un `Deal Lost` qui reçoit un signal de niveau création de
   deal (réponse entrante non négative, appel décroché où le prospect demande une suite, démo bookée ou
-  tenue) est **rouvert** au stage donné par la
+  tenue) **postérieur à la fermeture** est **rouvert** au stage donné par la
   grille ci-dessous, jamais dupliqué, avec Balle / date / next step de la grille et une note d'audit
   « Rouvert le JJ/MM : <signal> » (`create_audit_note`). Les réouvertures figurent dans le rapport
-  (section Pipeline). `Archived` et `Hors ICP` ne se rouvrent pas : note d'audit et ligne dans « Notes ».
+  (section Pipeline). La date de fermeture est celle de la dernière ligne `update_stage` → `Deal Lost`
+  `applied` de `sales.applied_actions`, sinon de la note « Clôture du deal - auto » du deal, sinon de la
+  première photo `sales.deal_snapshot` qui le montre en `Deal Lost` ; sans aucune des trois → pas de
+  réouverture, ligne dans « Notes ». Exemple : Novoma (appel du 31/08, Guillaume JEAN veut de la
+  documentation), fermé le 21/10 et laissé en `Deal Lost` par Yacin le 23/10 : pas de réouverture, même
+  en backfill. `Archived` et `Hors ICP` ne se rouvrent pas : note d'audit et ligne dans « Notes ».
 
 **Choix du stage à la création d'un deal** (tu décides) :
 - Paiement constaté (verdict `won`) → `Deal Won` (+ `update_company_status → Customer`).

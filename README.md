@@ -27,7 +27,8 @@ Tenir le CRM à jour, rien d'autre :
 Un deal est créé **uniquement** si :
 
 - une **démo est planifiée ou tenue** (Calendly, meeting calendar B2B, `demo_done`), **OU**
-- le **prospect répond** avec un intérêt concret (message **entrant**, `positive_reply`).
+- le **prospect répond** avec un intérêt concret (message **entrant**, `positive_reply`), **OU**
+- un **appel Allo décroché** où le prospect demande une suite (notes Attio de l'intégration Allo, depuis le 23/10).
 
 **Jamais** sur un email **sortant sans réponse** (prospection Growth/Lemlist non répondue). En cas de
 doute → pas de deal.
@@ -52,7 +53,7 @@ Dans Claude Code, sur ce repo :
 ```
 /sales-ops (orchestrateur, top-level Claude)
   ├─ Agent(email-expert)    en parallèle  → JSON threads Gmail B2B
-  ├─ Agent(meeting-expert)  en parallèle  → JSON meetings B2B (+ transcripts)
+  ├─ Agent(meeting-expert)  en parallèle  → JSON meetings B2B (+ transcripts) et appels Allo
   ├─ Agent(crm-sync)         (reçoit les 2 JSON dans le prompt)
   │    → cross-ref Attio + applique deals/stages/notes + audit log Supabase + rapport
   └─ Agent(sales-ops-notifier)  → notif Slack courte (uniquement s'il y a du nouveau)
@@ -64,7 +65,8 @@ Dans Claude Code, sur ce repo :
   threads internes, non-B2B. Fournit `direction` / `last_message_direction` / `positive_reply`.
 - **`meeting-expert`** (`.claude/agents/meeting-expert.md`) — **Claap** (source primaire des
   résumés/transcripts, bascule en cours) + Google Calendar + Drive (Meet Recordings) + Calendly +
-  Fireflies (dernier fallback). Fournit `demo_booked_via_calendly` / `demo_done`.
+  Fireflies (dernier fallback), plus les appels Allo (notes Attio de l'intégration). Fournit
+  `demo_booked_via_calendly` / `demo_done` et `calls[]`.
 - **`crm-sync`** (`.claude/agents/crm-sync.md`) — le **cerveau** : croise avec Attio, applique deals /
   stages / notes (règle de deal stricte), persiste l'audit log Supabase.
 - **`sales-ops-notifier`** (`.claude/agents/sales-ops-notifier.md`) — notif Slack **courte** :
@@ -87,6 +89,7 @@ L'agent ne traite **jamais** :
 - Claap : résumés IA + transcripts des meetings (workspace `Gang4`, id `JqwajNYNLd`) — **source
   primaire des résumés meetings, bascule progressive en cours**.
 - Fireflies : dernier fallback transcripts (historique pré-Claap).
+- Allo : appels de Samuel, lus dans les notes Attio de l'intégration Allo (depuis le 23/10).
 - Attio : **lecture + écriture** (apply mode). Audit log dans `sales.applied_actions`.
 
 ## Plomberie Supabase (minimale)

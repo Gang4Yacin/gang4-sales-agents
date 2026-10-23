@@ -95,8 +95,8 @@ Avec `subagent_type='crm-sync'`, en lui passant :
 - la liste des sources manquantes de l'étape 3b (vide si aucune).
 
 `crm-sync` croise les remontées avec Attio, **applique les modifs directement dans Attio** (deals,
-stages, Balle / date / next step, notes — règle de création de deal stricte : démo planifiée OU réponse
-entrante non négative du prospect), exécute à chaque run la réconciliation produit, le filet
+stages, Balle / date / next step, notes — règle de création de deal stricte : démo planifiée, réponse
+entrante non négative du prospect OU appel Allo décroché où il demande une suite), exécute à chaque run la réconciliation produit, le filet
 « Replied - Interested » et l'hygiène du pipeline (hors fenêtre), persiste l'audit log + l'idempotence
 + les cursors dans Supabase, et retourne le rapport markdown court.
 
@@ -134,7 +134,8 @@ sa réponse :
 - Sales-only : si `crm-sync` écrit sur un customer en dehors de la réconciliation produit (`Deal Won` /
   `Customer`, churn `Lost`), c'est un bug critique — signale-le.
 - **Pas de deal sur de l'outbound sans réponse** : si le rapport `crm-sync` crée un deal sans démo,
-  réponse entrante, paiement ni marquage « intéressé », c'est un bug — signale-le.
+  réponse entrante, appel décroché où le prospect demande une suite (source `allo:`), paiement ni marquage
+  « intéressé », c'est un bug — signale-le. Un deal créé sur un appel sans réponse est aussi un bug.
 
 ## Planification
 
