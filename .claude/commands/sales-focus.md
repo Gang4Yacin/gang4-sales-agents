@@ -468,7 +468,7 @@ Le message, en Slack mrkdwn, 6 lignes au plus :
 - Une ligne par carte, dans l'ordre des rangs : `deal_nom` en gras, puis ce qu'il faut faire, d'après le `titre` de
   la carte, sans le nom du deal, 60 caractères au plus. Rien d'autre : ni pourquoi, ni contenu, ni lien Attio.
 - Plus de 3 cartes (par exemple `manuel 10`) : les 3 premières, puis une ligne « + N autres » avant le lien.
-- Aucune carte : une seule ligne, `:dart: *Sales Focus — lundi 26/10* · aucune action à pousser aujourd'hui ·
+- Aucune carte : une seule ligne, `:dart: *Sales Focus — <jour> JJ/MM* · aucune action à pousser aujourd'hui ·
   <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>`.
 - Dans les noms et les actions, `&`, `<` et `>` s'écrivent `&amp;`, `&lt;` et `&gt;` (Slack).
 
@@ -482,24 +482,31 @@ Exemple, un top 10 lancé à la main :
 <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>
 ```
 
-Poste en **une seule** commande : `python3` écrit le corps JSON, accents et guillemets compris, puis `curl` l'envoie.
-Le message va tel quel entre les triples guillemets, retours à la ligne compris (seuls `\` et `"""` y sont
-interdits) ; le heredoc entre apostrophes (`<<'EOF'`) ne touche ni aux `$` ni aux accents.
+Poste en **une seule** commande : `python3` lit le message et écrit le corps JSON, accents et guillemets compris,
+puis `curl` l'envoie. Le message va tel quel entre les deux lignes `MESSAGE`, retours à la ligne compris. Le
+heredoc entre apostrophes (`<<'MESSAGE'`) ne touche ni aux `$`, ni aux `\`, ni aux guillemets, ni aux accents ; seule
+une ligne réduite à `MESSAGE` y est interdite. Le script Python reste entre apostrophes : n'y ajoute pas d'apostrophe.
 ```bash
 f=$(mktemp)
-python3 - "$f" <<'EOF'
+python3 -c '
 import json, sys
-texte = """<le message, tel quel>"""
-with open(sys.argv[1], "w") as sortie:
-    json.dump({"channel": "C0B5EV7AN4F", "text": texte, "unfurl_links": False, "unfurl_media": False}, sortie)
-EOF
-if [ -z "$SLACK_BOT_TOKEN_SALES_OPS" ]; then echo '{"ok":false,"error":"jeton absent"}'; else
+texte = sys.stdin.buffer.read().decode("utf-8").rstrip("\n")
+corps = json.dumps({"channel": "C0B5EV7AN4F", "text": texte, "unfurl_links": False, "unfurl_media": False})
+open(sys.argv[1], "w").write(corps)
+' "$f" <<'MESSAGE'
+<le message, tel quel>
+MESSAGE
+if [ ! -s "$f" ]; then echo '{"ok":false,"error":"corps JSON vide"}'
+elif [ -z "$SLACK_BOT_TOKEN_SALES_OPS" ]; then echo '{"ok":false,"error":"jeton absent"}'
+else
   curl -sS --max-time 20 -X POST https://slack.com/api/chat.postMessage \
     -H "Authorization: Bearer $SLACK_BOT_TOKEN_SALES_OPS" \
     -H "Content-Type: application/json; charset=utf-8" \
     --data-binary @"$f"
 fi
 ```
+- Si `python3` échoue, le fichier reste vide et rien ne part (`corps JSON vide`) : c'est un échec du post comme un
+  autre.
 - N'affiche jamais le jeton : ni `echo`, ni `curl -v`, ni `set -x`.
 - Réponse attendue `{"ok":true,"ts":"1761459512.123456"}` ; lien
   `https://gang4groupe.slack.com/archives/C0B5EV7AN4F/p<ts sans le point>` (ici `p1761459512123456`).
