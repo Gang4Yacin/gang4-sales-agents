@@ -559,9 +559,11 @@ connecteurs) :
 - son prompt lance `/sales-check` (le texte d'un lancement par l'API ou `fire_trigger`, par exemple `essai`, est
   passé comme argument) et s'arrête, sans rien poster, si la commande, Supabase ou Attio manquent ;
 - connecteurs : Supabase, Attio, Gmail de Samuel, Gmail de Lucie, Claap et Google Calendar (ajoutés par Yacin le
-  23/10) ; Lemlist et n8n ne servent plus ; Gmail de Yacin (connecteur personnalisé, nom conseillé
-  « yacin-gmail », workflow n8n « (Claude) Get Yacin's Gmail » `3ELGb9CCbQEX48DZ` du 24/10 ; son adresse ne
-  s'écrit jamais dans le repo) est à ajouter par Yacin ; sans lui, repli `ProspectTouch` et ligne « Non vérifié » ;
+  23/10) ; Lemlist et n8n ne servent plus ; Gmail de Yacin (connecteur personnalisé
+  « yacin-gmail », workflow n8n « (Claude) Get Yacin's Gmail » `3ELGb9CCbQEX48DZ`) ajouté par Yacin le 24/10 ; sans
+  lui, repli `ProspectTouch` et ligne « Non vérifié ». Les connecteurs « yacin-gmail » et « lucie-gmail » (ex
+  « lucie-gmail-MCP-bearer ») exigent un jeton depuis le 24/10 (header `authorization` gardé par claude.ai) ; leur
+  adresse et leur jeton ne s'écrivent jamais dans le repo ;
 - le jeton Slack `SLACK_BOT_TOKEN_SALES_OPS` est dans l'environnement de la routine ;
 - v1 du 21/10 (état des lieux en lecture seule, plomberie comprise) remplacée le 23/10 par ce contrôle CRM
   autonome (retour de Yacin : message « fourre-tout », trop tourné outils, pas assez deals) ; photo initiale des

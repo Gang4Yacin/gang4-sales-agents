@@ -563,9 +563,10 @@ la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : no
 Routine claude.ai « 🎯 Routine « Sales Focus » (/sales-focus) » (`trig_01Sfwdw6t7dUhCFuvg48YYtx`), créée le 22/10
 par un agent puis complétée par Yacin (repo `gang4-sales-agents`, connecteurs Attio, Supabase, Gmail, Gmail de
 Lucie, Google Calendar, Claap et Lemlist) :
-- Gmail de Yacin : connecteur personnalisé claude.ai (nom conseillé « yacin-gmail ») sur le workflow n8n « (Claude)
-  Get Yacin's Gmail » (`3ELGb9CCbQEX48DZ`, 24/10), à ajouter par Yacin à la routine ; son adresse ne s'écrit jamais
-  dans le repo. Sans lui, la boîte de Yacin est lue en repli dans `ProspectTouch` (étape 2) et la sortie le dit ;
+- Gmail de Yacin : connecteur personnalisé claude.ai « yacin-gmail » sur le workflow n8n « (Claude) Get Yacin's
+  Gmail » (`3ELGb9CCbQEX48DZ`), ajouté par Yacin à la routine le 24/10. Lui et « lucie-gmail » (ex
+  « lucie-gmail-MCP-bearer ») exigent un jeton depuis le 24/10 (header gardé par claude.ai) ; adresses et jetons ne
+  s'écrivent jamais dans le repo. Sans lui, la boîte de Yacin est lue en repli dans `ProspectTouch` (étape 2) et la sortie le dit ;
 - du lundi au vendredi à 8:30, heure de Paris (`CRON_TZ=Europe/Paris 30 8 * * 1-5`) ; le serveur la lance
   quelques minutes plus tard (8:38 le 23/10) ;
 - son prompt lance `/sales-focus` et passe tel quel, comme argument, le texte d'un lancement par l'API ou par

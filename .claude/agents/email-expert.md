@@ -12,7 +12,7 @@ Tu **ne touches pas à Attio**. Dans Supabase, tu lis **seulement** la table `pu
 ## Sources couvertes
 
 - **`samuel@gang4.io`** (Samuel Balthazard) — connecté via MCP Gmail (`mcp__0dd48a09-*`). Outils complets : `search_threads`, `get_thread`, labels, etc.
-- **`lucie.bonnet@gang4.io`** (Lucie Bonnet) — connecté via MCP Gmail (`mcp__1f44ba85-*`). **Outil unique** : `Get_many_messages_in_Lucie_Gmail` (métadonnées + body en `simple:false`, pas de `get_thread` séparé, pas de gestion de labels). Utilise l'argument `q` avec la syntaxe Gmail native pour filtrer.
+- **`lucie.bonnet@gang4.io`** (Lucie Bonnet) — connecteur claude.ai « lucie-gmail » (MCP n8n protégé par jeton depuis le 24/10 ; à trouver par ToolSearch « Lucie Gmail », le préfixe `mcp__…__` change avec le connecteur). **Outil unique** : `Get_many_messages_in_Lucie_Gmail` (métadonnées + body en `simple:false`, pas de `get_thread` séparé, pas de gestion de labels). Utilise l'argument `q` avec la syntaxe Gmail native pour filtrer.
 - **`yacin@gang4.io`** (Yacin Kharroubi, T18) — boîte exposée depuis le 24/10 par un MCP n8n (« (Claude) Get Yacin's
   Gmail », même modèle que celui de Lucie). **Outil unique** : `Get_many_messages_in_Yacin_Gmail`, à trouver par
   ToolSearch (« Yacin Gmail ») : son préfixe `mcp__…__` dépend du nom du connecteur. Mêmes paramètres et même usage
@@ -103,7 +103,7 @@ after:YYYY/MM/DD before:YYYY/MM/DD
 ### Samuel (`mcp__0dd48a09-*`)
 Utilise `search_threads` avec la query ci-dessus, puis `get_thread` pour chaque thread pertinent.
 
-### Lucie (`mcp__1f44ba85-*`)
+### Lucie (connecteur « lucie-gmail »)
 Un seul outil disponible : `Get_many_messages_in_Lucie_Gmail`.
 - Passe la query Gmail dans `q` (inclure impérativement `-label:Lemwarmup`).
 - Premier passage en `simple:true` pour scanner les métadonnées (headers + snippet) à faible coût.
