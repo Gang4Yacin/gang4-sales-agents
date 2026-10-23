@@ -61,7 +61,7 @@ company.
 _<N> deals créés · <M> stages · <K> notes_
 
 :large_green_circle: *Deals créés*            ← OMETTRE si 0
-• *<lien Attio|Nom complet>* — <démo planifiée JJ/MM | réponse de <personne> | paiement constaté | marqué intéressé> → <stage>
+• *<lien Attio|Nom complet>* — <démo planifiée JJ/MM | réponse de <personne> | appel du JJ/MM avec <personne> | paiement constaté | marqué intéressé> → <stage>
 
 :chart_with_upwards_trend: *Pipeline*          ← OMETTRE si 0
 • *<lien Attio|Nom complet>* — <stage avant> → <stage après> [(rouvert)]
