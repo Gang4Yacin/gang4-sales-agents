@@ -271,6 +271,14 @@ retenu, avec sa raison en quelques mots (la même liste va dans `resume`).
 - Français, phrases courtes, noms complets d'Attio.
 
 ## Planification
-Routine claude.ai « Sales Focus », chaque jour à 8:30 (Paris), à créer dans l'interface des routines
-comme « Sales Ops daily » : prompt « Lance /sales-focus », même repo, connecteurs Attio, Supabase, Gmail,
-Google Calendar, Gmail de Lucie, Claap et Lemlist.
+Routine claude.ai « 🎯 Routine « Sales Focus » (/sales-focus) » (`trig_01Sfwdw6t7dUhCFuvg48YYtx`), créée le 22/10
+par un agent puis complétée par Yacin (repo `gang4-sales-agents`, connecteurs Attio, Supabase, Gmail, Gmail de
+Lucie, Google Calendar, Claap et Lemlist) :
+- du lundi au vendredi à 8:30, heure de Paris (`CRON_TZ=Europe/Paris 30 8 * * 1-5`) ; le serveur la lance
+  quelques minutes plus tard (8:38 le 23/10) ;
+- son prompt lance `/sales-focus` et passe tel quel, comme argument, le texte d'un lancement par l'API ou par
+  `fire_trigger` (par exemple `manuel 10`) ; il s'arrête si la commande, Supabase ou Attio manquent ;
+- premier passage programmé le 23/10 : 3 cartes (Araw, Gourmandiz, Social Desk, reprise avec les corrections de
+  Yacin), environ 1 $ ; un calcul enrichi (plans, études) coûte autour de 2 $ ;
+- le calcul du matin remplace celui de la veille sur la page, top 10 manuel compris : les cartes d'avant restent
+  en base (`ouverte`) mais ne s'affichent plus.
