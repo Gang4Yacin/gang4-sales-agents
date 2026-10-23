@@ -188,10 +188,12 @@ Puis présente à l'utilisateur le message posté et son lien.
 
 ## Planification
 
-Routine claude.ai « Sales Check hebdo », à créer dans l'interface des routines : une routine créée par un
-agent n'emporte ni le repo ni les connecteurs. Elle se règle comme « Sales Ops daily » :
-- prompt « Lance /sales-check » ;
-- chaque vendredi à 8:44, heure de Paris ;
-- même repo `gang4-sales-agents` et mêmes connecteurs, au minimum Supabase et Attio ;
-- pour les erreurs n8n (C3), le connecteur n8n ou la variable `N8N_API_KEY` dans l'environnement ;
-  sans l'un ni l'autre, C3 apparaît en « Non vérifié ».
+Routine claude.ai « 🔎 Routine « Sales Check hebdo » (/sales-check) » (`trig_012XNbLCrTp3fL6EYQiWfdEj`), créée
+le 22/10 par un agent puis complétée par Yacin (repo `gang4-sales-agents`, connecteurs Supabase, Attio, n8n et
+Lemlist ; une routine créée par un agent n'emporte ni le repo ni les connecteurs) :
+- chaque vendredi à 8:44, heure de Paris (`CRON_TZ=Europe/Paris 44 8 * * 5`) ;
+- son prompt lance `/sales-check` et s'arrête, sans rien poster, si la commande, Supabase ou Attio manquent ;
+- le jeton Slack `SLACK_BOT_TOKEN_SALES_OPS` est dans l'environnement de la routine ;
+- premier passage programmé le 23/10 (8:45 à 8:49) : message posté dans `#sales-ops`, 8 écarts, run
+  `2590a4fc` dans `sales.run_log`, environ 1,50 $ ;
+- sans le connecteur n8n ni `N8N_API_KEY`, C3 apparaîtrait en « Non vérifié ».
