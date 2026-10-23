@@ -168,7 +168,11 @@ returning id;
    order by 2 desc nulls last;
    ```
    Retire ceux des sociétés des deals lus en 1 (environ 160 domaines au 23/10, une centaine après ce tri). Ajoute
-   les contacts `lead_status = Replied - Interested` (`list-records` sur `people`). Ces domaines vont aux
+   les contacts `lead_status = Replied - Interested` (`list-records` sur `people`), et les appels Allo
+   décrochés des 90 derniers jours, absents de `ProspectTouch` : `search-notes-by-metadata` sans parent,
+   `created_at_gt` = il y a 90 jours, `limit: 100`, pages suivantes tant que la page est pleine ; garde les
+   titres « Allo … Answered » ou « Allo Inbound … » et leurs parents `companies` (exemple : Laboratoires
+   Vinci, appel de 9 min du 08/09, Vincent Wahala veut voir des exemples, aucun deal). Ces domaines vont aux
    sous-agents (point 4), par lots de 15, avec le même brief. Pour un candidat, le sous-agent commence par
    l'identité : société avec un deal ouvert (déjà dans les dossiers), cliente, agence, `icp` = `Hors ICP`, ou
    dernier message qui n'est qu'une absence, un rebond, une désinscription ou du démarchage → une ligne, sans

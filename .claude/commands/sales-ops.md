@@ -1,5 +1,5 @@
 ---
-description: Lance le Sales Ops pour tenir le CRM Attio à jour à partir de Gmail/Calendar/Drive/Calendly/Claap/Fireflies, de l'inbox LinkedIn Lemlist et des paiements (deals créés, pipeline au bon stage, Balle et date, notes des deals à jour — sales B2B uniquement, customers exclus hors réconciliation produit). Argument optionnel = fenêtre temporelle.
+description: Lance le Sales Ops pour tenir le CRM Attio à jour à partir de Gmail/Calendar/Drive/Calendly/Claap/Fireflies, des appels Allo, de l'inbox LinkedIn Lemlist et des paiements (deals créés, pipeline au bon stage, Balle et date, notes des deals à jour — sales B2B uniquement, customers exclus hors réconciliation produit). Argument optionnel = fenêtre temporelle.
 argument-hint: "[N | YYYY-MM | <month> <year>]"
 ---
 
@@ -55,8 +55,9 @@ Dans **un seul message**, fais 2 appels Agent en parallèle :
   lucie.bonnet@gang4.io, touches Gmail de yacin@gang4.io dans `ProspectTouch`, conversations LinkedIn de
   l'inbox Lemlist), format JSON attendu (un objet par source).
 - `subagent_type='meeting-expert'` — brief : fenêtre, sources (**Claap en premier** — workspace Gang4,
-  bascule en cours — puis Calendar + Drive + Calendly si dispo + Fireflies en dernier fallback),
-  calendriers attendus (samuel@, lucie.bonnet@, yacin@gang4.io), format JSON attendu.
+  bascule en cours — puis Calendar + Drive + Calendly si dispo + Fireflies en dernier fallback), **appels
+  Allo** (notes « Allo … Call » d'Attio sur la fenêtre, étape 7, plus Allo s'il est connecté), calendriers
+  attendus (samuel@, lucie.bonnet@, yacin@gang4.io), format JSON attendu (`meetings` et `calls`).
 
 Chacun retourne un bloc JSON normalisé.
 
@@ -70,6 +71,7 @@ Un run « réussi » ne doit pas cacher une source muette. Sources attendues :
 | Inbox LinkedIn Lemlist | MCP Lemlist absent, erreur, ou `linkedinSync` ni `synced` ni `recent` |
 | Calendriers samuel@, lucie.bonnet@, yacin@gang4.io (Alice n'est plus attendue depuis le 21/10) | présent dans `calendars_missing` |
 | Claap | MCP absent, ou plus de 50 % des démos passées sans compte rendu (`transcripts_missing`) |
+| Appels Allo (notes Attio) | recherche des notes en erreur ou non faite (`allo_notes_scanned` absent). Zéro appel n'est pas une erreur : Samuel appelle peu (24 appels du 01/09 au 23/10). Allo non connecté n'est pas une source manquante (complément) |
 
 Fraîcheur des tables n8n dont dépendent les touches (FUNNEL §8-J, extrait) :
 ```sql
@@ -140,4 +142,6 @@ La routine « Sales Ops daily » doit lancer `/sales-ops` **tous les jours** à 
 (T18 : une réponse du samedi ne doit pas attendre le lundi) ; c'est le cas depuis le 20/10 (planning
 changé par Yacin dans l'interface des routines). Ses connecteurs incluent Lemlist
 (inbox LinkedIn, ajouté le 20/10) en plus de Gmail, Calendar, Drive, Claap, Fireflies, Calendly, Attio,
-Supabase, Slack et du Gmail de Lucie.
+Supabase, Slack et du Gmail de Lucie. Les appels Allo se lisent par Attio (notes de l'intégration Allo) ;
+le connecteur Allo, à ajouter dans l'interface des routines, n'apporte que les appels qu'Allo n'a
+rattachés à aucune fiche.
