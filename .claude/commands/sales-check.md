@@ -108,14 +108,17 @@ interne ou de test. Deals ouverts = `Prospect identified`, `Demo scheduled`, `Qu
 |---|---|---|
 | Attio | MCP Attio : `list-records`, `get-records-by-ids`, `search-records`, `list-records-in-list`, `search-notes-by-metadata`, `get-note-body`, `search-emails-by-metadata`, `get-email-content`, `search-meetings`, `list-tasks` ; écriture : `update-record`, `create-record`, `create-note`, `update-task` | Deals, sociétés, contacts, notes (Allo, comptes rendus, récaps), emails synchronisés, corrections |
 | Supabase | `execute_sql`, projet `bksiaeiqzmoaxvkdtspn` | `ProspectTouch`, réconciliation produit, `sales.applied_actions`, `sales.deal_snapshot`, `sales.run_log` |
-| Gmail de Samuel, Gmail de Lucie, Claap, Google Calendar | MCP | Lire un fil, un compte rendu ou un rendez-vous précis ; jamais une boîte en masse |
+| Gmail de Yacin (`Get_many_messages_in_Yacin_Gmail`, trouvé par ToolSearch « Yacin Gmail » ; repli : ses touches `gmail:yacin` de `ProspectTouch`), Gmail de Samuel, Gmail de Lucie, Claap, Google Calendar | MCP | Lire un fil, un compte rendu ou un rendez-vous précis ; jamais une boîte en masse |
 | Slack | `curl` sur `chat.postMessage` avec `$SLACK_BOT_TOKEN_SALES_OPS` | Le message, canal `C0B5EV7AN4F` |
 
 Formes d'appel qui marchent (essayées le 22/10) : Gmail de Lucie (`Get_many_messages_in_Lucie_Gmail`), les huit
 paramètres sont obligatoires (`q`, `limit`, `returnAll`, `simple`, `readStatus`, `receivedAfter`,
-`receivedBefore`, `sender`) ; Google Calendar `list_events` : `calendarId` = l'adresse, `startTime` et `endTime`
-à l'heure de Paris sans `Z` ni décalage. Un connecteur absent ou en erreur n'arrête pas le contrôle : écris-le
-dans la ligne « Non vérifié » du message.
+`receivedBefore`, `sender`) ; Gmail de Yacin (`Get_many_messages_in_Yacin_Gmail`, essayé le 24/10), les mêmes huit
+paramètres, tous obligatoires (`readStatus` `"both"`, dates ISO comme `2026-10-22T00:00:00Z`, `sender` `""`,
+`returnAll` `false`, `limit` petit, `simple` `true` pour en-têtes et extrait ou `false` pour les corps) ; Google
+Calendar `list_events` : `calendarId` = l'adresse, `startTime` et `endTime` à l'heure de Paris sans `Z` ni
+décalage. Un connecteur absent ou en erreur n'arrête pas le contrôle : écris-le dans la ligne « Non vérifié » du
+message (Gmail de Yacin : « Non vérifié : Gmail de Yacin (repli ProspectTouch, retard jusqu'à 24 h) »).
 
 ## Étape 1 — Ouvrir le run
 ```sql
@@ -245,6 +248,15 @@ returning id;
      `next_cursor` **tant que `has_more` est vrai** : une page vide n'est pas la dernière. Lis le `summary` de
      chaque email, et `get-email-content` sur le dernier message entrant et sur chaque message de Gang4 qui
      promet quelque chose ;
+   - **la boîte de Yacin**, lue en direct d'abord : Attio ne la synchronise pas, et Yacin anime des démos, envoie
+     des récaps et des invitations. `Get_many_messages_in_Yacin_Gmail`, un appel par domaine de la société,
+     avec les huit paramètres, tous obligatoires (sinon l'appel échoue) : `q` = `from:<domaine> OR
+     to:<domaine>`, `readStatus: "both"`, `receivedAfter` = la création du deal (90 jours au plus pour un
+     candidat, ISO), `receivedBefore` = maintenant (ISO), `sender: ""`, `returnAll: false`, `limit: 25`,
+     `simple: true`, puis `simple: false` sur les messages qui promettent ou tiennent quelque chose. Repli si
+     l'outil est absent ou en erreur : ses touches de la requête `ProspectTouch` ci-dessus
+     (`source = 'gmail:yacin'`), sans corps et avec jusqu'à 24 h de retard (chargées vers 10:46). Une
+     invitation agenda envoyée par yacin@ après un meeting est un signe de suivi ;
    - **les réunions** : les lignes `channel_kind = 'meeting'` de la requête `ProspectTouch` (démos à venir
      comprises), les emails qui confirment ou annulent un rendez-vous, les comptes rendus en notes, Google
      Calendar et Claap. Un rendez-vous peut être rangé sous l'adresse d'un organisateur d'un autre domaine
@@ -259,7 +271,9 @@ returning id;
      LinkedIn : date, source, et sa nature au sens de « Lire une réponse » ci-dessous) ;
    - la **dernière action de Gang4** ;
    - chaque **promesse de Gang4** (« je t'envoie », « je reviens vers toi », action d'un compte rendu), avec la
-     preuve qu'elle a été tenue ou non ;
+     preuve qu'elle a été tenue ou non. « Non tenue » exige des boîtes lues à jour : boîte de Yacin en repli et
+     promesse qu'il a pu tenir (il était à la démo ou dans le fil) → « à vérifier : boîte de Yacin non lue à
+     jour » ;
    - les contacts qui ont échangé sans être rattachés au deal ;
    - les corrections proposées (contrôle, champ, avant → après, fait daté et source) ou « RAS ».
    Un deal rendu sans ligne de preuve, ou avec des notes trouvées mais aucune lue, compte comme non lu : relance
@@ -342,7 +356,8 @@ réconciliation produit qui le fait).
 **Deal fermé par un agent** : relis son dossier entier.
 - **Rouvre** quand l'une de ces conditions est vraie :
   - le prospect avait montré de l'intérêt et c'est Gang4 qui devait agir (promesse non tenue, question sans
-    réponse, rappel promis, démo à recaler) ;
+    réponse, rappel promis, démo à recaler). Une promesse « à vérifier » (étape 2.4, boîte de Yacin en repli)
+    rouvre avec le next step « Vérifier que <ce qui a été promis le JJ/MM> est parti », jamais « Envoyer » ;
   - un signal de création de deal est postérieur à la fermeture ;
   - le motif de fermeture est contredit par les faits (« 60 jours sans signal » alors qu'un appel décroché avec
     résumé ou un message date de moins de 60 jours ; « Hors ICP » posé à cause d'un contact alors que la marque
@@ -362,7 +377,10 @@ réconciliation produit qui le fait).
 - Le dernier échange vient du prospect (message, ou appel où il demande quelque chose) et Gang4 n'a rien envoyé
   depuis → Balle Gang4, aujourd'hui, « Répondre à <prénom nom> (message du JJ/MM) ».
 - Gang4 a promis quelque chose et rien n'est parti → Balle Gang4, aujourd'hui, le livrable promis en next step
-  (« Envoyer à <prénom> <ce qui a été promis le JJ/MM> »).
+  (« Envoyer à <prénom> <ce qui a été promis le JJ/MM> »). On n'affirme jamais l'absence d'un envoi sur une boîte
+  qu'on n'a pas lue à jour : boîte de Yacin en repli et promesse « à vérifier » (étape 2.4) → même Balle et même
+  date, next step « Vérifier que <ce qui a été promis le JJ/MM> est parti », et la note d'audit dit que sa boîte
+  n'a pas été lue à jour.
 - Balle Gang4 posée par un agent alors que le dernier message est de Gang4, qu'il attend une réponse et qu'aucune
   promesse n'est due → Balle Prospect, envoi + 7 j (aujourd'hui si c'est passé), « Relancer <prénom nom> —
   relance n/3 ».
@@ -527,7 +545,8 @@ Puis présente le message et son lien.
   d'un deal, jamais d'écriture sur une company `Customer` (hors réconciliation produit), une agence ou un
   domaine perso.
 - **Jamais d'invention** : chaque correction s'appuie sur un fait daté et sa source, cités dans la note et dans
-  `reasoning`. Sans preuve, pas de correction.
+  `reasoning`. Sans preuve, pas de correction. Jamais l'absence d'un envoi affirmée sur une boîte non lue à jour
+  (C3, C4).
 - Toute écriture passe d'abord par `sales.applied_actions` (avec le `run_id`).
 - Aucun email, aucun brouillon, rien dans Lemlist ni n8n. Un seul message Slack.
 
@@ -540,7 +559,9 @@ connecteurs) :
 - son prompt lance `/sales-check` (le texte d'un lancement par l'API ou `fire_trigger`, par exemple `essai`, est
   passé comme argument) et s'arrête, sans rien poster, si la commande, Supabase ou Attio manquent ;
 - connecteurs : Supabase, Attio, Gmail de Samuel, Gmail de Lucie, Claap et Google Calendar (ajoutés par Yacin le
-  23/10) ; Lemlist et n8n ne servent plus ;
+  23/10) ; Lemlist et n8n ne servent plus ; Gmail de Yacin (connecteur personnalisé, nom conseillé
+  « yacin-gmail », workflow n8n « (Claude) Get Yacin's Gmail » `3ELGb9CCbQEX48DZ` du 24/10 ; son adresse ne
+  s'écrit jamais dans le repo) est à ajouter par Yacin ; sans lui, repli `ProspectTouch` et ligne « Non vérifié » ;
 - le jeton Slack `SLACK_BOT_TOKEN_SALES_OPS` est dans l'environnement de la routine ;
 - v1 du 21/10 (état des lieux en lecture seule, plomberie comprise) remplacée le 23/10 par ce contrôle CRM
   autonome (retour de Yacin : message « fourre-tout », trop tourné outils, pas assez deals) ; photo initiale des

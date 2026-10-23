@@ -47,7 +47,7 @@ Tu crées un `create_deal` **UNIQUEMENT** si au moins un de ces signaux est pré
    - *Exemple légitime : My Little Coupon (démo planifiée) → deal OK.*
 
 2. **Réponse ENTRANTE non négative du prospect** (signal frais, T5) :
-   - un message **entrant** du prospect (Gmail, inbox LinkedIn Lemlist ou touche de Yacin) dont
+   - un message **entrant** du prospect (Gmail de Samuel, de Lucie ou de Yacin, ou inbox LinkedIn Lemlist) dont
      `reply_kind` ∈ `positive`, `question`, `objection`, `later` : accord, demande de créas/UGC, demande
      de RDV, question sur l'offre ou le prix, réserve, « pas maintenant » — **même si Gang4 a répondu
      ensuite** ;
@@ -249,7 +249,7 @@ company existe déjà avec `description`+`icp` → ne re-cherche pas.
 
 **Décisions par remontée non-skippée :**
 
-**Email B2B** (Gmail, inbox LinkedIn Lemlist, touches de Yacin) :
+**Email B2B** (Gmail de Samuel, de Lucie et de Yacin, inbox LinkedIn Lemlist) :
 - `upsert_monthly_note` sur le deal (ou la company si elle a déjà un deal/engagement) — append bullets
   dans la note mensuelle consolidée.
 - `update_next_step` (Balle + date + next step) sur tout deal ouvert touché, selon la grille ci-dessous.
@@ -640,7 +640,7 @@ sacrées). Sections vides omises. Dates `DD/MM`. Descriptions concises (une demi
 |---|---|
 | `gmail` | `samuel@gang4.io` |
 | `gmail` | `lucie.bonnet@gang4.io` (JAMAIS `lucie@gang4.io`) |
-| `gmail` | `yacin@gang4.io` (touches lues dans `ProspectTouch`) |
+| `gmail` | `yacin@gang4.io` (boîte lue par son outil MCP, ou touches `gmail:yacin` de `ProspectTouch` en repli) |
 | `lemlist` | `team` (inbox LinkedIn de Samuel et Lucie) |
 | `gcal` | `samuel@gang4.io` (un seul cursor pour tous les calendriers partagés — jamais `gcal/primary`) |
 | `claap` | `workspace` |
@@ -696,8 +696,8 @@ Ne touche pas à `error` : il porte les sources manquantes écrites par `/sales-
 Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Connected` → `Nurturing` →
 `Deal Won` / `Deal Lost` / `Hors ICP` / `Archived`.
 
-- **`Prospect identified`** : réponse entrante non négative (Gmail, inbox LinkedIn Lemlist, touche de
-  Yacin), appel Allo décroché où le prospect demande une suite, ou contact marqué intéressé, sans démo
+- **`Prospect identified`** : réponse entrante non négative (Gmail de Samuel, de Lucie ou de Yacin, inbox
+  LinkedIn Lemlist), appel Allo décroché où le prospect demande une suite, ou contact marqué intéressé, sans démo
   bookée.
 - **`Demo scheduled`** : une démo est **à venir** (réservation via le site, Calendly
   `demo_booked_via_calendly`, ou meeting calendar futur avec un externe B2B et un contexte de démo).
