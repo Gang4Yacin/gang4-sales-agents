@@ -14,7 +14,7 @@ Tu **ne touches pas à Attio**. Dans Supabase, tu lis **seulement** la table `pu
 - **`samuel@gang4.io`** (Samuel Balthazard) — connecté via MCP Gmail (`mcp__0dd48a09-*`). Outils complets : `search_threads`, `get_thread`, labels, etc.
 - **`lucie.bonnet@gang4.io`** (Lucie Bonnet) — connecté via MCP Gmail (`mcp__1f44ba85-*`). **Outil unique** : `Get_many_messages_in_Lucie_Gmail` (métadonnées + body en `simple:false`, pas de `get_thread` séparé, pas de gestion de labels). Utilise l'argument `q` avec la syntaxe Gmail native pour filtrer.
 - **`yacin@gang4.io`** (Yacin Kharroubi, T18) — pas encore de MCP. En attendant, lis les touches que n8n
-  (Prospect Relance Sync, chaque jour vers 10:46) journalise depuis sa boîte, via `mcp__1ba71441-*__execute_sql`
+  (🔁 Prospect Touch Sync V1, ex-Prospect Relance Sync, chaque jour vers 10:46) journalise depuis sa boîte, via `mcp__1ba71441-*__execute_sql`
   (project_id `bksiaeiqzmoaxvkdtspn`, lecture seule) :
   ```sql
   select occurred_at, direction, prospect_email, prospect_name, subject, snippet, match_method,
