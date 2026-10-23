@@ -73,6 +73,10 @@ Un run « réussi » ne doit pas cacher une source muette. Sources attendues :
 | Claap | MCP absent, ou plus de 50 % des démos passées sans compte rendu (`transcripts_missing`) |
 | Appels Allo (notes Attio) | recherche des notes en erreur ou non faite (`allo_notes_scanned` absent). Zéro appel n'est pas une erreur : Samuel appelle peu (24 appels du 01/09 au 23/10). Allo non connecté n'est pas une source manquante (complément) |
 
+Seules les conditions du tableau font une source manquante. Un cursor ancien n'en est pas une : il reste à
+la date du dernier item reçu quand la source n'a rien eu de neuf (le 23/10, `lemlist/team` était resté au
+08/10 alors que l'inbox était lue chaque soir et qu'aucune réponse LinkedIn n'était arrivée depuis).
+
 Fraîcheur des tables n8n dont dépendent les touches (FUNNEL §8-J, extrait) :
 ```sql
 select 'relance (attendu < 26 h)' as signal, max(last_evaluated_at) as dernier from public."ProspectRelanceCandidate"

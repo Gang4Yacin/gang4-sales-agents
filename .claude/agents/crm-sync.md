@@ -660,6 +660,12 @@ on conflict (source, account) do update set
 `max_processed_at` = timestamp du **dernier item effectivement scanné** pour cette source dans la
 fenêtre (pas `window_end` arbitrairement).
 
+Exception `lemlist/team` : si l'inbox a été lue sans erreur, avec `linkedinSync` `synced` ou `recent` pour
+Samuel et Lucie, `last_processed_at = window_end` (la synchro faite pendant le run couvre toute la fenêtre)
+et `last_external_id` reste la dernière conversation avec un message LinkedIn entrant. Les réponses
+LinkedIn sont rares (aucune du 08 au 23/10) : arrêté au dernier message, le cursor passait pour une inbox
+non relue.
+
 ### 8. Clôture du run
 ```sql
 update sales.run_log
