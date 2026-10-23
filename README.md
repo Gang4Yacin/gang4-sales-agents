@@ -120,10 +120,13 @@ order by status, target_record_id;
 
 ## Contrôle hebdo
 
-- **`/sales-check`** (`.claude/commands/sales-check.md`) : lecture seule, chaque vendredi matin. Fait
-  l'état des lieux du funnel (santé de `/sales-ops`, automatisations et erreurs n8n, paiements comparés
-  à Attio, réponses et démos sans suite, lancements Growth, hygiène du pipeline). Poste un seul message
-  « Contrôles hebdo » dans `#sales-ops` et trace le run dans `sales.run_log` (`agent = 'sales-check'`).
+- **`/sales-check`** (`.claude/commands/sales-check.md`) : chaque vendredi matin, autonome comme `/sales-ops`.
+  Repasse sur tout le pipeline Attio, deal par deal, avec le dossier complet (touches, notes du deal, de la
+  société et des contacts dont les appels Allo, emails et réunions) et corrige lui-même ce que `/sales-ops` a
+  raté : deals manquants, stage faux, fermetures de la semaine à tort, Balle mal placée (promesses de Gang4 non
+  tenues comprises), fiches incomplètes. Écritures tracées dans `sales.applied_actions`, photo des deals dans
+  `sales.deal_snapshot`, un message court « Contrôle CRM » dans `#sales-ops` (une ligne par deal corrigé).
+  `/sales-check essai` fait le contrôle sans rien écrire.
 
 ## Top 3 du jour
 
@@ -150,7 +153,7 @@ order by status, target_record_id;
 - ✅ Activation écriture Attio (apply mode + audit log)
 - ✅ Recentrage `/sales-ops` : règle de deal stricte, suppression des rappels/follow-ups, notif courte
 - ✅ Claap = source primaire des résumés meetings (bascule progressive ; Drive/Gemini puis Fireflies en fallback)
-- ✅ Contrôle hebdo `/sales-check` (21/10)
+- ✅ Contrôle hebdo `/sales-check` (21/10), autonome depuis le 23/10
 - ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10), v3 avec source au survol, email modifiable ou réécrit sur consigne et guide de style (22/10), v4 avec pastilles de filtre colorées et édition au double-clic (22/10), top 10 à la demande (22/10)
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
 - ⏳ Gmail Yacin via n8n
