@@ -110,14 +110,14 @@ Migrations : `supabase/migrations/0001…0005`.
 ## Inspecter un run
 
 ```sql
--- dernier run
-select * from sales.run_log order by started_at desc limit 1;
+-- dernier run de /sales-ops (sales-check et sales-focus écrivent aussi dans run_log)
+select * from sales.run_log where agent = 'sales-ops' order by started_at desc limit 1;
 
 -- actions du dernier run, groupées par cible
 select status, target_object_type, target_record_id, action_type,
        reasoning, source_refs, error_message, applied_at
 from sales.applied_actions
-where run_id = (select id from sales.run_log order by started_at desc limit 1)
+where run_id = (select id from sales.run_log where agent = 'sales-ops' order by started_at desc limit 1)
 order by status, target_record_id;
 ```
 
@@ -142,6 +142,12 @@ order by status, target_record_id;
   (ou le Google Doc) par le flow n8n « Préparer l'action » ; l'envoi reste manuel.
   Lancé à la main avec `/sales-focus manuel 10`, il propose jusqu'à 10 cartes ; une carte que Yacin a modifiée et
   encore ouverte est reprise telle quelle au calcul suivant.
+- **Snooze et Pas pertinent** (v5, 23/10) : « Snooze » masque la carte jusqu'à un jour choisi (3, 7 ou 14 jours, ou
+  une autre date) et la page décale la prochaine action d'Attio à ce jour (note « Snooze - auto »). « Pas pertinent »
+  demande un motif, traité au calcul suivant : « Mauvais objectif » → `/sales-focus` écrit le bon objectif dans
+  Attio (note « Objectif corrigé - auto ») et réécrit la carte ; « Autre » → la même action ne revient pas pendant 30
+  jours, et le deal est corrigé dans Attio si le texte le demande (note « Correction depuis Sales Actions - auto »).
+  Ce sont les seules écritures Attio de `/sales-focus`, tracées dans `sales.applied_actions`.
 - **`docs/STYLE-EMAILS.md`** : la manière d'écrire de Gang4 (règles et situations), suivie par `/sales-focus`
   avec les vrais envois de la même boîte et les corrections de Yacin gardées en base.
 

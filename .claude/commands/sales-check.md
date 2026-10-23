@@ -50,6 +50,13 @@ postérieure. Avant de toucher au stage, à la Balle, à la date ou au next step
      sessions Claude écrivent ainsi les décisions de Yacin : « Clôture du deal - auto », « Correction du stage
      - auto », « Réouverture du deal - auto », « Revue de la fermeture du deal - auto », « Création du deal -
      auto » ;
+   - ou une note « Objectif corrigé - auto » ou « Correction depuis Sales Actions - auto » du deal (elles
+     contiennent « (page Sales Actions) », quel que soit le prénom qu'elles citent) : quelqu'un de l'équipe a décidé,
+     sur la page `/admin/sales-actions` (depuis le 23/10), la Balle, la date et le next step de sa ligne « Après : »,
+     jamais le stage. Une note « Snooze - auto » ne porte que la date, jusqu'au jour du snooze (garde-fou « Date
+     repoussée ») : ni la Balle, ni le next step, ni le stage. « Snooze annulé - auto » remet l'état d'avant le
+     snooze et n'est pas une décision. Les lignes d'un run `sales-focus` dans `sales.applied_actions` exécutent ces
+     décisions : ce ne sont pas des lignes d'agent ;
    - ou le deal est cité avec une décision de Yacin dans `docs/FUNNEL.md` §7 et §12 ou
      `docs/MIGRATION-ATTIO-2026-10-20.md` (lis-les avant de commencer) ;
    - ou son état diffère de la dernière ligne agent qui le pose (requête ci-dessous) : quelqu'un l'a changé à la
@@ -58,7 +65,7 @@ postérieure. Avant de toucher au stage, à la Balle, à la date ou au next step
    récente :
    - la dernière ligne `applied` d'un run `sales-ops` ou `sales-check` le pose ;
    - ou une note « - auto » d'une session Claude (« Clôture du deal », « Correction du stage », « Création du
-     deal »…) le pose sans citer Yacin ;
+     deal »…) le pose sans citer Yacin ni « (page Sales Actions) » ;
    - ou la Balle, la date et le next step sont ceux du tableau de `docs/MIGRATION-ATTIO-2026-10-20.md`
      (migration du 20/10 par une session Claude : les champs Balle et date ont été créés ce jour-là). Exemples :
      Bricks, Nowa No Water, Wopilo, SmartWorkout.
@@ -478,8 +485,9 @@ RAS : <contrôles sans correction, en mots simples>
 - Ajoute une ligne seulement si besoin : « ⚠️ Non corrigé (n) : <deal> — <raison> » pour un échec Attio ;
   « Non vérifié : <source> (<raison>) » pour un connecteur de la table Outils absent ou en erreur, jamais pour un
   travail sauté ni pour une source hors de cette table ;
-  « ⚠️ /sales-ops n'a pas tourné le JJ/MM » si `sales.run_log` montre un jour sans run depuis le 20/10 (la
-  routine tourne tous les jours à 17:45 UTC).
+  « ⚠️ /sales-ops n'a pas tourné le JJ/MM » si `sales.run_log` montre un jour sans run `agent = 'sales-ops'`
+  depuis le 20/10 (la routine tourne tous les jours à 17:45 UTC ; `sales-focus` et `sales-check` y écrivent aussi
+  leurs lignes).
 - Rien d'autre : pas de volume, pas de n8n, pas de Lemlist, pas de sourcing, pas de « à trancher ».
 - Poste toujours, même sans correction (« ✅ Rien à corriger cette semaine »).
 - Noms complets d'Attio, dates `JJ/MM`.

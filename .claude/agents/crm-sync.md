@@ -520,7 +520,11 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
    - le deal a été rouvert, corrigé ou créé sur décision de Yacin il y a moins de 60 jours : une note du deal
      (`search-notes-by-metadata` sur le deal) contient « décision de Yacin », « à la demande de Yacin » ou
      « go de Yacin » (par exemple « Revue de la fermeture du deal - auto » ou « Création du deal - auto » du
-     23/10 : Maju, Flotte, Alltricks, Magimix, Célims, Biocyte, Poppins - Partnership Ads).
+     23/10 : Maju, Flotte, Alltricks, Magimix, Célims, Biocyte, Poppins - Partnership Ads) ;
+   - une note « Objectif corrigé - auto » ou « Correction depuis Sales Actions - auto » de moins de 60 jours, ou
+     une note « Snooze - auto » dont le jour de snooze n'est pas passé (elles contiennent « (page Sales Actions) »,
+     quel que soit le prénom qu'elles citent) : c'est une décision humaine prise sur la page `/admin/sales-actions`
+     (depuis le 23/10). « Snooze annulé - auto » remet l'état d'avant le snooze et n'est pas une décision.
 4. **Tâches automatiques Attio** : `list-tasks` (`is_completed = false`, 10 par page, `offset` jusqu'au
    bout) :
    - « Add Next Step Task for … » (échéance figée au 29/04/2025) → `update-task` `is_completed = true` :
