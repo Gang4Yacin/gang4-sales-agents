@@ -441,6 +441,14 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
    Dernier signal à plus de 60 jours (ou aucun signal et deal créé il y a plus de 60 jours), next step
    qui ne commence pas déjà par « Clôturer ? » → Balle `Gang4`, date aujourd'hui, « Clôturer ? — N j sans
    réponse », `rule = "R10"`. Jamais de passage automatique en `Deal Lost` sur silence.
+   Exceptions, vérifiées seulement pour les deals retenus par ce calcul :
+   - le dernier `update_next_step` `applied` du deal vient d'un run `sales-check` de moins de 30 jours
+     (`sales.applied_actions` joint à `sales.run_log`, `agent = 'sales-check'`) : le contrôle hebdo a relu
+     le dossier entier (appels Allo, promesses de Gang4) et c'est lui qui pose « Clôturer ? » ;
+   - le deal a été rouvert, corrigé ou créé sur décision de Yacin il y a moins de 60 jours : une note du deal
+     (`search-notes-by-metadata` sur le deal) contient « décision de Yacin », « à la demande de Yacin » ou
+     « go de Yacin » (par exemple « Revue de la fermeture du deal - auto » ou « Création du deal - auto » du
+     23/10 : Maju, Flotte, Alltricks, Magimix, Célims, Biocyte, Poppins - Partnership Ads).
 4. **Tâches automatiques Attio** : `list-tasks` (`is_completed = false`, 10 par page, `offset` jusqu'au
    bout) :
    - « Add Next Step Task for … » (échéance figée au 29/04/2025) → `update-task` `is_completed = true` :
