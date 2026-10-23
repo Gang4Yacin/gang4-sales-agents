@@ -139,7 +139,8 @@ order by status, target_record_id;
   d'appel) ou le plan d'action. Le calcul va dans Supabase
   (`SalesFocusRun`, `SalesFocusAction`). Sur la page admin `/admin/sales-actions`, « Voir la source » montre
   l'extrait au survol, l'email se modifie ou se réécrit sur consigne, et « Valider » crée le brouillon Gmail
-  (ou le Google Doc) par le flow n8n « Préparer l'action » ; l'envoi reste manuel.
+  (ou le Google Doc) par le flow n8n « Préparer l'action » ; l'envoi reste manuel. Après chaque calcul, un message
+  court dans `#sales-ops` annonce le top (les 3 premiers deals, une demi-phrase chacun) avec le lien vers la page.
   Lancé à la main avec `/sales-focus manuel 10`, il propose jusqu'à 10 cartes ; une carte que Yacin a modifiée et
   encore ouverte est reprise telle quelle au calcul suivant.
 - **Snooze et Pas pertinent** (v5, 23/10) : « Snooze » masque la carte jusqu'à un jour choisi (3, 7 ou 14 jours, ou
@@ -163,7 +164,7 @@ order by status, target_record_id;
 - ✅ Recentrage `/sales-ops` : règle de deal stricte, suppression des rappels/follow-ups, notif courte
 - ✅ Claap = source primaire des résumés meetings (bascule progressive ; Drive/Gemini puis Fireflies en fallback)
 - ✅ Contrôle hebdo `/sales-check` (21/10), autonome depuis le 23/10
-- ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10), v3 avec source au survol, email modifiable ou réécrit sur consigne et guide de style (22/10), v4 avec pastilles de filtre colorées et édition au double-clic (22/10), top 10 à la demande (22/10)
+- ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10), v3 avec source au survol, email modifiable ou réécrit sur consigne et guide de style (22/10), v4 avec pastilles de filtre colorées et édition au double-clic (22/10), top 10 à la demande (22/10), notification courte dans `#sales-ops` (23/10)
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
 - ⏳ Gmail Yacin via n8n
 - ⏳ Reprise du `sales-strategist`

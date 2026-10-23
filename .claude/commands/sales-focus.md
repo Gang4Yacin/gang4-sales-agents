@@ -1,5 +1,5 @@
 ---
-description: Sales Focus — choisit les 3 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun le contenu prêt (email, document ou plan d'action). Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Lecture seule partout ailleurs.
+description: Sales Focus — choisit les 3 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun le contenu prêt (email, document ou plan d'action). Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Poste ensuite une courte notification dans Slack #sales-ops avec le lien vers la page. Lecture seule partout ailleurs.
 argument-hint: "[manuel] [nombre de cartes : 3 par défaut, 10 au plus]"
 ---
 
@@ -16,7 +16,8 @@ Tu n'écris **nulle part** sauf dans Supabase, tables `public."SalesFocusRun"` e
 `20261022170000_sales_focus_v3.sql`, `20261022190000_sales_focus_top10.sql` et `20261023190000_sales_focus_v5.sql`
 du repo de l'admin), et dans Attio pour un seul cas : un « Pas pertinent » de la page à traiter (étape 2 bis), sur
 son deal (`update-record` : next step, date, Balle ; `create-note`), tracé dans `sales.run_log` et
-`sales.applied_actions`. Ni n8n, ni Lemlist, ni email, ni Slack.
+`sales.applied_actions`. Un seul message part : une courte notification dans Slack `#sales-ops`, une fois le calcul
+écrit, avec le lien vers la page (étape 8). Ni n8n, ni Lemlist, ni email.
 
 Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d'action », « pas grave »,
 « pas prioritaire ») ne revient pas dans le top 3.
@@ -39,12 +40,15 @@ Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d
   jusqu'à un jour choisi et la page décale déjà la prochaine action d'Attio. « Pas pertinent » a un motif :
   « Mauvais objectif » (la carte est réécrite au calcul suivant avec le bon objectif, Attio compris) ou « Autre »
   (tu lis le texte et tu agis en conséquence). Les deux se traitent ici, en premier (étape 2 bis).
+- (23/10) Après le calcul, une courte notification dans Slack `#sales-ops` annonce le top et renvoie vers la page
+  (étape 8).
 
 ## Arguments
 - `manuel` → `source = 'manuel'` (lancé à la main : app Claude, « Run now » ou appel de la routine) ; sans lui,
   `source = 'routine'`.
 - Un nombre de 1 à 10 → `N`, le nombre de cartes au plus ; 3 par défaut. Exemple : `manuel 10` pour voir un top 10
   sur la page (demande de Yacin du 22/10). Un nombre hors de 1 à 10 compte pour 3.
+- Pas de mode d'essai : chaque lancement, `manuel` compris, écrit le calcul et poste dans `#sales-ops` (étape 8).
 
 ## Étape 1 — Mémoire des calculs précédents
 ```sql
@@ -256,7 +260,7 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
 - **Balle Gang4 à échéance**, le point de départ : chaque deal ouvert dont `balle_dans_le_camp` vaut `Gang4` et dont
   `prochaine_action_le` est aujourd'hui, passée ou vide. Attio dit déjà que Gang4 doit agir, et
   `next_step_description` dit quoi : chacun est candidat d'office, et chacun reçoit un verdict, retenu ou écarté avec
-  sa raison (étape 8 et `resume`). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
+  sa raison (étape 9 et `resume`). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
   oublié Goodvest (Aurélie Briche-Heinry absente à la démo du 22/09, à recaler), Hindbag et Circle Sportswear
   (relances).
 - **Argent qui attend** : go donné et Meta connecté sans abonnement avec un signal récent, facture
@@ -446,11 +450,69 @@ set ended_at = now(),
 where id = '<id de sales.run_log>';
 ```
 
-## Étape 8 — Restituer
+## Étape 8 — Prévenir dans #sales-ops
+Une fois tout écrit (étape 7 : le calcul et ses cartes, les « Pas pertinent » marqués, `sales.run_log` clos), poste
+**un** message court dans `#sales-ops` (canal `C0B5EV7AN4F`), avec le jeton du bot Sales Ops
+(`SLACK_BOT_TOKEN_SALES_OPS`, dans l'environnement des routines). Chaque lancement poste, `manuel` compris. Si
+l'écriture du calcul a échoué, ne poste rien : la page n'a rien de nouveau.
+
+Le message, en Slack mrkdwn, 6 lignes au plus :
+```
+:dart: *Sales Focus — <jour> JJ/MM* · top <nombre de cartes> prêt
+1. *<deal_nom>* — <ce qu'il faut faire, en une demi-phrase>
+2. …
+3. …
+<https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>
+```
+- Titre : le jour du calcul, heure de Paris (« lundi 26/10 »), et le nombre de cartes écrites.
+- Une ligne par carte, dans l'ordre des rangs : `deal_nom` en gras, puis ce qu'il faut faire, d'après le `titre` de
+  la carte, sans le nom du deal, 60 caractères au plus. Rien d'autre : ni pourquoi, ni contenu, ni lien Attio.
+- Plus de 3 cartes (par exemple `manuel 10`) : les 3 premières, puis une ligne « + N autres » avant le lien.
+- Aucune carte : une seule ligne, `:dart: *Sales Focus — lundi 26/10* · aucune action à pousser aujourd'hui ·
+  <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>`.
+- Dans les noms et les actions, `&`, `<` et `>` s'écrivent `&amp;`, `&lt;` et `&gt;` (Slack).
+
+Exemple, un top 10 lancé à la main :
+```
+:dart: *Sales Focus — lundi 26/10* · top 10 prêt
+1. *Goodvest* — recaler la démo manquée d'Aurélie Briche-Heinry
+2. *Hindbag* — relancer : l'email est prêt
+3. *Circle Sportswear* — relancer : l'email est prêt
++ 7 autres
+<https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>
+```
+
+Poste en **une seule** commande : `python3` écrit le corps JSON, accents et guillemets compris, puis `curl` l'envoie.
+Le message va tel quel entre les triples guillemets, retours à la ligne compris (seuls `\` et `"""` y sont
+interdits) ; le heredoc entre apostrophes (`<<'EOF'`) ne touche ni aux `$` ni aux accents.
+```bash
+f=$(mktemp)
+python3 - "$f" <<'EOF'
+import json, sys
+texte = """<le message, tel quel>"""
+with open(sys.argv[1], "w") as sortie:
+    json.dump({"channel": "C0B5EV7AN4F", "text": texte, "unfurl_links": False, "unfurl_media": False}, sortie)
+EOF
+if [ -z "$SLACK_BOT_TOKEN_SALES_OPS" ]; then echo '{"ok":false,"error":"jeton absent"}'; else
+  curl -sS --max-time 20 -X POST https://slack.com/api/chat.postMessage \
+    -H "Authorization: Bearer $SLACK_BOT_TOKEN_SALES_OPS" \
+    -H "Content-Type: application/json; charset=utf-8" \
+    --data-binary @"$f"
+fi
+```
+- N'affiche jamais le jeton : ni `echo`, ni `curl -v`, ni `set -x`.
+- Réponse attendue `{"ok":true,"ts":"1761459512.123456"}` ; lien
+  `https://gang4groupe.slack.com/archives/C0B5EV7AN4F/p<ts sans le point>` (ici `p1761459512123456`).
+- `ok:false` (`not_in_channel`, `invalid_auth`, …), erreur réseau ou jeton absent : pas de nouvel essai, le calcul
+  reste valable et la page à jour. Un échec du post ne fait jamais échouer le calcul : il est dit à l'étape 9.
+- Rien en base pour ce message : ni colonne, ni `resume` à reprendre.
+
+## Étape 9 — Restituer
 Affiche les cartes en markdown court (rang, deal, pourquoi, je propose, objet de l'email), puis une ligne
 « + N autres candidats » avec les 2 ou 3 suivants en un mot chacun, puis chaque deal Balle Gang4 à échéance non
 retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Ajoute une ligne par « Pas pertinent »
-traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`.
+traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`. Termine par la
+ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : non posté (<erreur>) ».
 
 ## Règles strictes
 - `N` cartes au plus (3 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
@@ -459,6 +521,7 @@ traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; ell
   « Pas pertinent » à traiter (étape 2 bis) : son deal dans Attio (`update-record`, `create-note`), tracé dans
   `sales.run_log` et `sales.applied_actions`. Jamais d'autre écriture dans Attio. Aucun email envoyé, aucun
   brouillon créé : c'est « Valider » qui prépare.
+- Un seul message Slack, court, dans `#sales-ops` (étape 8), jamais ailleurs. Son échec n'arrête jamais le calcul.
 - Français, phrases courtes, noms complets d'Attio.
 
 ## Planification
@@ -476,4 +539,7 @@ Lucie, Google Calendar, Claap et Lemlist) :
 - depuis la v5 (23/10), Sales Focus écrit aussi dans Attio, pour deux cas seulement : un « Mauvais objectif » (next
   step, date, Balle, note « Objectif corrigé - auto ») et un « Pas pertinent » « Autre » qui demande une correction
   du deal (note « Correction depuis Sales Actions - auto »), étape 2 bis. Le connecteur Attio de la routine (déjà
-  là) suffit ; les écritures sont tracées dans `sales.run_log` (`agent = 'sales-focus'`) et `sales.applied_actions`.
+  là) suffit ; les écritures sont tracées dans `sales.run_log` (`agent = 'sales-focus'`) et `sales.applied_actions` ;
+- depuis le 23/10 (demande de Yacin), chaque calcul finit par une courte notification dans `#sales-ops` avec le
+  lien vers la page (étape 8), postée par le bot Sales Ops avec `SLACK_BOT_TOKEN_SALES_OPS`, comme `/sales-check` ;
+  un jeton absent de l'environnement se lit dans la sortie (« Slack : non posté (jeton absent) »).

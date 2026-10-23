@@ -77,14 +77,15 @@ Seules les conditions du tableau font une source manquante. Un cursor ancien n'e
 la date du dernier item reçu quand la source n'a rien eu de neuf (le 23/10, `lemlist/team` était resté au
 08/10 alors que l'inbox était lue chaque soir et qu'aucune réponse LinkedIn n'était arrivée depuis).
 
-Fraîcheur des tables n8n dont dépendent les touches (FUNNEL §8-J, extrait) :
+Fraîcheur des touches que n8n journalise dans `public."ProspectTouch"` (FUNNEL §8-J, extrait) :
 ```sql
-select 'relance (attendu < 26 h)' as signal, max(last_evaluated_at) as dernier from public."ProspectRelanceCandidate"
-union all select 'touches ' || source || ' (attendu < 96 h)', max(created_at) from public."ProspectTouch"
-  where source in ('gmail:samuel', 'gmail:lucie', 'gmail:yacin', 'lemlist') group by source;
+select 'touches ' || source || ' (attendu < 96 h)' as signal, max(created_at) as dernier
+from public."ProspectTouch"
+where source in ('gmail:samuel', 'gmail:lucie', 'gmail:yacin', 'lemlist')
+group by source;
 ```
-Relance à plus de 26 h, ou une source de touches ingérée il y a plus de 96 h (le workflow tourne chaque
-jour, 96 h couvrent un week-end) → ajoute-la aux manquantes.
+Une source de touches ingérée il y a plus de 96 h (le workflow tourne chaque jour, 96 h couvrent un week-end)
+→ ajoute-la aux manquantes.
 
 S'il en manque au moins une : écris tout de suite
 `update sales.run_log set error = 'sources: <source> (<raison>); ...' where id = '<run_id>';`
