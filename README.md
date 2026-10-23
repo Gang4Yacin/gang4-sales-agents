@@ -166,6 +166,6 @@ order by status, target_record_id;
 - ✅ Contrôle hebdo `/sales-check` (21/10), autonome depuis le 23/10
 - ✅ Top 3 du jour `/sales-focus` et page admin `/admin/sales-actions` (21/10), v2 avec contenu prêt et « Valider » (22/10), v3 avec source au survol, email modifiable ou réécrit sur consigne et guide de style (22/10), v4 avec pastilles de filtre colorées et édition au double-clic (22/10), top 10 à la demande (22/10), notification courte dans `#sales-ops` (23/10)
 - ⏳ Nettoyage des faux deals historiques (outbound sans réponse) — sur demande
-- ⏳ Gmail Yacin via n8n
+- ✅ Gmail Yacin via n8n (MCP « (Claude) Get Yacin's Gmail », 24/10 ; connecteur claude.ai et authentification par jeton à finir)
 - ⏳ Reprise du `sales-strategist`
 - ⏳ `customer-success` (périmètre customer, distinct du sales)
