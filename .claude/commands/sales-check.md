@@ -391,7 +391,8 @@ réconciliation produit qui le fait).
   ce fait, tu ne fais que remplir un champ vide.
 - **Date repoussée** : une date posée plus tard que celle que tu calcules, avec la même Balle, reste en place,
   sauf message entrant du prospect depuis.
-- **Pas de date passée** : une date calculée n'est jamais avant aujourd'hui.
+- **Pas de date passée** : une date que tu calcules pour une correction (stage, Balle ou next step qui change)
+  n'est jamais avant aujourd'hui. Ramener seule la date d'un deal en retard n'est pas une correction (C5).
 - **Identique** → rien.
 
 **Aucun doute ne reste ouvert.** Un doute se lève en lisant plus (la réunion dans `ProspectTouch` ou l'agenda,
