@@ -116,7 +116,10 @@ Un appel en erreur se corrige et se relance une fois ; une source restée muette
   oublié Goodvest (Aurélie Briche-Heinry absente à la démo du 22/09, à recaler), Hindbag et Circle Sportswear
   (relances).
 - **Argent qui attend** : go donné et Meta connecté sans abonnement avec un signal récent, facture
-  ouverte, go sans accès Business Manager.
+  ouverte, go sans accès Business Manager. Après l'onboarding, la marque doit d'abord uploader ses créas
+  avant d'activer l'abonnement, ce qui prend quelques jours ou quelques semaines : pas de lien d'abonnement ni
+  de relance dans les 14 jours qui suivent l'onboarding ; ensuite, la relance demande ce qui bloque l'upload
+  (retour de Yacin du 23/10 sur Araw, onboarding du 20/10, relance le 06/11).
 - **Prospect qui attend Gang4** : son dernier message appelle une réponse, ou un livrable promis après un
   échange (récap, offre, créas) n'est pas parti.
 - **Rendez-vous** : démo refusée, annulée ou manquée à recaler ; rendez-vous à fort enjeu dans les 48 h
