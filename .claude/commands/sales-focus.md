@@ -124,19 +124,34 @@ vue deux fois devient une règle : applique-la partout et cite-la dans `resume`,
   `next_step_description`, company (nom, domaines, ICP) et contacts.
 - **Paiements** : la requête de verdict de `.claude/agents/crm-sync.md` §4b, telle quelle.
 - **Échanges** : `public."ProspectTouch"` des 14 derniers jours par domaine (entrants, sortants,
-  rendez-vous), complété par les emails des **dernières 48 h** des boîtes de Samuel et de Lucie et les
-  touches de Yacin (la table n'est chargée qu'une fois par jour).
+  rendez-vous), complété par les emails des **dernières 48 h** des trois boîtes, lues en direct : Samuel, Lucie
+  et Yacin (la table n'est chargée qu'une fois par jour, vers 10:46). Yacin anime les démos et envoie récaps et
+  invitations depuis sa boîte : elle se lit comme les deux autres.
 - **Agenda** : rendez-vous externes des 48 prochaines heures.
 - **Comptes rendus** : Claap (workspace Gang4) pour les démos et points récents, utile pour les récaps.
 
-Deux appels ont échoué le 22/10 ; voici leur forme (essayée le 22/10) :
+Formes d'appel qui marchent (deux appels avaient échoué le 22/10) :
 - Gmail de Lucie (`Get_many_messages_in_Lucie_Gmail`) : les huit paramètres sont obligatoires, par exemple
   `{"q": "newer_than:2d -label:lemwarmup", "limit": 25, "returnAll": false, "simple": true, "readStatus": "both",
   "receivedAfter": "<il y a 48 h, ISO>", "receivedBefore": "<maintenant, ISO>", "sender": ""}`.
+- Gmail de Yacin (`Get_many_messages_in_Yacin_Gmail`, essayé le 24/10) : à trouver par ToolSearch (« Yacin
+  Gmail »), comme celui de Lucie, car son préfixe `mcp__…__` dépend du nom du connecteur. Les mêmes huit paramètres,
+  tous obligatoires (sinon « Received tool input did not match expected schema ») : `q` (syntaxe Gmail, par
+  exemple `in:sent to:foodvisor.io newer_than:2d`), `readStatus` (`"both"`), `receivedAfter` et `receivedBefore`
+  (ISO, `2026-10-22T00:00:00Z`), `sender` (`""` si inutile), `returnAll` (`false`), `limit` (petit), `simple`
+  (`true` : en-têtes et extrait ; `false` : corps complets).
 - Google Calendar (`list_events`) : `calendarId` = l'adresse de l'agenda (`samuel@gang4.io`, …), `startTime` et
   `endTime` à l'heure de Paris sans `Z` ni décalage (`2026-10-23T08:30:00`). `timeMin` et `timeMax` n'existent pas.
 
 Un appel en erreur se corrige et se relance une fois ; une source restée muette est citée dans `resume`.
+
+**Boîte de Yacin sans son outil** (absent de la session, ou en erreur après une relance) : repli sur ses touches
+de `ProspectTouch` (`source = 'gmail:yacin'`). Elles ont jusqu'à 24 h de retard : n8n ne les charge qu'à 10:46.
+Avec ce repli, n'affirme jamais qu'un email n'est pas parti quand Yacin a pu l'envoyer : il anime les démos et
+organise les invitations. Regarde aussi les invitations agenda envoyées par yacin@ après un meeting (agenda de
+Yacin, ou reçues dans les boîtes de Samuel et de Lucie) : c'est un signe de suivi. Si un doute reste, la carte dit
+« Vérifier que <le récap, l'offre…> est parti » au lieu de proposer de l'envoyer. Le repli se dit dans `resume`
+et dans la sortie (étape 9).
 
 ## Étape 2 bis — Traiter les « Pas pertinent »
 Les « Pas pertinent » avec un motif que tu n'as pas encore traités passent avant les candidats. Le texte est une
@@ -269,7 +284,7 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   de relance dans les 14 jours qui suivent l'onboarding ; ensuite, la relance demande ce qui bloque l'upload
   (retour de Yacin du 23/10 sur Araw, onboarding du 20/10, relance le 06/11).
 - **Prospect qui attend Gang4** : son dernier message appelle une réponse, ou un livrable promis après un
-  échange (récap, offre, créas) n'est pas parti.
+  échange (récap, offre, créas) n'est pas parti, vérifié dans les trois boîtes (étape 5).
 - **Rendez-vous** : démo refusée, annulée ou manquée à recaler ; rendez-vous à fort enjeu dans les 48 h
   à préparer.
 - **Conversation chaude qui retombe** : intérêt clair, puis plus rien depuis 10 jours ou plus.
@@ -290,10 +305,17 @@ snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3).
 cartes.
 
 ## Étape 5 — Vérifier à date
-Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures (boîtes de Samuel et
-de Lucie, touches de Yacin) et l'agenda. Une action déjà faite ou une situation qui a changé remplace la
-carte par la candidate suivante. Exemple du 22/10 : Payfit écarté, Samuel avait répondu à Julie Florin à
-9:43.
+Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures dans les boîtes de Samuel,
+de Lucie et de Yacin, et l'agenda. Après une démo ou un call, cherche ce que Yacin a envoyé au prospect depuis le
+meeting : `Get_many_messages_in_Yacin_Gmail` avec `q` = `in:sent to:<domaine>`, `receivedAfter` = le début du
+meeting, `receivedBefore` = maintenant ; fais de même chez Samuel et Lucie. Une action déjà faite ou une situation
+qui a changé remplace la carte par la candidate suivante. Exemples : le 22/10, Payfit écarté, Samuel avait répondu
+à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor proposait d'« envoyer le récap de la
+démo » que Yacin avait envoyé le 23/10 à 16:54, sa boîte n'étant lue que par `ProspectTouch` (jusqu'à 10:38).
+
+**On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
+ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
+dit « Vérifier que <le récap> est parti », et `pourquoi` dit que sa boîte n'a pas été lue à jour.
 
 ## Étape 6 — Préparer le contenu
 **Carte que Yacin a modifiée** (étape 1, même `cle`) : si l'étape 5 ne trouve rien de nouveau, reprends tels quels son
@@ -518,12 +540,16 @@ fi
 Affiche les cartes en markdown court (rang, deal, pourquoi, je propose, objet de l'email), puis une ligne
 « + N autres candidats » avec les 2 ou 3 suivants en un mot chacun, puis chaque deal Balle Gang4 à échéance non
 retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Ajoute une ligne par « Pas pertinent »
-traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`. Termine par la
-ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : non posté (<erreur>) ».
+traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`. Une source
+manquante a sa ligne, elle aussi dans `resume` ; pour la boîte de Yacin en repli : « Boîte de Yacin : repli
+ProspectTouch, retard jusqu'à 24 h (outil Get_many_messages_in_Yacin_Gmail absent) ». Termine par la ligne Slack
+de l'étape 8 : « Slack : <lien du message> », ou « Slack : non posté (<erreur>) ».
 
 ## Règles strictes
 - `N` cartes au plus (3 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
   contenu ne dit que ce qui est vérifiable (ce qui manque reste `[à compléter : …]`, étape 6).
+- Jamais l'absence d'un envoi affirmée sur une boîte qu'on n'a pas lue à jour : dans le doute, « Vérifier que … est
+  parti » (étape 5).
 - Aucune écriture hors de `SalesFocusRun` et `SalesFocusAction` (et `sales_focus_motif_traite`), sauf pour un
   « Pas pertinent » à traiter (étape 2 bis) : son deal dans Attio (`update-record`, `create-note`), tracé dans
   `sales.run_log` et `sales.applied_actions`. Jamais d'autre écriture dans Attio. Aucun email envoyé, aucun
@@ -535,6 +561,9 @@ ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : non p
 Routine claude.ai « 🎯 Routine « Sales Focus » (/sales-focus) » (`trig_01Sfwdw6t7dUhCFuvg48YYtx`), créée le 22/10
 par un agent puis complétée par Yacin (repo `gang4-sales-agents`, connecteurs Attio, Supabase, Gmail, Gmail de
 Lucie, Google Calendar, Claap et Lemlist) :
+- Gmail de Yacin : connecteur personnalisé claude.ai (nom conseillé « yacin-gmail ») sur le workflow n8n « (Claude)
+  Get Yacin's Gmail » (`3ELGb9CCbQEX48DZ`, 24/10), à ajouter par Yacin à la routine ; son adresse ne s'écrit jamais
+  dans le repo. Sans lui, la boîte de Yacin est lue en repli dans `ProspectTouch` (étape 2) et la sortie le dit ;
 - du lundi au vendredi à 8:30, heure de Paris (`CRON_TZ=Europe/Paris 30 8 * * 1-5`) ; le serveur la lance
   quelques minutes plus tard (8:38 le 23/10) ;
 - son prompt lance `/sales-focus` et passe tel quel, comme argument, le texte d'un lancement par l'API ou par

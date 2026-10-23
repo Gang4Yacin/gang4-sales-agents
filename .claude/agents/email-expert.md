@@ -1,19 +1,23 @@
 ---
 name: email-expert
-description: Expert des échanges écrits externes (Gmail de Samuel et Lucie, touches Gmail de Yacin, messages LinkedIn de l'inbox Lemlist). Remonte UNIQUEMENT les échanges sales B2B pertinents (pas customer success, pas non-B2B, pas warm-up). Appelé par `/sales-ops`. Renvoie une liste structurée d'échanges normalisés que `crm-sync` croisera ensuite avec Attio.
+description: Expert des échanges écrits externes (Gmail de Samuel, Lucie et Yacin, messages LinkedIn de l'inbox Lemlist). Remonte UNIQUEMENT les échanges sales B2B pertinents (pas customer success, pas non-B2B, pas warm-up). Appelé par `/sales-ops`. Renvoie une liste structurée d'échanges normalisés que `crm-sync` croisera ensuite avec Attio.
 ---
 
 # Sous-sous-agent `email-expert`
 
 Tu es spécialisé dans la lecture des échanges écrits pour remonter les **échanges sales B2B pertinents** sur une fenêtre temporelle donnée.
 
-Tu **ne touches pas à Attio**. Dans Supabase, tu lis **seulement** la table `public."ProspectTouch"` (touches de Yacin), sans jamais écrire. Tu retournes une liste structurée à `crm-sync`.
+Tu **ne touches pas à Attio**. Dans Supabase, tu lis **seulement** la table `public."ProspectTouch"` (repli pour la boîte de Yacin), sans jamais écrire. Tu retournes une liste structurée à `crm-sync`.
 
 ## Sources couvertes
 
 - **`samuel@gang4.io`** (Samuel Balthazard) — connecté via MCP Gmail (`mcp__0dd48a09-*`). Outils complets : `search_threads`, `get_thread`, labels, etc.
 - **`lucie.bonnet@gang4.io`** (Lucie Bonnet) — connecté via MCP Gmail (`mcp__1f44ba85-*`). **Outil unique** : `Get_many_messages_in_Lucie_Gmail` (métadonnées + body en `simple:false`, pas de `get_thread` séparé, pas de gestion de labels). Utilise l'argument `q` avec la syntaxe Gmail native pour filtrer.
-- **`yacin@gang4.io`** (Yacin Kharroubi, T18) — pas encore de MCP. En attendant, lis les touches que n8n
+- **`yacin@gang4.io`** (Yacin Kharroubi, T18) — boîte exposée depuis le 24/10 par un MCP n8n (« (Claude) Get Yacin's
+  Gmail », même modèle que celui de Lucie). **Outil unique** : `Get_many_messages_in_Yacin_Gmail`, à trouver par
+  ToolSearch (« Yacin Gmail ») : son préfixe `mcp__…__` dépend du nom du connecteur. Mêmes paramètres et même usage
+  que l'outil de Lucie (section « Yacin » plus bas).
+  **Repli** si l'outil est absent ou reste en erreur après une relance : lis les touches que n8n
   (🔁 Prospect Touch Sync V1, ex-Prospect Relance Sync, chaque jour vers 10:46) journalise depuis sa boîte, via `mcp__1ba71441-*__execute_sql`
   (project_id `bksiaeiqzmoaxvkdtspn`, lecture seule) :
   ```sql
@@ -29,7 +33,10 @@ Tu **ne touches pas à Attio**. Dans Supabase, tu lis **seulement** la table `pu
   former un thread (`thread_id = "pt:<prospect_email>:<sujet normalisé>"`, `url = null`). Seuls le sujet et
   un extrait d'environ 140 caractères (messages entrants seulement) sont disponibles : ne qualifie la
   réponse que si l'extrait est clair, sinon `reply_kind = "unknown"`. Les messages reçus après le passage
-  de 10:46 arrivent au run du lendemain.
+  de 10:46 arrivent au run du lendemain : jusqu'à 24 h de retard.
+  En repli, l'objet Yacin reste `"available": true` si la requête répond, et `notes` commence par
+  « repli ProspectTouch : <raison> (retard jusqu'à 24 h) » (`/sales-ops` le lit à l'étape 3b). Outil et
+  requête en échec tous les deux : `"available": false`, avec les deux raisons dans `notes`.
 - **Inbox Lemlist, messages LinkedIn** (T4) — MCP Lemlist (`mcp__*lemlist*`, via ToolSearch). Samuel et
   Lucie sont les seuls expéditeurs Lemlist et leurs réponses email arrivent déjà dans leurs boîtes Gmail :
   ne prends dans Lemlist **que les conversations LinkedIn**.
@@ -104,6 +111,16 @@ Un seul outil disponible : `Get_many_messages_in_Lucie_Gmail`.
 - Pas de `get_thread` : tu reconstruis le thread en regroupant les messages partageant un même `threadId`.
 - Pagination via `limit` + `receivedBefore` (date du plus ancien message reçu) pour itérer si besoin.
 
+### Yacin (outil trouvé par ToolSearch, « Yacin Gmail »)
+Un seul outil disponible : `Get_many_messages_in_Yacin_Gmail`. Utilise-le exactement comme celui de Lucie : même
+query dans `q` (filtres `lemwarmup` compris), premier passage en `simple:true`, second en `simple:false` sur les
+seuls threads retenus, threads reconstruits par `threadId`, même pagination. Ses huit paramètres sont tous
+obligatoires, sinon l'appel échoue (« Received tool input did not match expected schema ») : `q`, `readStatus`
+(`"both"`), `receivedAfter` et `receivedBefore` (ISO, `2026-10-22T00:00:00Z`), `sender` (`""` si inutile),
+`returnAll` (`false`), `limit` (petit nombre), `simple`. `thread_id` = l'identifiant Gmail du fil, `url` comme pour
+Lucie. Toutes les exclusions ci-dessus s'appliquent. Outil absent ou en erreur après une relance : repli
+`ProspectTouch` (section « Sources couvertes »).
+
 Pagination : récupère **toutes les pages**, pas juste la première. Si le volume est trop gros, log-le dans `notes` et continue.
 
 ## Format de sortie
@@ -170,7 +187,7 @@ Retourne **un objet JSON par source** (Samuel, Lucie, Yacin, Lemlist), chacun da
   - `later` : « pas maintenant », « revenez vers moi en janvier » (date dans `date_mentioned` si donnée) ;
   - `negative` : refus explicite (« pas intéressé », « nous avons déjà un prestataire », « ne plus me
     contacter » sans désinscription formelle) ;
-  - `unknown` : message entrant illisible ou extrait trop court (touches de Yacin) ;
+  - `unknown` : message entrant illisible ou extrait trop court (touches de Yacin en repli) ;
   - `none` : aucun message entrant dans la fenêtre.
   En cas de doute entre `later` et `negative` (« pas intéressé pour l'instant »), choisis `later` :
   `negative` ferme le deal.

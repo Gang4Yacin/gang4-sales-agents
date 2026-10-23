@@ -51,8 +51,9 @@ Garde le `run_id` pour le passer à `crm-sync`.
 
 ### Étape 3 — Appeler les 2 experts d'ingestion EN PARALLÈLE
 Dans **un seul message**, fais 2 appels Agent en parallèle :
-- `subagent_type='email-expert'` — brief : fenêtre, sources à couvrir (Gmail samuel@gang4.io et
-  lucie.bonnet@gang4.io, touches Gmail de yacin@gang4.io dans `ProspectTouch`, conversations LinkedIn de
+- `subagent_type='email-expert'` — brief : fenêtre, sources à couvrir (Gmail samuel@gang4.io,
+  lucie.bonnet@gang4.io et yacin@gang4.io, cette dernière par l'outil `Get_many_messages_in_Yacin_Gmail` trouvé
+  par ToolSearch, en repli par ses touches `gmail:yacin` de `ProspectTouch` ; conversations LinkedIn de
   l'inbox Lemlist), format JSON attendu (un objet par source).
 - `subagent_type='meeting-expert'` — brief : fenêtre, sources (**Claap en premier** — workspace Gang4,
   bascule en cours — puis Calendar + Drive + Calendly si dispo + Fireflies en dernier fallback), **appels
@@ -67,7 +68,7 @@ Un run « réussi » ne doit pas cacher une source muette. Sources attendues :
 | Source | Manquante si |
 |---|---|
 | Gmail samuel@gang4.io, Gmail lucie.bonnet@gang4.io | `available: false`, MCP absent, ou `raw_threads_scanned = 0` sur une fenêtre qui contient un jour ouvré |
-| Touches Gmail yacin@gang4.io (`ProspectTouch`) | requête en erreur, ou aucune touche `gmail:yacin` ingérée depuis 96 h |
+| Gmail yacin@gang4.io | `available: false` (outil et repli en échec), ou boîte lue en repli (outil MCP absent ou en erreur : `notes` qui commence par « repli ProspectTouch ») **et** aucune touche `gmail:yacin` ingérée depuis 96 h. Repli avec des touches fraîches : pas une panne, note seulement « boîte de Yacin en repli ProspectTouch (retard jusqu'à 24 h) » |
 | Inbox LinkedIn Lemlist | MCP Lemlist absent, erreur, ou `linkedinSync` ni `synced` ni `recent` |
 | Calendriers samuel@, lucie.bonnet@, yacin@gang4.io (Alice n'est plus attendue depuis le 21/10) | présent dans `calendars_missing` |
 | Claap | MCP absent, ou plus de 50 % des démos passées sans compte rendu (`transcripts_missing`) |
@@ -85,7 +86,9 @@ where source in ('gmail:samuel', 'gmail:lucie', 'gmail:yacin', 'lemlist')
 group by source;
 ```
 Une source de touches ingérée il y a plus de 96 h (le workflow tourne chaque jour, 96 h couvrent un week-end)
-→ ajoute-la aux manquantes.
+→ ajoute-la aux manquantes. Pour `gmail:yacin`, seulement si la boîte de Yacin a été lue en repli (ligne du
+tableau) : sinon elle a été lue en direct. Le repli de la boîte de Yacin n'est pas une source manquante : ni
+`run_log.error`, ni alerte, seulement la ligne de l'étape 6.
 
 S'il en manque au moins une : écris tout de suite
 `update sales.run_log set error = 'sources: <source> (<raison>); ...' where id = '<run_id>';`
@@ -115,7 +118,8 @@ where id = '<run_id>';
 Ne remets pas `error` à null : il porte les sources manquantes de l'étape 3b.
 
 ### Étape 6 — Présenter à l'utilisateur
-Affiche le rapport markdown de `crm-sync` tel quel, précédé d'une ligne `> run_id: <uuid>`.
+Affiche le rapport markdown de `crm-sync` tel quel, précédé d'une ligne `> run_id: <uuid>` et, si la boîte de
+Yacin a été lue en repli (étape 3b), d'une ligne `> boîte de Yacin en repli ProspectTouch (retard jusqu'à 24 h)`.
 
 ### Étape 7 — Déléguer la notification Slack au sous-agent `sales-ops-notifier`
 À la fin de chaque run, **n'envoie pas toi-même** sur Slack. Délègue à `sales-ops-notifier` :
@@ -148,6 +152,9 @@ La routine « Sales Ops daily » doit lancer `/sales-ops` **tous les jours** à 
 (T18 : une réponse du samedi ne doit pas attendre le lundi) ; c'est le cas depuis le 20/10 (planning
 changé par Yacin dans l'interface des routines). Ses connecteurs incluent Lemlist
 (inbox LinkedIn, ajouté le 20/10) en plus de Gmail, Calendar, Drive, Claap, Fireflies, Calendly, Attio,
-Supabase, Slack et du Gmail de Lucie. Les appels Allo se lisent par Attio (notes de l'intégration Allo) ;
+Supabase, Slack et du Gmail de Lucie. Le Gmail de Yacin (connecteur personnalisé, nom conseillé « yacin-gmail »,
+sur le workflow n8n « (Claude) Get Yacin's Gmail » `3ELGb9CCbQEX48DZ` du 24/10 ; son adresse ne s'écrit jamais
+dans le repo) est à ajouter par Yacin à la routine ; sans lui, sa boîte est lue en repli dans `ProspectTouch`
+(étape 3b). Les appels Allo se lisent par Attio (notes de l'intégration Allo) ;
 le connecteur Allo, à ajouter dans l'interface des routines, n'apporte que les appels qu'Allo n'a
 rattachés à aucune fiche.
