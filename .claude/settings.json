@@ -22,7 +22,8 @@
       "WebFetch",
       "WebSearch",
       "Bash(curl:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "mcp__Lovable__deploy_project"
     ],
     "ask": [
       "mcp__Attio__delete-task",
