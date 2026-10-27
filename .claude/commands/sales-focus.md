@@ -294,8 +294,11 @@ venir), les deals fermés et le customer success (hors argent). **Un contenu à 
 (Yacin, 22/10) : cas chiffré, offre, références, récap, créas, la carte prépare ce qu'il faut (étape 6). Un deal
 Balle Gang4 à échéance n'est écarté que si l'action est déjà faite, si la situation a changé (réponse, rendez-vous
 pris, refus net), s'il est snoozé (étape 1, `plus_tard_jusqu_au` à venir ; verdict « snoozé jusqu'au JJ/MM »), s'il
-attend le jour de son objectif corrigé (étape 1 ; verdict « objectif corrigé, retour le JJ/MM ») ou s'il vient après
-les `N` retenus.
+attend le jour de son objectif corrigé (étape 1 ; verdict « objectif corrigé, retour le JJ/MM »), si l'action ne
+peut pas aboutir avant une date connue (offre pas encore sortie, prospect qui a écrit qu'il reviendrait vers nous ;
+verdict « attend le JJ/MM : <raison> ») ou s'il vient après les `N` retenus. Le 27/10, Payfit est passé en 3e
+alors que Julie Florin avait décliné le call du 22/10 (« je te contacte si jamais on change d'avis ») et que ses
+exemples vidéo attendaient la sortie de l'offre vidéo, annoncée pour la fin du mois.
 
 ## Étape 4 — Classer
 Score = **impact** (argent en jeu, taille de la marque : ICP Large > Medium > Small, `App / Service` ;
@@ -303,6 +306,11 @@ effet sur le pipeline) × **urgence** (jours d'attente, échéance, temps fort c
 Garde les `N` meilleurs deals (3 par défaut, voir Arguments), après ceux qui entrent d'office (« Mauvais objectif »,
 snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3). Moins de `N` candidats sérieux → moins de
 cartes.
+Classe sur des dossiers relus, pas sur le next step d'Attio : pour les `2N` premiers candidats au moins, lis le
+dernier fil (trois boîtes) et le dernier compte rendu Claap avant de les départager. À impact comparable, un livrable
+promis par Gang4 en retard depuis plus de 30 jours (créas, étude chiffrée, offre) passe devant une promesse de
+quelques jours. Le 27/10, Emily's Pillow (Hot, créas demandées par sa CMO le 21/09) et The Bradery (cas chiffrés
+demandés le 24/09) sont restés derrière Payfit, faute d'avoir relu leurs fils.
 
 ## Étape 5 — Vérifier à date
 Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures dans les boîtes de Samuel,
@@ -314,6 +322,19 @@ action déjà faite ou une situation qui a changé remplace la carte par la cand
 Payfit écarté, Samuel avait répondu à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor
 proposait d'« envoyer le récap de la démo » que Yacin avait envoyé le 23/10 à 16:54, sa boîte n'étant lue que par
 `ProspectTouch` (jusqu'à 10:38).
+
+**Avant de proposer un rendez-vous** (onboarding, call, démo), cherche s'il a déjà eu lieu : agendas de Samuel, Lucie
+et Yacin sur les 60 derniers jours (titre qui contient « Onboarding », « Démo » ou le nom de la marque) et comptes
+rendus Claap. S'il a eu lieu, l'action est ce que Gang4 y a promis (actions du compte rendu Claap) et qui n'est pas
+fait, jamais un nouveau rendez-vous. Relis aussi le next step d'Attio : quand il dit un engagement de Gang4
+(« Envoyer à … promis le … »), c'est l'action, sauf s'il est fait. Le 27/10, la carte Bricks proposait un point
+« pour ouvrir ton espace » alors que l'onboarding avait eu lieu le 13/10 et qu'Attio portait déjà « Envoyer à Yoann
+Ros l'invitation à la plateforme promise le 13/10 (prévue le 16/10) ».
+
+**Un accès plateforme promis se vérifie en base**, il ne se laisse jamais « à vérifier » : `public.invitations`
+(`email`, `business_client_id`, `status`, `created_at`), `public."BusinessUser"` et
+`public."UserAuthorizedBusinessClient"` (`business_client_id`). Aucune ligne pour la marque ni pour son domaine →
+l'invitation n'est pas partie : la carte prépare son envoi (`document` « Plan d'action », étape 6) avant tout email.
 
 **On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
 ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
@@ -354,7 +375,12 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      ce qui a été changé à la main avant l'envoi est une correction de plus.
 - Le style de l'expéditeur dans le fil : « Hello <Prénom>, », tutoiement si le fil tutoie, phrases
   courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots, une seule demande claire (un créneau, un
-  accès, une réponse). S'il faut un lien d'agenda, prends le dernier que l'expéditeur a envoyé.
+  accès, une réponse). S'il faut un lien d'agenda, prends celui du bon type de rendez-vous, jamais seulement le
+  dernier envoyé : un lien se reconnaît à l'événement qu'une réservation a créé dans l'agenda de l'expéditeur
+  (« Démo Gang4 - Partnership Ad (<nom>) » ou « Onboarding Gang4 (<nom>) »). Au 27/10, chez Samuel : démo
+  `https://calendar.app.google/vaWqQLAWum6R3e4N7`, onboarding `https://calendar.app.google/tpwHan1jZCgybahx5`.
+  Pas de lien du bon type → demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de Gourmandiz
+  portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel.
 - **Jamais d'invention** : aucun chiffre, prix, remise, délai ou promesse qui ne soit déjà dans les
   emails, les comptes rendus ou la base.
 
@@ -383,8 +409,10 @@ corps en markdown, complet et prêt à relire. « Valider » le dépose dans un 
 - **Récap, lien d'abonnement** → l'email : le récap suit le compte rendu Claap, à défaut les notes Attio et les
   emails ; le lien est celui que la même boîte a déjà envoyé à d'autres marques (recherche ciblée).
 - **Ce que Gang4 ne peut pas produire ici** (des créas, un accès, une décision interne) → le `document` « Plan
-  d'action — <deal> » : les étapes concrètes, qui (Samuel, Lucie, Yacin), pour quand, avec quel outil (créas test d'une
-  marque PROSPECT et batch de démo : `docs/FUNNEL.md`, étapes 1 et 4), et le message au prospect pour la suite.
+  d'action — <deal> » : les étapes concrètes, qui (Samuel, Lucie, Yacin), pour quand, avec quel outil, nommé comme
+  Yacin le voit (page de l'admin, créas test d'une marque PROSPECT et batch de démo pour des statics), jamais par un
+  renvoi à la doc du repo, et le message au prospect pour la suite. Pas d'étape « mettre à jour Attio » : `/sales-ops`
+  le fait le soir de l'envoi.
 - **Appel** → le `document` « Script d'appel — <contact> » : le numéro (Attio), l'objectif, le déroulé, les questions
   et les réponses aux objections connues.
 
@@ -430,7 +458,10 @@ returning run_id;
 - `contenu_initial` et `modifications` : `null` pour une carte neuve ; pour une carte que Yacin a modifiée ou une
   carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6).
 - `titre` : verbe en tête, 80 caractères au plus.
-- `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui).
+- `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui). Toutes les heures
+  écrites (`pourquoi`, `resume`, contenu) sont à l'heure de Paris : Gmail, Supabase et Claap donnent l'UTC, à
+  convertir (UTC+2 jusqu'au 24/10, UTC+1 depuis le 25/10). Le 27/10, « 18:05 » et « 07:43 » étaient faux (17:05 et
+  09:43).
 - `quoi_faire` : l'objectif, affiché « Objectif » sur la carte (« Je propose » jusqu'au 27/10) : ce que l'action doit
   obtenir, en une phrase de 160 caractères au plus, sans répéter le titre (« Obtenir la date de lancement du test
   Lui Bien » plutôt que « Relancer Benjamin pour caler le lancement du test »).
