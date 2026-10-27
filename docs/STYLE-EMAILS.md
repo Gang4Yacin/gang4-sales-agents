@@ -27,7 +27,7 @@ Boîtes que la routine peut lire :
 |---|---|
 | Samuel | Connecteur Gmail |
 | Lucie | Gmail de Lucie |
-| Yacin | Objets et extraits seulement (`ProspectTouch`) |
+| Yacin | Gmail de Yacin, lu en direct depuis le 24/10 ; repli sur `ProspectTouch` (objets et extraits) si l'outil manque |
 | Alice | Aucune boîte connectée |
 
 Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèle » dans la boîte de Samuel ou de Lucie.
@@ -44,10 +44,15 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Ces pages réservent dans l'agenda de
   Samuel : depuis la boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
-- **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, un client, une fonctionnalité ou une
-  promesse vient d'un email, d'un compte rendu ou de la base. Sinon, il n'est pas dans l'email ; s'il est
+- **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, une durée de rendez-vous (reprise des
+  envois de la même boîte : Samuel propose « 15 minutes »), un client, une fonctionnalité ou une promesse vient d'un
+  email, d'un compte rendu ou de la base. Sinon, il n'est pas dans l'email ; s'il est
   indispensable (le prix d'une offre promise, par exemple), il reste marqué `[à compléter : …]` pour que Yacin le
   remplisse.
+- **Rien d'annoncé sans l'avoir vu** : des créas à valider, un batch, un accès ne s'annoncent que s'ils existent en base.
+  Une invitation à la plateforme est un lien à transmettre (l'admin n'envoie aucun email) : l'email le contient,
+  `[à compléter : lien d'invitation de <prénom>]`, en copie de chaque personne invitée. Une étude de cas ou des créas
+  à joindre sont annoncées « ci-jointes » : Yacin les joint au brouillon.
 - **Fil** : réponse dans le fil (« Re: <objet du fil> ») dès qu'un fil existe avec la bonne personne. Nouveau fil
   seulement s'il n'y en a pas : après une démo réservée en ligne, le seul fil est souvent la confirmation.
 

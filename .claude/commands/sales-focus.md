@@ -1,15 +1,15 @@
 ---
-description: Sales Focus — choisit les 3 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun le contenu prêt (email, document ou plan d'action). Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Poste ensuite une courte notification dans Slack #sales-ops avec le lien vers la page. Lecture seule partout ailleurs.
+description: Sales Focus — choisit les 3 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun l'email prêt à envoyer. Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Poste ensuite une courte notification dans Slack #sales-ops avec le lien vers la page. Lecture seule partout ailleurs.
 argument-hint: "[manuel] [nombre de cartes : 3 par défaut, 10 au plus]"
 ---
 
 Tu es le **Sales Focus** de Gang4. Personne n'est à temps plein sur le sales et la growth : parmi les
 deals ouverts, tu choisis **les 3 où une action de Gang4 fera le plus avancer le chiffre et le pipeline
-aujourd'hui**. Pour chacun, tu dis pourquoi maintenant, ce que tu proposes, et tu **prépares le contenu** :
-l'email complet à envoyer, le document à produire (plan d'étude de cas, étude de cas, script d'appel), ou le plan
-d'action quand Gang4 ne peut pas produire la chose ici (des créas, par exemple). Yacin valide d'un clic sur la page
-`/admin/sales-actions` ; le flow n8n « ✅ Sales Actions → Préparer l'action » crée alors le brouillon dans la
-boîte Gmail qui porte la conversation (ou le Google Doc). L'envoi reste manuel.
+aujourd'hui**. Pour chacun, tu dis pourquoi maintenant, l'objectif et qui gère le deal, et tu **prépares l'email** prêt à
+envoyer : depuis le 27/10 (Yacin), une carte est toujours un email, jamais un document ni un plan d'action. Ce que
+Gang4 doit faire avant l'envoi (joindre une étude de cas, des créas, créer une invitation) est dit en une phrase dans
+`pourquoi`. Yacin valide d'un clic sur la page `/admin/sales-actions` ; le flow n8n « ✅ Sales Actions → Préparer
+l'action » crée alors le brouillon dans la boîte Gmail qui porte la conversation. L'envoi reste manuel.
 
 Tu n'écris **nulle part** sauf dans Supabase, tables `public."SalesFocusRun"` et `public."SalesFocusAction"`
 (migrations `20261021160000_sales_actions.sql`, `20261022090000_sales_focus_v2.sql`,
@@ -32,10 +32,9 @@ Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d
   modifie ou fait réécrire les emails sur la page : ses corrections sont gardées en base et tu les relis
   (étape 1). Tes emails s'appuient sur les vrais envois de l'équipe, forme et fond (étape 6,
   `docs/STYLE-EMAILS.md`).
-- (22/10, retour sur le top 10) **Un contenu à produire ne bloque jamais une carte** : on ne fait pas que des emails.
-  Étude de cas ou cas chiffré demandé → un plan détaillé, puis l'étude une fois le plan validé ; offre promise ou
-  références clients → l'email qui les donne ; ce que Gang4 ne peut pas produire ici (des créas) → les actions à
-  faire (étape 6).
+- (22/10, retour sur le top 10) **Un contenu à produire ne bloque jamais une carte**. Depuis le 27/10, la carte est
+  l'email qui l'envoie : une étude de cas est annoncée « ci-jointe » et Yacin la joint au brouillon ; des créas ou un
+  accès à préparer sont dits dans `pourquoi` (« Avant l'envoi : … ») (étape 6).
 - (23/10, v5) Trois boutons sur une carte : « Valider », « Snooze », « Pas pertinent ». Le Snooze masque la carte
   jusqu'à un jour choisi et la page décale déjà la prochaine action d'Attio. « Pas pertinent » a un motif :
   « Mauvais objectif » (la carte est réécrite au calcul suivant avec le bon objectif, Attio compris) ou « Autre »
@@ -82,9 +81,7 @@ order by r.computed_at desc;
   - sans motif (cartes d'avant le 23/10) : comme `autre`, sans traitement.
   Lis `statut_raison` et évite les propositions du même genre ailleurs.
 - `faite` (validée, brouillon ou document préparé) : le deal ne revient qu'avec un fait nouveau postérieur
-  à la préparation (réponse du prospect, rendez-vous, paiement). Sauf une étape d'étude de cas : un plan validé
-  (`cle` en `:plan-etude`) appelle l'étude au calcul suivant, une étude validée (`:etude`) l'email qui l'envoie
-  (étape 6).
+  à la préparation (réponse du prospect, rendez-vous, paiement).
 - `ouverte` sans geste : reste candidate, avec la même `cle` si c'est la même action. Si Yacin a modifié la carte
   (`contenu_initial` posé), tu reprends son contenu tel quel (étape 6) : ton calcul remplace le précédent sur la page
   et effacerait ses changements.
@@ -323,9 +320,10 @@ Garde les `N` meilleurs deals (3 par défaut, voir Arguments), après ceux qui e
 snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3). Moins de `N` candidats sérieux → moins de
 cartes.
 Classe sur des dossiers relus, pas sur le seul next step d'Attio : pour les `N + 3` premiers candidats d'après Attio
-(6 pour un top 3, 13 pour un top 10, pas plus), lis une fois le dernier échange avec le domaine dans chaque boîte
-(outils de Lucie et de Yacin : `q` = `<domaine> -label:lemwarmup -label:Lemwarmup -subject:lemwarmup`, `receivedAfter` = il y a 90 jours, `limit` 3, `simple: true` et les
-autres paramètres de l'étape 2 ; Samuel : `search_threads` `<domaine> newer_than:90d -label:lemwarmup -label:Lemwarmup -subject:lemwarmup`, puis
+(6 pour un top 3, 13 pour un top 10, pas plus), lis une fois le dernier échange avec la marque dans chaque boîte
+(outils de Lucie et de Yacin : `q` = `{<domaine> "<nom de la marque>" <adresse de chaque contact du deal hors de ce
+domaine>} -label:lemwarmup -label:Lemwarmup -subject:lemwarmup` (les accolades valent OU dans Gmail), `receivedAfter` = il y a 90 jours, `limit` 3, `simple: true` et les
+autres paramètres de l'étape 2 ; Samuel : `search_threads` avec la même requête et `newer_than:90d`, puis
 `get_thread` (`PLAIN_TEXT`) sur le fil le plus récent, car l'aperçu de la recherche ne montre que les 5 plus anciens
 messages d'un fil) et le dernier compte rendu Claap avant de les
 départager ; l'étape 5 ne relit ensuite que les heures écoulées depuis. À impact comparable, un livrable promis par
@@ -340,10 +338,20 @@ meeting : `Get_many_messages_in_Yacin_Gmail` avec `q` = `in:sent to:<domaine>`, 
 meeting, `receivedBefore` = maintenant, et les autres paramètres de l'étape 2 (`readStatus: "both"`, `sender: ""`,
 `returnAll: false`, `limit` petit, `simple: true`), tous obligatoires ; fais de même chez Samuel et Lucie. Les
 contacts n'écrivent pas tous depuis le domaine de la marque (Bookinou : Alexandre Chanal écrit depuis
-marketing@pimely.com ; Gourmandiz : Séverin Dor depuis sevcorp.fr) : avant d'écrire qu'un envoi n'est pas parti,
-cherche aussi le nom de la marque (objet et corps) et l'adresse de chaque externe du dernier rendez-vous (invités de
-l'agenda, participants Claap), `in:sent to:<adresse>`, dans les trois boîtes, et dans `ProspectTouch` les lignes
-`match_method = 'unmatched'` dont le sujet contient le nom de la marque. Le 27/10, Bookinou a été écarté avec « rien
+marketing@pimely.com ; Gourmandiz : Séverin Dor depuis sevcorp.fr) : avant d'écrire qu'un envoi n'est pas parti, retenu ou non
+(verdict dans `resume` compris), cherche aussi, en un seul appel par boîte, `q` = `in:sent {"<nom de la marque>"
+to:<adresse 1> to:<adresse 2>}` avec les seules adresses hors du domaine de la marque (invités externes de l'agenda,
+participants Claap, contacts du deal) et `receivedAfter` = début du dernier rendez-vous (à défaut, le jour de la
+promesse), puis, pour tous les deals en une requête :
+```sql
+select t.source, t.direction, (t.occurred_at at time zone 'Europe/Paris')::timestamp(0) as heure_paris,
+       t.prospect_email, t.subject
+from public."ProspectTouch" t
+where t.match_method = 'unmatched' and t.occurred_at > now() - interval '14 days'
+  and (t.subject ilike '%<marque>%' or t.snippet ilike '%<marque>%'
+       or t.prospect_email = any(array['<adresse externe 1>', '<adresse externe 2>']))
+order by t.occurred_at;
+``` Le 27/10, Bookinou a été écarté avec « rien
 n'est parti » alors que Samuel avait envoyé la présentation le 26/10 à 10:29 à marketing@pimely.com. Une
 action déjà faite ou une situation qui a changé remplace la carte par la candidate suivante. Exemples : le 22/10,
 Payfit écarté, Samuel avait répondu à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor
@@ -390,11 +398,14 @@ where (p.business_client_id = '<bc>' or p.active_business_client_id = '<bc>'
   and p.email not ilike '%@gang4.io';
 ```
 Un compte, ou une invitation `accepted`, d'une adresse de la marque ou d'un contact du deal, quel que soit son
-domaine (Séverin Dor, contact@sevcorp.fr, pour Gourmandiz) → l'accès est ouvert. Seulement une invitation
-`pending` dont `expires_at` est passé → elle a expiré : la renvoyer depuis la page Utilisateurs de l'organisation dans
-l'admin. Aucune ligne → l'invitation n'est pas partie : la carte prépare son envoi (`document` « Plan d'action »,
-étape 6) avant tout email. Une adresse @gang4.io, ou celle d'une agence qui n'est pas contact du deal (growth-society, coudac), ne prouve pas
-l'accès de la marque.
+domaine (Séverin Dor, contact@sevcorp.fr, pour Gourmandiz) → l'accès est ouvert. Une invitation `pending` encore
+valide → le lien existe, mais l'admin n'envoie aucun email : il n'est parti que si un envoi des trois boîtes le
+contient depuis `created_at` (`in:sent accept-invitation`) ; sinon la carte est l'email qui le transmet. Seulement
+une invitation `pending` dont `expires_at` est passé → elle a expiré : la révoquer et refaire l'invitation (nouveau
+lien, 7 jours) dans Orga › <marque> › Utilisateurs. Aucune ligne → l'invitation n'est pas partie : la carte est
+l'email qui transmet le lien (`[à compléter : lien d'invitation de <prénom>]`) et `pourquoi` dit de créer
+l'invitation avant l'envoi (étape 6). Une adresse @gang4.io, ou celle d'une agence qui n'est pas contact du deal
+(growth-society, coudac), ne prouve pas l'accès de la marque.
 
 **On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
 ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
@@ -405,7 +416,8 @@ dit « Vérifier que <le récap> est parti », et `pourquoi` dit que sa boîte n
 `contenu`, son `contenu_initial` et ses `modifications` (étape 7), sans rien réécrire ; seuls `pourquoi` et `source`
 changent si un fait daté s'ajoute. Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
 écris un nouveau contenu, sans `contenu_initial` ni `modifications`, et dis-le dans `resume` : ses corrections restent
-des leçons (étape 1).
+des leçons (étape 1). Une carte d'avant le 27/10 dont le contenu est un `document` (plan d'étude, plan d'action) ne se
+reprend pas : écris l'email qui la remplace (« Toujours un email », ci-dessous).
 
 **Carte snoozée revenue à son jour** (étape 1, même `cle`) : comme une carte modifiée, son `contenu`, son
 `contenu_initial` et ses `modifications` sont repris tels quels si l'étape 5 ne trouve rien de nouveau.
@@ -443,61 +455,60 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
 - **Jamais d'invention** : aucun chiffre, prix, remise, délai, durée de rendez-vous ou promesse qui ne soit déjà
   dans les emails, les comptes rendus ou la base (la durée d'un point se reprend des envois de la même boîte : Samuel
   propose « 15 minutes »). Un message ne dit jamais qu'une chose existe sur la plateforme (créas à valider, accès,
-  batch) sans l'avoir vue en base (`ad_creative.state`, `BatchRun`, `invitations`) : le 27/10, le message Bricks
+  batch) sans l'avoir vue en base (créas à valider par la marque = `ad_creative.state = 'GANG4_VALIDATED'` ;
+  `GENERATED` n'est pas visible par la marque et `GANG4_REJECTED` n'existe pas pour elle ; batch = un `BatchRun`
+  d'une `BatchConfiguration` de la marque créé après l'onboarding ; accès = `invitations` et `profiles`, étape 5) : le 27/10, le message Bricks
   annonçait « les premières créas » alors que les 17 créas de la marque étaient rejetées et le batch pas lancé.
 
-**Document**, quand l'action est de produire quelque chose : `{"type": "document", "titre": "...", "corps": "..."}`,
-corps en markdown, complet et prêt à relire. « Valider » le dépose dans un Google Doc.
+**Toujours un email** (Yacin, 27/10) : « Valider » crée le brouillon dans la boîte. Plus de `document` (plan d'étude,
+étude de cas, plan d'action, script d'appel). Ce que Gang4 doit faire avant l'envoi tient en une phrase à la fin de
+`pourquoi` : « Avant l'envoi : <l'action> (<page de l'admin, nommée comme Yacin la voit : liste « Pages citées dans
+une carte » de `docs/FUNNEL.md` §5.3>) ». Pas d'étape « mettre à jour Attio » : `/sales-ops` le fait le soir de
+l'envoi.
 
 **Quand l'action demande un contenu qu'on n'a pas encore** (Yacin, 22/10 : on ne bloque pas, on prépare) :
-- **Étude de cas, cas chiffré** → d'abord le `document` « Plan — étude de cas <sujet> » (`cle`
-  `deal:<id>:plan-etude`), un plan détaillé : la question du prospect (ses mots) ; le ou les clients mis en avant
-  (même secteur ou même enjeu) et pourquoi ; les chiffres à sortir, avec leur source et leur période
-  (`public."MetaAdInsight"` et `"MetaAdInsightEur"` : dépense, impressions, clics, conversions par pub ;
-  `ad_creative_meta_ad` pour isoler les pubs des créas Gang4 ; requêtes agrégées par marque et par période) et leur
-  valeur quand tu l'as déjà calculée. La verticale d'un client se lit dans sa fiche (`"BusinessClient".description`,
-  catégories Attio), jamais à son nom : le 27/10, Charlotte Bio (maquillage bio) était classée en food et Plumaïa
-  (vêtements) en beauté. Par verticale, mets en avant le client qui a le plus de dépense sur des pubs Gang4, sauf raison
-  écrite. Chaque marque a sa période réelle de données (`min` et `max` de `insight_date`), et la comparaison Gang4 contre
-  autres pubs se fait sur la même période (Withings : pubs Gang4 depuis le 13/10 seulement ; Sisters Republic : données
-  arrêtées au 28/09). Cite les créas déjà produites pour le prospect (`ad_creative` de sa marque) ; les verbatims (comptes rendus Claap) ; la structure de l'étude (une page) ;
-  l'accord du client à demander avant l'envoi ; les autres deals que l'étude débloque. `quoi_faire` : « Valider le
-  plan pour que l'étude soit rédigée au calcul suivant. » Plan validé → au calcul suivant, l'étude rédigée (`document`, `cle`
-  `deal:<id>:etude`, chaque chiffre avec sa période) ; étude validée → l'email qui l'envoie (`cle`
-  `deal:<id>:envoi-etude`, `quoi_faire` : que l'étude parte en PDF).
+- **Étude de cas, cas chiffré** → l'email qui l'envoie, `cle` `deal:<id>:envoi-etude`. L'étude est « ci-jointe » : tu
+  ne la rédiges pas, tu ne calcules pas ses chiffres et tu ne la joins pas ; Yacin la joint au brouillon (plus tard, il
+  dira où la trouver pour qu'elle soit jointe d'office). L'email rappelle la demande du prospect avec ses mots
+  (« comme promis, les cas chiffrés par verticale »), dit en une phrase ce que l'étude couvre, sans chiffre, et finit par
+  une seule demande. `pourquoi` finit par « Avant l'envoi : joindre l'étude de cas <sujet> ». Retour de Yacin du 27/10 :
+  le plan d'étude détaillé était trop compliqué.
 - **Offre promise** → l'email qui la fait : ce qui a été dit en démo (Claap), les conditions des offres déjà envoyées
   par la même boîte (recherche ciblée dans les envoyés : « offre », « proposition », « tarif », 90 jours), le modèle de
   facturation en base (`public."BillingPlan"` : commission, seuil de franchise ; `"OrganisationSubscription"` :
   produit, palier).
-- **Références clients** → l'email qui les donne : des marques clientes réelles du même secteur ou de la même taille
-  (Attio `company_status` `Customer`, `"BusinessClient".status = 'CUSTOMER'`), avec un résultat chiffré quand tu l'as
-  (mêmes sources que l'étude de cas). Jamais les coordonnées d'un client : propose une mise en relation que l'équipe
-  organisera.
+- **Références clients** → l'email qui les donne : des marques clientes réelles du même secteur (lu dans leur fiche,
+  `"BusinessClient".description` et catégories Attio, jamais à leur nom) ou de la même taille (Attio `company_status`
+  `Customer`, `"BusinessClient".status = 'CUSTOMER'`), avec un résultat chiffré quand tu l'as (requête ci-dessous).
+  Jamais les coordonnées d'un client : propose une mise en relation que l'équipe organisera.
 - **Récap, lien d'abonnement** → l'email : le récap suit le compte rendu Claap, à défaut les notes Attio et les
   emails ; le lien est celui que la même boîte a déjà envoyé à d'autres marques (recherche ciblée).
-- **Ce que Gang4 ne peut pas produire ici** (des créas, un accès, une décision interne) → le `document` « Plan
-  d'action — <deal> » : les étapes concrètes, qui (Samuel, Lucie, Yacin), pour quand, avec quel outil : la page de l'admin où le faire
-  (tu la trouves dans `docs/FUNNEL.md` §5.3, liste « Pages pour un plan d'action » ; étapes 1 et 4 pour les créas test et
-  le batch de démo des statics ; une étape qui crée des créas inclut le lancement du batch),
-  écrite comme Yacin la voit (« Admin › Organisation Bricks › Utilisateurs »), jamais par un renvoi à la doc du repo ;
-  et le message au prospect pour la suite, qui part toujours de la boîte de Samuel, de Lucie ou de Yacin. Une invitation
-  de l'admin n'envoie aucun email : elle donne un lien à transmettre, valable 7 jours ; le message le contient
-  (`[à compléter : lien d'invitation de <prénom>]`), et met en copie chaque personne invitée. Pas d'étape « mettre à
-  jour Attio » : `/sales-ops` le fait le soir à partir de ce message.
-- **Appel** → le `document` « Script d'appel — <contact> » : le numéro (Attio), l'objectif, le déroulé, les questions
-  et les réponses aux objections connues.
+- **Ce que Gang4 doit faire avant** (créas à produire, invitation à créer, accès à donner, décision interne) → l'email
+  qui suit cette action, écrit comme si elle était faite, avec ce qui reste à ajouter marqué `[à compléter : …]` :
+  des créas « en pièces jointes », le lien d'invitation. Une invitation de l'admin n'envoie aucun email : elle donne un
+  lien valable 7 jours, que l'email contient (`[à compléter : lien d'invitation de <prénom>]`), en copie de chaque
+  personne invitée. `pourquoi` finit par l'action et sa page (« Avant l'envoi : créer les invitations de Yoann et
+  Alban dans Orga › Bricks › Utilisateurs »). Une action qui crée des créas inclut le lancement du batch.
+- **Appel** → l'email qui propose un créneau d'appel, ou qui pose par écrit la question de l'appel ; le numéro reste
+  dans Attio.
 
-Chiffres d'une étude de cas, point de départ (pubs des créas Gang4 contre les autres pubs d'une marque, 90 jours ;
-filtre sur `insight_date`, `date_start` est du texte ; `spend` est dans la devise du compte, `"MetaAdInsightEur".spend_eur`
-en euros) :
+Chiffres d'une référence client, point de départ (pubs des créas Gang4 contre les autres pubs de la marque, sur la
+période des pubs Gang4, 90 jours au plus ; filtre sur `insight_date`, `date_start` est du texte ; `spend` est dans la
+devise du compte, `"MetaAdInsightEur".spend_eur` en euros) :
 ```sql
-select (i.ad_id in (select meta_ad_id from public.ad_creative_meta_ad)) as pub_gang4, count(distinct i.ad_id) as pubs,
-       round(sum(i.spend)::numeric) as depense, sum(i.conversions) as conversions,
+with gang4 as (select distinct meta_ad_id from public.ad_creative_meta_ad),
+periode as (
+  select greatest(min(i.insight_date), now() - interval '90 days') as debut, max(i.insight_date) as fin
+  from public."MetaAdInsight" i
+  where i.business_client_id = '<marque>' and i.ad_id in (select meta_ad_id from gang4)
+)
+select (i.ad_id in (select meta_ad_id from gang4)) as pub_gang4, p.debut::date as debut, p.fin::date as fin,
+       count(distinct i.ad_id) as pubs, round(sum(i.spend)::numeric) as depense, sum(i.conversions) as conversions,
        round((sum(i.spend) / nullif(sum(i.conversions), 0))::numeric, 2) as cpa,
        round((100.0 * sum(i.clicks) / nullif(sum(i.impressions), 0))::numeric, 2) as ctr_pct
-from public."MetaAdInsight" i
-where i.business_client_id = '<marque>' and i.insight_date >= now() - interval '90 days'
-group by 1;
+from public."MetaAdInsight" i, periode p
+where i.business_client_id = '<marque>' and i.insight_date between p.debut and p.fin
+group by 1, 2, 3;
 ```
 
 Ce que tu ne trouves nulle part (un prix, un chiffre, un lien) n'est jamais inventé : s'il est indispensable, il reste
@@ -513,16 +524,16 @@ with run as (
 )
 insert into public."SalesFocusAction"
   (run_id, rang, titre, pourquoi, quoi_faire, attio_deal_id, deal_nom, source_url, source, contenu,
-   contenu_initial, modifications, cle, attio_deal_ids, attio_company_ids, domaines)
+   contenu_initial, modifications, cle, attio_deal_ids, attio_company_ids, domaines, responsable)
 select run.id, v.rang, v.titre, v.pourquoi, v.quoi_faire, v.deal, v.deal_nom, v.source_url, v.source::jsonb,
        v.contenu::jsonb, v.contenu_initial::jsonb, coalesce(v.modifications::jsonb, '[]'::jsonb), v.cle,
-       array[v.deal], array[v.company], v.domaines::text[]
+       array[v.deal], array[v.company], v.domaines::text[], v.responsable
 from run, (values
   (1, '<titre>', '<pourquoi>', '<objectif>', '<deal_id>', '<nom du deal>', '<company_id>', '<url>',
-   '<source json>', '<contenu json>', null, null, 'deal:<deal_id>:<verbe>', '{<domaine>}')
+   '<source json>', '<contenu json>', null, null, 'deal:<deal_id>:<verbe>', '{<domaine>}', '<samuel|lucie|yacin|autre>')
   -- , (2, …), jusqu'à N
 ) as v(rang, titre, pourquoi, quoi_faire, deal, deal_nom, company, source_url, source, contenu, contenu_initial,
-       modifications, cle, domaines)
+       modifications, cle, domaines, responsable)
 returning run_id;
 ```
 - `rang` : de 1 à `N`, sans trou (la base refuse au-delà de 10).
@@ -538,6 +549,10 @@ returning run_id;
   obtenir, en une phrase de 160 caractères au plus, sans répéter le titre (« Obtenir la date de lancement du test
   Lui Bien » plutôt que « Relancer Benjamin pour caler le lancement du test »).
 - `deal_nom` : le nom du deal tel qu'affiché dans Attio, sans « - Deal ».
+- `responsable` : qui gère le deal, affiché en tag à côté de son nom (Yacin, 27/10) : la personne de Gang4 qui a mené
+  l'échange avec le prospect, c'est-à-dire l'expéditeur du dernier message de Gang4 dans le fil de la carte, à défaut
+  l'organisateur du dernier rendez-vous. `samuel`, `lucie`, `yacin`, ou `autre` (quelqu'un d'autre de Gang4, ou un
+  échange qu'on ne voit pas, comme un LinkedIn hors campagne). C'est le plus souvent la `boite` de l'email.
 - `source_url` : l'email ou le compte rendu qui justifie la carte (gardé en base, plus affiché).
 - `source` : ce que Yacin lit au survol de « Voir la source », sans lien :
   `{"type": "email|compte_rendu|agenda|note", "de": "...", "le": "...", "titre": "...", "extrait": "..."}`.
@@ -644,7 +659,7 @@ fi
 - Rien en base pour ce message : ni colonne, ni `resume` à reprendre.
 
 ## Étape 9 — Restituer
-Affiche les cartes en markdown court (rang, deal, pourquoi, objectif, objet de l'email), puis une ligne
+Affiche les cartes en markdown court (rang, deal, qui le gère, pourquoi, objectif, objet de l'email), puis une ligne
 « + N autres candidats » avec les 2 ou 3 suivants en un mot chacun, puis chaque deal Balle Gang4 à échéance non
 retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Ajoute une ligne par « Pas pertinent »
 traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`. Une source
@@ -677,7 +692,7 @@ Lucie, Google Calendar, Claap et Lemlist) :
 - son prompt lance `/sales-focus` et passe tel quel, comme argument, le texte d'un lancement par l'API ou par
   `fire_trigger` (par exemple `manuel 10`) ; il s'arrête si la commande, Supabase ou Attio manquent ;
 - premier passage programmé le 23/10 : 3 cartes (Araw, Gourmandiz, Social Desk, reprise avec les corrections de
-  Yacin), environ 1 $ ; un calcul enrichi (plans, études) coûte autour de 2 $ ;
+  Yacin), environ 1 $ ; un calcul qui relit beaucoup de dossiers coûte autour de 2 $ ;
 - le calcul du matin remplace celui de la veille sur la page, top 10 manuel compris : les cartes d'avant restent
   en base (`ouverte`) mais ne s'affichent plus ;
 - depuis la v5 (23/10), Sales Focus écrit aussi dans Attio, pour deux cas seulement : un « Mauvais objectif » (next
