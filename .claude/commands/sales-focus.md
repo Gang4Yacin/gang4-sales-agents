@@ -134,7 +134,8 @@ vue deux fois devient une règle : applique-la partout et cite-la dans `resume`,
 - **Agenda** : rendez-vous externes des 48 prochaines heures.
 - **Comptes rendus** : Claap (workspace Gang4) pour les démos et points récents, utile pour les récaps. À défaut
   d'enregistrement Claap (rendez-vous d'avant la bascule ou non enregistré), les notes Gemini de Google Meet : un
-  email de gemini-notes@google.com dans la boîte de l'organisateur, objet « Notes : "<titre du rendez-vous>" <date> »
+  email de gemini-notes@google.com dans la boîte de l'organisateur et des invités de Gang4 (cherche dans les trois
+  boîtes : Yacin anime les démos), objet « Notes : "<titre du rendez-vous>" <date> »
   (Samuel : `search_threads` `from:gemini-notes@google.com "<marque>"`, puis `get_thread` en `PLAIN_TEXT` ; Lucie et
   Yacin : même `q`, `receivedAfter` = le jour du rendez-vous, `simple: false` pour avoir le corps, et les autres
   paramètres ci-dessous), avec le résumé et les « Étapes suivantes suggérées », chacune au nom de qui s'y est engagé. Le 27/10, la présentation promise
@@ -398,7 +399,8 @@ complète d'un contact : un domaine seul ne renvoie rien, « bricks.co » → 0,
 participant de la marque présent ; un enregistrement sans intervenant externe ni résumé ne prouve rien (Les Commis :
 « Onboarding Gang4 (Romain Lacoste) » du 23/10, vide, onboarding calé au 30/10) ; une démo manquée, déclinée ou annulée n'est pas tenue (famille « Rendez-vous », étape 3). Déjà
 calé → pas de carte pour le caler. Déjà tenu → l'action est ce que Gang4 y a promis et qui n'est pas fait (actions du
-compte rendu Claap, à défaut des notes Gemini, étape 2), jamais le même rendez-vous une deuxième fois. Une entrée d'office (« Mauvais objectif », objectif
+compte rendu Claap, à défaut des notes Gemini, étape 2 : toutes les promesses non tenues du rendez-vous, dans la même
+carte ou citées dans `pourquoi`), jamais le même rendez-vous une deuxième fois. Une entrée d'office (« Mauvais objectif », objectif
 corrigé, snooze), ou un deal dont le next step d'Attio est encore celui d'un « Mauvais objectif » traité
 (`motif_traitement`), garde l'objectif de l'équipe. L'onboarding n'est jamais une carte (étape 3, « argent qui
 attend »). Agenda illisible (quota, comme le 27/10 à 08:42) → comptes rendus Claap, notes « Sales <Mois> <Année> - auto » du
@@ -457,6 +459,12 @@ l'email qui transmet le lien (`[à compléter : lien d'invitation de <prénom>]`
 l'invitation, avec sa page (étape 6). Une adresse @gang4.io, ou celle d'une agence qui n'est pas contact du deal
 (growth-society, coudac), ne prouve pas l'accès de la marque.
 
+**« Rien n'est parti » nomme ce qui n'est pas parti** (« aucune étude de cas n'est partie ») : un autre envoi de la
+même promesse est cité avec sa date (Wopilo, 27/10 : le deck était parti le 11/09 à 19:31, pas les études de cas).
+L'heure de « trois boîtes lues jusqu'au JJ/MM à HH:MM » est celle de la dernière lecture, lue sur l'horloge
+(`TZ=Europe/Paris date '+%d/%m %H:%M'`), jamais arrondie ni estimée : le 27/10 au soir, « 21:00 » a été écrit pour un
+calcul écrit à 20:49.
+
 **On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
 ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
 reste l'email, et `avant_envoi` dit « vérifier que <le récap> n'est pas déjà parti (boîte de Yacin
@@ -489,7 +497,8 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   1. Repère la situation de la carte (relance après un silence, démo manquée à recaler, récap, informations à
      demander, question du prospect, mauvais contact qui renvoie vers quelqu'un d'autre, go à concrétiser,
      facture, conversation qui retombe, offre promise, références clients, étude de cas à envoyer) et suis ce que
-     le guide dit d'y écrire.
+     le guide dit d'y écrire. Une carte qui envoie un livrable et recale un point décliné suit les deux lignes : ce
+     que le point devait apporter, d'après le compte rendu (Tikamoon, Wopilo, 27/10).
   2. Relis tout le fil : tutoiement ou vouvoiement, salutation, signature, ce qui a déjà été dit.
   3. Lis au plus 3 emails envoyés par la même boîte dans une situation comparable : d'abord le libellé
      Gmail « Modèle », sinon une recherche ciblée dans les envoyés (mots de la situation, 90 derniers jours). Reprends
@@ -545,11 +554,26 @@ l'envoi.
   lien valable 7 jours, que l'email contient (`[à compléter : lien d'invitation de <prénom>]`), en copie de chaque
   personne invitée. `avant_envoi` dit l'action et sa page (« créer les invitations de Yoann et Alban dans
   Orga › Bricks › Utilisateurs »). Une action qui crée des créas inclut le lancement du batch. Pour une marque à
-  créer, l'assistant `/admin/onboarding` va jusqu'à l'étape « Profils test », avec au moins un profil (« Créer un
-  homme » ou « Créer une femme ») : sans profil whitelisting proposé ou validé, le Batch Planner refuse de générer le
-  plan. Des créas à joindre s'enregistrent une à une depuis le batch (la loupe en haut à droite de la créa, au survol, puis
-  clic droit › Enregistrer l'image ; après « Ajouter au pipeline », elles sont dans l'onglet « Validées ») :
-  `avant_envoi` le dit. Le 27/10 au soir, la carte Emily's Pillow disait
+  créer, l'assistant `/admin/onboarding` va jusqu'à l'étape « Profils test » : produit, puis « Créer les USP & Customer
+  Profiles » à l'étape « USP & Profils » (préparation d'une vingtaine de minutes), puis un profil test choisi d'après
+  la clientèle de la marque, celle que décrit l'email (« Créer une femme » par défaut, « Créer un homme » pour une
+  marque qui vise des hommes) : sans profil whitelisting proposé ou validé, ni USP et profils clients, le Batch Planner
+  refuse de générer le plan. Dans Whitelisting › Batch, le produit s'ajoute à la « Config par défaut » de la marque
+  avant « Générer un plan ». Des créas à joindre s'enregistrent une à une dans Whitelisting › Batchs à valider
+  (« Voir le batch » de la marque, la loupe en haut à droite de la créa, au survol, puis clic droit › Enregistrer
+  l'image ; après « Ajouter au pipeline », elles sont dans l'onglet « Validées ») ; la page du plan, elle, ne montre
+  pas les créas générées : `avant_envoi` le dit.
+- **Sélection de profils promise** (des créateurs qui ressemblent aux clients de la marque) → ce sont les créateurs qui
+  postulent à l'offre whitelisting de la marque. Sans offre en base (`Offer`, `OfferWhitelisting` de la marque),
+  `avant_envoi` dit d'abord de l'ouvrir : « ouvrir l'offre de <marque> dans Orga › <marque> › Whitelisting, « Create
+  Whitelisting Offer », puis « Relancer » sur la seule ligne « Création / enrichissement de l'OfferWhitelisting » ».
+  Jamais « Lancer la cascade » pour un prospect : elle passerait ses créas de démo en `GANG4_REJECTED` et supprimerait
+  ses profils test. Les candidatures arrivent en 24 h environ : l'email du jour envoie ce qui est prêt (la
+  présentation…) et annonce l'offre ouverte et la liste à venir ; la liste part dans un second email (Google Sheet des
+  postulants, comme Samuel pour HomeExchange le 05/10), carte d'un calcul suivant. Offre déjà ouverte avec des
+  postulants → l'email transmet la liste (`[à compléter : lien du Google Sheet des profils]`). Le 27/10 au soir, la carte
+  Bloon Paris joignait « une sélection de profils » choisie dans Orga › Bloon Paris › Whitelisting, une page qui
+  n'en montre aucun. Le 27/10 au soir, la carte Emily's Pillow disait
   « créer la marque » puis « lancer son batch » : une marque arrêtée au Business client n'a pas de profil test, et son
   batch ne part pas.
 - **Appel** → l'email qui propose un créneau d'appel, ou qui pose par écrit la question de l'appel ; le numéro reste
