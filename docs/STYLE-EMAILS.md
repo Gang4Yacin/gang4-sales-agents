@@ -38,8 +38,12 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 - **Tutoiement ou vouvoiement** : la forme déjà employée dans le fil. Pour un premier contact, celle des derniers emails
   de la même boîte à un premier contact.
 - **Ton** : phrases courtes, direct et chaleureux, sans formule creuse ni superlatif.
-- **Longueur** : de 80 à 150 mots, moins pour une simple relance.
-- **Demande** : une seule, claire, en fin d'email (un créneau, un accès, une réponse).
+- **Longueur** : de 80 à 150 mots, moins pour une simple relance ou pour l'email qui accompagne une pièce jointe
+  promise (étude de cas « ci-jointe »).
+- **Demande** : une seule, claire, en fin d'email (un créneau, un accès, une réponse), jamais au conditionnel d'une
+  autre question : une question suivie de « Si oui, tu aurais 15 minutes … ? » ne demande plus rien si la réponse est
+  non (Tikamoon, 27/10). C'est l'objectif de la carte, ni plus ni moins (pour une simple réponse à une question du
+  prospect, l'objectif est qu'il ait sa réponse).
 - **Lien d'agenda** : celui du type de rendez-vous demandé (démo ou onboarding), pris dans la liste des pages de
   réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Ces pages réservent dans l'agenda de
   Samuel : depuis la boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
@@ -50,7 +54,8 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   indispensable (le prix d'une offre promise, par exemple), il reste marqué `[à compléter : …]` pour que Yacin le
   remplisse.
 - **Rien d'annoncé sans l'avoir vu** : des créas à valider, un batch, un accès ne s'annoncent que s'ils existent en base.
-  Une invitation à la plateforme est un lien à transmettre (l'admin n'envoie aucun email) : l'email le contient,
+  Une invitation créée dans l'admin est un lien à transmettre (l'admin n'envoie aucun email ; créée depuis l'app
+  marque, la plateforme l'envoie elle-même) : l'email le contient,
   `[à compléter : lien d'invitation de <prénom>]`, en copie de chaque personne invitée. Une étude de cas ou des créas
   à joindre sont annoncées « ci-jointes » : Yacin les joint au brouillon.
 - **Fil** : réponse dans le fil (« Re: <objet du fil> ») dès qu'un fil existe avec la bonne personne. Nouveau fil
@@ -61,7 +66,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 | Situation | Ce que dit l'email | La demande |
 |---|---|---|
 | **Relance après un silence** | Le dernier échange en une phrase (quoi, quand). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
-| **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase. | Recaler, avec le lien d'agenda. |
+| **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase, d'après l'envoi qui l'a fait réserver (Lemlist ou email) et les créas de démo de la marque en base (Pimpant avait réservé pour voir les UGC préparés pour elle) ; pour un point de suivi décliné, ce qu'il devait apporter, d'après le compte rendu (Claap, à défaut les notes Gemini). | Recaler, avec le lien d'agenda. |
 | **Récap après une démo ou un appel** | Merci en une phrase. Ce qui a été dit, tel que dans le compte rendu : besoins, prochaines étapes, qui fait quoi. | La prochaine étape, datée si elle l'a été. |
 | **Gang4 a besoin d'informations** (accès, marques visées, éléments pour lancer) | Pourquoi on en a besoin, en une phrase. | La liste courte de ce qu'il faut, ou un court appel pour le faire ensemble. |
 | **Le prospect pose une question** | La réponse d'abord, précise, avec ce qu'on sait. Si elle demande un chiffre qu'on n'a pas encore (cas chiffré, étude de cas), la carte est l'email qui l'annonce « ci-jointe », sans chiffre ; Yacin la joint au brouillon (`/sales-focus`, étape 6). | Seulement si elle fait avancer le deal. |
