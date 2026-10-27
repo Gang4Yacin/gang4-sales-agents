@@ -340,7 +340,9 @@ rouvre jamais.
 - **Réconciliation produit** : rejoue la requête de verdict de `crm-sync` §4b et applique ses décisions de stage et
   de statut telles quelles (paiement → `Deal Won` et `Customer`, Meta connecté sans paiement → `Meta Connected`…).
   Balle, date et next step du passage en `Meta Connected` suivent les règles d'onboarding de §4b, seulement si le
-  deal n'est pas sous décision humaine au sens de cette commande ; sinon, stage seul (la puce « promesse » de C4
+  deal n'est pas sous une décision humaine (au sens de cette commande) postérieure à la connexion Meta
+  (`meta_connected_at`) ou dont le next step parle déjà de l'onboarding ; une décision plus ancienne, ou un next step
+  que la connexion a accompli (« Obtenir l'accès BM »), cède comme dans §4b ; sinon, stage seul (la puce « promesse » de C4
   reste prioritaire). Normalement rien : une correction ici veut dire que `/sales-ops` l'a ratée.
 
 ### C3. Fermetures de la semaine (lignes `fermé` et `créé et fermé` de l'étape 2.2)
@@ -389,8 +391,11 @@ réconciliation produit qui le fait).
   promesse n'est due → Balle Prospect, envoi + 7 j (aujourd'hui si c'est passé), « Relancer <prénom nom> —
   relance n/3 ».
 - Balle `RDV calé` dont le rendez-vous est passé, quel que soit le stage → ligne T9 de la grille de `crm-sync`, sauf
-  un rendez-vous d'onboarding d'un deal `Meta Connected` : ligne « Rendez-vous d'onboarding » (R6) de la grille,
-  jamais « Envoyer le récap / la proposition » ni le lien d'abonnement dans les 14 jours.
+  un rendez-vous d'onboarding d'une marque qui a donné son go (deal `Meta Connected`, ou verdict `meta_no_sub` /
+  `customer_no_meta`) : ligne « Rendez-vous d'onboarding » (R6) de la grille, y compris passé sans preuve
+  (« Confirmer la tenue de l'onboarding du JJ/MM ») ou annulé (« Re-caler l'onboarding avec <prénom nom> »), jamais
+  « Envoyer le récap / la proposition » ni le lien d'abonnement dans les 14 jours. Les phrases qui suivent valent pour
+  les autres rendez-vous.
   Compte rendu : Balle Gang4, J+1, « Envoyer le récap / la proposition à <prénom nom> » (et `Qualified` par C2).
   Ni compte rendu ni échange depuis : Balle Gang4, aujourd'hui, « Confirmer la tenue du RDV du JJ/MM et faire le
   récap ». Rendez-vous annulé, décliné ou manqué : Balle Gang4, J+2, « Re-caler le RDV avec <prénom nom> ».
