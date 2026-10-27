@@ -338,7 +338,13 @@ Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières h
 de Lucie et de Yacin, et l'agenda. Après une démo ou un call, cherche ce que Yacin a envoyé au prospect depuis le
 meeting : `Get_many_messages_in_Yacin_Gmail` avec `q` = `in:sent to:<domaine>`, `receivedAfter` = le début du
 meeting, `receivedBefore` = maintenant, et les autres paramètres de l'étape 2 (`readStatus: "both"`, `sender: ""`,
-`returnAll: false`, `limit` petit, `simple: true`), tous obligatoires ; fais de même chez Samuel et Lucie. Une
+`returnAll: false`, `limit` petit, `simple: true`), tous obligatoires ; fais de même chez Samuel et Lucie. Les
+contacts n'écrivent pas tous depuis le domaine de la marque (Bookinou : Alexandre Chanal écrit depuis
+marketing@pimely.com ; Gourmandiz : Séverin Dor depuis sevcorp.fr) : avant d'écrire qu'un envoi n'est pas parti,
+cherche aussi le nom de la marque (objet et corps) et l'adresse de chaque externe du dernier rendez-vous (invités de
+l'agenda, participants Claap), `in:sent to:<adresse>`, dans les trois boîtes, et dans `ProspectTouch` les lignes
+`match_method = 'unmatched'` dont le sujet contient le nom de la marque. Le 27/10, Bookinou a été écarté avec « rien
+n'est parti » alors que Samuel avait envoyé la présentation le 26/10 à 10:29 à marketing@pimely.com. Une
 action déjà faite ou une situation qui a changé remplace la carte par la candidate suivante. Exemples : le 22/10,
 Payfit écarté, Samuel avait répondu à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor
 proposait d'« envoyer le récap de la démo » que Yacin avait envoyé le 23/10 à 16:54, sa boîte n'étant lue que par
@@ -434,8 +440,11 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   onboarding pour un onboarding. Ces pages réservent dans l'agenda de Samuel : depuis la boîte de Lucie ou de Yacin,
   ou sans page du bon type dans la liste, demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de
   Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel.
-- **Jamais d'invention** : aucun chiffre, prix, remise, délai ou promesse qui ne soit déjà dans les
-  emails, les comptes rendus ou la base.
+- **Jamais d'invention** : aucun chiffre, prix, remise, délai, durée de rendez-vous ou promesse qui ne soit déjà
+  dans les emails, les comptes rendus ou la base (la durée d'un point se reprend des envois de la même boîte : Samuel
+  propose « 15 minutes »). Un message ne dit jamais qu'une chose existe sur la plateforme (créas à valider, accès,
+  batch) sans l'avoir vue en base (`ad_creative.state`, `BatchRun`, `invitations`) : le 27/10, le message Bricks
+  annonçait « les premières créas » alors que les 17 créas de la marque étaient rejetées et le batch pas lancé.
 
 **Document**, quand l'action est de produire quelque chose : `{"type": "document", "titre": "...", "corps": "..."}`,
 corps en markdown, complet et prêt à relire. « Valider » le dépose dans un Google Doc.
@@ -446,7 +455,12 @@ corps en markdown, complet et prêt à relire. « Valider » le dépose dans un 
   (même secteur ou même enjeu) et pourquoi ; les chiffres à sortir, avec leur source et leur période
   (`public."MetaAdInsight"` et `"MetaAdInsightEur"` : dépense, impressions, clics, conversions par pub ;
   `ad_creative_meta_ad` pour isoler les pubs des créas Gang4 ; requêtes agrégées par marque et par période) et leur
-  valeur quand tu l'as déjà calculée ; les verbatims (comptes rendus Claap) ; la structure de l'étude (une page) ;
+  valeur quand tu l'as déjà calculée. La verticale d'un client se lit dans sa fiche (`"BusinessClient".description`,
+  catégories Attio), jamais à son nom : le 27/10, Charlotte Bio (maquillage bio) était classée en food et Plumaïa
+  (vêtements) en beauté. Par verticale, mets en avant le client qui a le plus de dépense sur des pubs Gang4, sauf raison
+  écrite. Chaque marque a sa période réelle de données (`min` et `max` de `insight_date`), et la comparaison Gang4 contre
+  autres pubs se fait sur la même période (Withings : pubs Gang4 depuis le 13/10 seulement ; Sisters Republic : données
+  arrêtées au 28/09). Cite les créas déjà produites pour le prospect (`ad_creative` de sa marque) ; les verbatims (comptes rendus Claap) ; la structure de l'étude (une page) ;
   l'accord du client à demander avant l'envoi ; les autres deals que l'étude débloque. `quoi_faire` : « Valider le
   plan pour que l'étude soit rédigée au calcul suivant. » Plan validé → au calcul suivant, l'étude rédigée (`document`, `cle`
   `deal:<id>:etude`, chaque chiffre avec sa période) ; étude validée → l'email qui l'envoie (`cle`
@@ -463,10 +477,13 @@ corps en markdown, complet et prêt à relire. « Valider » le dépose dans un 
   emails ; le lien est celui que la même boîte a déjà envoyé à d'autres marques (recherche ciblée).
 - **Ce que Gang4 ne peut pas produire ici** (des créas, un accès, une décision interne) → le `document` « Plan
   d'action — <deal> » : les étapes concrètes, qui (Samuel, Lucie, Yacin), pour quand, avec quel outil : la page de l'admin où le faire
-  (tu la trouves dans `docs/FUNNEL.md` §5.3, et étapes 1 et 4 pour les créas test et le batch de démo des statics),
+  (tu la trouves dans `docs/FUNNEL.md` §5.3, liste « Pages pour un plan d'action » ; étapes 1 et 4 pour les créas test et
+  le batch de démo des statics ; une étape qui crée des créas inclut le lancement du batch),
   écrite comme Yacin la voit (« Admin › Organisation Bricks › Utilisateurs »), jamais par un renvoi à la doc du repo ;
-  et le message au prospect pour la suite, qui part toujours de la boîte de Samuel, de Lucie ou de Yacin. Pas d'étape
-  « mettre à jour Attio » : `/sales-ops` le fait le soir à partir de ce message.
+  et le message au prospect pour la suite, qui part toujours de la boîte de Samuel, de Lucie ou de Yacin. Une invitation
+  de l'admin n'envoie aucun email : elle donne un lien à transmettre, valable 7 jours ; le message le contient
+  (`[à compléter : lien d'invitation de <prénom>]`), et met en copie chaque personne invitée. Pas d'étape « mettre à
+  jour Attio » : `/sales-ops` le fait le soir à partir de ce message.
 - **Appel** → le `document` « Script d'appel — <contact> » : le numéro (Attio), l'objectif, le déroulé, les questions
   et les réponses aux objections connues.
 
