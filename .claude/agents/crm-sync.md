@@ -516,7 +516,8 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
                      where u.business_client_id = '<business_client_id>'))
     and p.email not ilike '%@gang4.io';
   ```
-  Aucune ligne → l'invitation n'est pas partie ; seulement une invitation `pending` expirée → elle est à renvoyer.
+  Aucune ligne → l'invitation n'est pas partie ; seulement une invitation `pending` expirée → elle est à refaire (révoquer, nouvelle invitation, lien à
+  transmettre par email : l'admin n'envoie rien).
 - `update_stage → Deal Won` et `update_company_status → Customer` vont **toujours** ensemble (deux
   lignes d'audit). Un deal qui passe `Deal Won` garde Balle/date/next step tels quels.
 - Company à créer (verdict `won`, domaine connu, introuvable même par nom) → `create_company` avec le
