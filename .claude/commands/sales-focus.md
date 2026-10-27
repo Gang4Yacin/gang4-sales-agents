@@ -419,8 +419,8 @@ contrôles C3 et C4, quand une promesse n'est pas prouvée tenue, ou à la main)
 une relance :
 cherche l'envoi dans les trois boîtes, lues en direct ; parti → le deal suit le fait suivant ; pas parti → la carte
 est l'email qui tient la promesse, comme pour « Envoyer à … ». Ce que le next step affirme entre parenthèses (« offre
-ouverte le 01/10 ») se vérifie à sa source avant d'être cru : en base pour une offre (`Offer`, `OfferWhitelisting` de la
-marque) ou un accès (requête ci-dessous), dans les boîtes ou les notes pour un message. Le 27/10 au soir, Bloon Paris
+ouverte le 01/10 ») se vérifie à sa source avant d'être cru : en base pour une offre (`OfferWhitelisting` de la marque
+pour les Partnership Ads, `Offer` pour le Social Proof) ou un accès (requête ci-dessous), dans les boîtes ou les notes pour un message. Le 27/10 au soir, Bloon Paris
 (« Vérifier l'envoi à Mégane de la présentation et des profils promis le 29/09 (offre ouverte le 01/10) ») était rangé
 parmi les relances : ni la présentation ni les profils n'étaient partis (trois boîtes lues), et « offre ouverte »
 désignait l'invitation de Mégane à la plateforme, acceptée le 01/10 ; aucune offre n'existait en base.
@@ -497,8 +497,8 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   1. Repère la situation de la carte (relance après un silence, démo manquée à recaler, récap, informations à
      demander, question du prospect, mauvais contact qui renvoie vers quelqu'un d'autre, go à concrétiser,
      facture, conversation qui retombe, offre promise, références clients, étude de cas à envoyer) et suis ce que
-     le guide dit d'y écrire. Une carte qui envoie un livrable et recale un point décliné suit les deux lignes : ce
-     que le point devait apporter, d'après le compte rendu (Tikamoon, Wopilo, 27/10).
+     le guide dit d'y écrire. Un point décliné à recaler : l'email dit ce que le point devait apporter, d'après le
+     compte rendu (Tikamoon, 27/10). Avec un livrable promis, la carte suit les deux lignes (Wopilo, 27/10).
   2. Relis tout le fil : tutoiement ou vouvoiement, salutation, signature, ce qui a déjà été dit.
   3. Lis au plus 3 emails envoyés par la même boîte dans une situation comparable : d'abord le libellé
      Gmail « Modèle », sinon une recherche ciblée dans les envoyés (mots de la situation, 90 derniers jours). Reprends
@@ -564,15 +564,19 @@ l'envoi.
   l'image ; après « Ajouter au pipeline », elles sont dans l'onglet « Validées ») ; la page du plan, elle, ne montre
   pas les créas générées : `avant_envoi` le dit.
 - **Sélection de profils promise** (des créateurs qui ressemblent aux clients de la marque) → ce sont les créateurs qui
-  postulent à l'offre whitelisting de la marque. Sans offre en base (`Offer`, `OfferWhitelisting` de la marque),
-  `avant_envoi` dit d'abord de l'ouvrir : « ouvrir l'offre de <marque> dans Orga › <marque> › Whitelisting, « Create
-  Whitelisting Offer », puis « Relancer » sur la seule ligne « Création / enrichissement de l'OfferWhitelisting » ».
-  Jamais « Lancer la cascade » pour un prospect : elle passerait ses créas de démo en `GANG4_REJECTED` et supprimerait
-  ses profils test. Les candidatures arrivent en 24 h environ : l'email du jour envoie ce qui est prêt (la
+  postulent à l'offre whitelisting de la marque (lignes `Whitelisting` dont `offer_whitelisting_id` est l'offre, hors
+  profils test). Sans `OfferWhitelisting` `ACTIVE` de la marque, `avant_envoi` dit d'abord de l'ouvrir : « ouvrir l'offre
+  de <marque> dans Orga › <marque> › PA Offer, « Create Whitelisting Offer », puis « Relancer » sur « Description de la
+  marque » si elle est manquante, puis « Relancer » sur « Création / enrichissement de l'OfferWhitelisting », jamais sur
+  les deux autres lignes ». La marque doit avoir un produit, sinon l'offre n'est pas créée ; une offre créée sans
+  description se complète par « Description manquante — Générer » sur sa carte. Jamais « Lancer la cascade » pour un
+  prospect : elle passerait ses créas de démo en `GANG4_REJECTED` et supprimerait ses profils test. L'offre est visible
+  de tous les créateurs de l'app dès sa création et le reste : deal perdu → la fermer (carte de l'offre › « Éditer »,
+  statut « Terminé »). Les candidatures arrivent en 24 h environ : l'email du jour envoie ce qui est prêt (la
   présentation…) et annonce l'offre ouverte et la liste à venir ; la liste part dans un second email (Google Sheet des
   postulants, comme Samuel pour HomeExchange le 05/10), carte d'un calcul suivant. Offre déjà ouverte avec des
   postulants → l'email transmet la liste (`[à compléter : lien du Google Sheet des profils]`). Le 27/10 au soir, la carte
-  Bloon Paris joignait « une sélection de profils » choisie dans Orga › Bloon Paris › Whitelisting, une page qui
+  Bloon Paris joignait « une sélection de profils » choisie dans Orga › Bloon Paris › PA Offer, une page qui
   n'en montre aucun. Le 27/10 au soir, la carte Emily's Pillow disait
   « créer la marque » puis « lancer son batch » : une marque arrêtée au Business client n'a pas de profil test, et son
   batch ne part pas.
