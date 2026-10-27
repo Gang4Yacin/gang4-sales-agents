@@ -190,7 +190,12 @@ order by a.statut_change_at;
    `crm-sync` R5). Date : seulement si le texte en donne une ; « dans 2 semaines » compte depuis le jour du geste,
    un samedi ou un dimanche passe au lundi, 90 jours au plus. Date vide dans Attio et aucune date dans le texte →
    aujourd'hui, écrite dans le même `update-record`. Balle : seulement si le nouvel objectif l'impose (une relance
-   datée → `Prospect` ; une action de Gang4 aujourd'hui → `Gang4`).
+   datée → `Prospect` ; une action de Gang4 aujourd'hui → `Gang4`). Un texte qui dit que la marque passe en
+   onboarding (go donné, connexion Meta reçue, onboarding en cours) n'appelle pas d'action sales : next step, date et
+   Balle de la phase d'onboarding de `crm-sync` §4b (Balle `Prospect`, « Relancer <prénom nom> : upload des créas et
+   abonnement », à la fin de la phase), donc pas de carte avant ; une promesse de Gang4 non tenue reste l'objectif.
+   Le 27/10, « on a reçu la connexion Meta pour faire l'onboarding » est devenu « Caler l'onboarding », Balle Gang4,
+   aujourd'hui, et Gourmandiz est sorti en n°1 : c'était une erreur (Yacin).
 2. Écris-le dans Attio (audit ci-dessous) : `update-record` sur le deal (`next_step_description`, et
    `prochaine_action_le` ou `balle_dans_le_camp` s'ils changent, dans le même appel), puis `create-note` sur le deal,
    titre « Objectif corrigé - auto » :
@@ -282,7 +287,12 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   ouverte, go sans accès Business Manager. Après l'onboarding, la marque doit d'abord uploader ses créas
   avant d'activer l'abonnement, ce qui prend quelques jours ou quelques semaines : pas de lien d'abonnement ni
   de relance dans les 14 jours qui suivent l'onboarding ; ensuite, la relance demande ce qui bloque l'upload
-  (retour de Yacin du 23/10 sur Araw, onboarding du 20/10, relance le 06/11).
+  (retour de Yacin du 23/10 sur Araw, onboarding du 20/10, relance le 06/11). **Pas pendant l'onboarding** : une
+  marque Meta connectée depuis moins de 14 jours, ou dont le rendez-vous d'onboarding date de moins de 14 jours, n'est
+  pas candidate (phase d'onboarding de `crm-sync` §4b, suivie sur la page Onboarding de l'admin ; verdict « en
+  onboarding jusqu'au JJ/MM »), sauf une promesse de Gang4 faite au prospect et non tenue (Bricks : invitation à la
+  plateforme promise pour le 16/10). Ni « caler l'onboarding », ni « proposer l'onboarding » ne sont des cartes
+  (Yacin, 27/10 : Gourmandiz, Meta connecté le jour même, sortait en n°1).
 - **Prospect qui attend Gang4** : son dernier message appelle une réponse, ou un livrable promis après un
   échange (récap, offre, créas) n'est pas parti, vérifié dans les trois boîtes (étape 5).
 - **Rendez-vous** : démo refusée, annulée ou manquée à recaler ; rendez-vous à fort enjeu dans les 48 h
@@ -296,16 +306,15 @@ Balle Gang4 à échéance n'est écarté que si l'action est déjà faite, si la
 pris, refus net), s'il est snoozé (étape 1, `plus_tard_jusqu_au` à venir ; verdict « snoozé jusqu'au JJ/MM »), s'il
 attend le jour de son objectif corrigé (étape 1 ; verdict « objectif corrigé, retour le JJ/MM »), si l'action elle-même ne
 peut pas se faire avant une date connue et à venir : elle livre un produit de Gang4 pas encore lancé (des exemples
-vidéo avant la sortie de l'offre vidéo ; date de sortie dans `docs/FUNNEL.md` §7, point 48 ; tant que la sortie n'est
-pas annoncée, le deal reste écarté même une fois cette date passée, verdict « attend la sortie de l'offre vidéo
-(annoncée pour le JJ/MM, à confirmer) », et `resume` demande la nouvelle date à Yacin), ou le prospect a fixé lui-même une date de reprise encore à venir (« je
+vidéo avant la sortie de l'offre vidéo : pas de date annoncée, « dans les prochaines semaines », Yacin le 27/10 ; le
+deal reste écarté tant que `docs/FUNNEL.md` §7, point 48, ne dit pas l'offre sortie ; verdict « attend la sortie de
+l'offre vidéo »), ou le prospect a fixé lui-même une date de reprise encore à venir (« je
 reviens vers toi après le 15/11 ») ; verdict « attend le JJ/MM : <raison> ». Ne s'écartent jamais ainsi : un contenu
 que Gang4 peut préparer aujourd'hui (offre commerciale, cas chiffré, créas statiques, récap), un prospect qui « devait
 revenir vers nous » sans date ou dont la date est passée (c'est une relance : Social Desk le 27/10, Circle
 Sportswear), un rendez-vous décliné à recaler (Tikamoon, Wopilo), une entrée d'office. Ou enfin s'il vient après les
 `N` retenus. Le 27/10, Payfit est passé en 3e avec « Préparer les exemples vidéo promis » alors que ces exemples
-attendaient la sortie de l'offre vidéo, annoncée pour la fin du mois (verdict attendu : « attend le 31/10 : offre
-vidéo pas encore sortie »).
+attendaient la sortie de l'offre vidéo (verdict attendu : « attend la sortie de l'offre vidéo »).
 
 ## Étape 4 — Classer
 Score = **impact** (argent en jeu, taille de la marque : ICP Large > Medium > Small, `App / Service` ;
@@ -346,10 +355,10 @@ complète d'un contact : un domaine seul ne renvoie rien, « bricks.co » → 0,
 participant de la marque présent ; un enregistrement sans intervenant externe ni résumé ne prouve rien (Les Commis :
 « Onboarding Gang4 (Romain Lacoste) » du 23/10, vide, onboarding calé au 30/10) ; une démo manquée, déclinée ou annulée n'est pas tenue (famille « Rendez-vous », étape 3). Déjà
 calé → pas de carte pour le caler. Déjà tenu → l'action est ce que Gang4 y a promis et qui n'est pas fait (actions du
-compte rendu Claap), jamais le même rendez-vous une deuxième fois. Une démo tenue n'empêche jamais de caler
-l'onboarding qui suit le go, et une entrée d'office (« Mauvais objectif », objectif corrigé, snooze), ou un deal dont le
-next step d'Attio est encore celui d'un « Mauvais objectif » traité (`motif_traitement` ; Gourmandiz le 28/10), garde
-l'objectif de l'équipe. Agenda illisible (quota, comme le 27/10 à 08:42) → comptes rendus Claap, notes « Sales <Mois> <Année> - auto » du
+compte rendu Claap), jamais le même rendez-vous une deuxième fois. Une entrée d'office (« Mauvais objectif », objectif
+corrigé, snooze), ou un deal dont le next step d'Attio est encore celui d'un « Mauvais objectif » traité
+(`motif_traitement`), garde l'objectif de l'équipe. L'onboarding n'est jamais une carte (étape 3, « argent qui
+attend »). Agenda illisible (quota, comme le 27/10 à 08:42) → comptes rendus Claap, notes « Sales <Mois> <Année> - auto » du
 deal (jamais sur la company), et emails de réservation des trois boîtes sur la même période (« Rendez-vous réservé »,
 « Invitation : », avec le domaine ou le nom du contact). Sans preuve, la carte garde son action et son contenu (l'email
 qui propose le rendez-vous) ; `quoi_faire` commence par « Vérifier dans l'agenda qu'aucun <onboarding|démo|call>
