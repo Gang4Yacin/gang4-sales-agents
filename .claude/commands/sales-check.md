@@ -289,7 +289,8 @@ ferme un deal ou empêche sa création. Ne sont jamais des refus, même s'ils co
 maintenant » ou « pas pour le moment », avec ou sans date (`later`) ; une réserve sans refus ferme
 (`objection`) ; une demande d'étude de cas, d'exemples, de tarifs ou de rappel (`question`). Le deal est alors
 créé (C1) ou reste ouvert, avec la Balle, la date et le next step de la grille : la date annoncée s'il y en a
-une, la demande en next step (Axonaut, 19/10 → « Envoyer l'étude de cas demandée le 19/10 »). Entre `later` et
+une, la demande en next step (Axonaut, 19/10 → « Envoyer l'étude de cas vidéo demandée le 19/10 (attend la sortie de
+l'offre vidéo) », aujourd'hui + 14 j : C4 et `docs/FUNNEL.md` §7, point 48). Entre `later` et
 `negative`, choisis `later` (Coucoo Cabanes, 22/10 : « pas intéressés pour le moment mais gardons votre
 contact »).
 

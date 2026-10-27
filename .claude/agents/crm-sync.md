@@ -505,11 +505,11 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
     dans le pipeline sales pendant l'onboarding (Bricks : invitation promise pour le 16/10, jamais partie).
   `rule = "R6"`. Accès plateforme de la marque (une adresse @gang4.io ou d'agence ne prouve rien) :
   ```sql
-  select 'invitation' as quoi, i.email, i.status, i.created_at, i.expires_at
+  select 'invitation' as quoi, i.id, i.email, i.status, i.created_at, i.expires_at, i.reminded_at
   from public.invitations i
   where i.business_client_id = '<business_client_id>' and i.email not ilike '%@gang4.io'
   union all
-  select 'compte', p.email, null, p.created_at, null
+  select 'compte', null, p.email, null, p.created_at, null, null
   from public.profiles p
   where (p.business_client_id = '<business_client_id>' or p.active_business_client_id = '<business_client_id>'
          or p.id in (select u.profile_id from public."UserAuthorizedBusinessClient" u
@@ -517,7 +517,9 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
     and p.email not ilike '%@gang4.io';
   ```
   Aucune ligne → l'invitation n'est pas partie ; seulement une invitation `pending` expirée → elle est à refaire (révoquer, nouvelle invitation, lien à
-  transmettre par email : l'admin n'envoie rien).
+  transmettre par email : l'admin n'envoie rien). Une invitation `pending` encore valide n'est tenue que si elle a été
+  transmise, au sens de `/sales-focus` étape 5 (envoyée par la plateforme depuis l'app marque : log `INVITE_SENT` ou
+  `reminded_at` ; sinon un email des trois boîtes qui contient le lien) ; pas transmise → la promesse reste due.
 - `update_stage → Deal Won` et `update_company_status → Customer` vont **toujours** ensemble (deux
   lignes d'audit). Un deal qui passe `Deal Won` garde Balle/date/next step tels quels.
 - Company à créer (verdict `won`, domaine connu, introuvable même par nom) → `create_company` avec le

@@ -135,8 +135,9 @@ vue deux fois devient une règle : applique-la partout et cite-la dans `resume`,
 - **Comptes rendus** : Claap (workspace Gang4) pour les démos et points récents, utile pour les récaps. À défaut
   d'enregistrement Claap (rendez-vous d'avant la bascule ou non enregistré), les notes Gemini de Google Meet : un
   email de gemini-notes@google.com dans la boîte de l'organisateur, objet « Notes : "<titre du rendez-vous>" <date> »
-  (Samuel : `search_threads` `from:gemini-notes@google.com "<marque>"`, puis `get_thread` en `PLAIN_TEXT`), avec le
-  résumé et les « Étapes suivantes suggérées », chacune au nom de qui s'y est engagé. Le 27/10, la présentation promise
+  (Samuel : `search_threads` `from:gemini-notes@google.com "<marque>"`, puis `get_thread` en `PLAIN_TEXT` ; Lucie et
+  Yacin : même `q`, `receivedAfter` = le jour du rendez-vous, `simple: false` pour avoir le corps, et les autres
+  paramètres ci-dessous), avec le résumé et les « Étapes suivantes suggérées », chacune au nom de qui s'y est engagé. Le 27/10, la présentation promise
   à The Bradery à la démo du 03/09 n'était que dans ces notes.
 
 Formes d'appel qui marchent (deux appels avaient échoué le 22/10) :
@@ -290,7 +291,8 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
 - **Balle Gang4 à échéance**, le point de départ : chaque deal ouvert dont `balle_dans_le_camp` vaut `Gang4` et dont
   `prochaine_action_le` est aujourd'hui, passée ou vide. Attio dit déjà que Gang4 doit agir, et
   `next_step_description` dit quoi : chacun est candidat d'office, et chacun reçoit un verdict, retenu ou écarté avec
-  sa raison (étape 9 et `resume`). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
+  sa raison (étape 9 et `resume`). Un next step « Vérifier que … est parti » ou « Vérifier l'envoi … » se classe comme
+  la promesse qu'il nomme, jamais comme une relance (étape 5, « Next step d'Attio »). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
   oublié Goodvest (Aurélie Briche-Heinry absente à la démo du 22/09, à recaler), Hindbag et Circle Sportswear
   (relances).
 - **Argent qui attend** : go donné et Meta connecté sans abonnement avec un signal récent, facture
@@ -325,8 +327,11 @@ revenir vers nous » sans date ou dont la date est passée (c'est une relance : 
 Sportswear), un rendez-vous décliné à recaler (Tikamoon, Wopilo), une entrée d'office. Ou enfin s'il vient après les
 `N` retenus. Le 27/10, Payfit est passé en 3e avec « Préparer les exemples vidéo promis » alors que ces exemples
 attendaient la sortie de l'offre vidéo (verdict attendu : « attend la sortie de l'offre vidéo »). Un refus net est
-un refus explicite au sens de `/sales-check` (« Lire une réponse », `negative`) ; une demande d'étude de cas,
-d'exemples ou de tarifs n'en est jamais un. Le 27/10 au soir, Axonaut était écarté pour « refus net le 19/10 » alors
+un refus qui remplit les conditions de fermeture de `/sales-check` C2 : `negative` écrit, dernier signal du prospect,
+porte fermée à toute l'offre (pas à un format), aucune promesse de Gang4 postérieure. Un refus partiel, un `later`, une
+`objection`, une demande d'étude de cas, d'exemples ou de tarifs n'en sont jamais un. Un refus au téléphone
+(« Clôturer ? — refus au téléphone », posé par `crm-sync`) écarte le deal avec le verdict « refus au téléphone le
+JJ/MM, clôture à décider par Lucie ». Le 27/10 au soir, Axonaut était écarté pour « refus net le 19/10 » alors
 que Siobhan Donovan demandait une étude de cas vidéo d'une marque comparable (Abby, qui n'a que des créas image) :
 verdict « attend la sortie de l'offre vidéo » (`docs/FUNNEL.md` §7, point 48).
 
@@ -341,9 +346,9 @@ Classe sur des dossiers relus, pas sur le seul next step d'Attio : pour les `N +
 (outils de Lucie et de Yacin : `q` = `{<domaine> "<nom de la marque>" <adresse de chaque contact du deal hors de ce
 domaine>} -label:lemwarmup -label:Lemwarmup -subject:lemwarmup` (les accolades valent OU dans Gmail), `receivedAfter` = il y a 90 jours, `limit` 3, `simple: true` et les
 autres paramètres de l'étape 2 ; Samuel : `search_threads` avec la même requête et `newer_than:90d`, puis
-`get_thread` (`PLAIN_TEXT`) sur le fil le plus récent, et sur le dernier fil où la marque a écrit s'il est différent,
-les réponses d'agenda « Accepté : » et « Refusé : » ne comptant pas, car l'aperçu de la recherche ne montre que les 5
-plus anciens messages d'un fil) et le dernier compte rendu (Claap, à défaut les notes Gemini, étape 2) avant de les
+`get_thread` (`PLAIN_TEXT`), car l'aperçu de la recherche ne montre que les 5 plus anciens messages d'un fil, sur le
+fil le plus récent et sur le dernier fil où la marque a écrit, s'il est différent ; une réponse d'agenda (« Accepté : »,
+« Refusé : ») ne compte ni comme fil le plus récent ni comme message de la marque) et le dernier compte rendu (Claap, à défaut les notes Gemini, étape 2) avant de les
 départager ; l'étape 5 ne relit ensuite que les heures écoulées depuis. À impact comparable, un livrable promis par
 Gang4 en retard depuis plus de 30 jours (créas, étude chiffrée, offre) passe devant une promesse de quelques jours.
 Le 27/10, Emily's Pillow (Hot, créas demandées par sa CMO le 21/09) et The Bradery (cas chiffrés demandés le 24/09)
@@ -407,22 +412,25 @@ eu lieu le 13/10.
 est fait, si un fait plus récent du prospect le remplace, ou s'il ne peut pas aboutir avant une date connue (étape 3 :
 Payfit, « Envoyer des exemples vidéo à Julie Florin (promis le 22/10) », attend l'offre vidéo). Le 27/10, Attio
 portait pour Bricks « Envoyer à Yoann Ros l'invitation à la plateforme promise le 13/10 (prévue le 16/10) ». Un next
-step « Vérifier que <ce qui a été promis le JJ/MM> est parti » ou « Vérifier l'envoi de … » (posé par `/sales-check`
-ou `crm-sync` quand la boîte de Yacin n'était pas lisible) est aussi un engagement de Gang4, jamais une relance :
+step « Vérifier que <ce qui a été promis le JJ/MM> est parti » ou « Vérifier l'envoi de … » (posé par `/sales-check`,
+contrôles C3 et C4, quand une promesse n'est pas prouvée tenue, ou à la main) est aussi un engagement de Gang4, jamais
+une relance :
 cherche l'envoi dans les trois boîtes, lues en direct ; parti → le deal suit le fait suivant ; pas parti → la carte
 est l'email qui tient la promesse, comme pour « Envoyer à … ». Ce que le next step affirme entre parenthèses (« offre
-ouverte le 01/10 ») se vérifie en base avant d'être cru. Le 27/10 au soir, Bloon Paris (« Vérifier l'envoi à Mégane de
-la présentation et des profils promis le 29/09 (offre ouverte le 01/10) ») était rangé parmi les relances : rien
-n'était parti et aucune offre n'existait en base.
+ouverte le 01/10 ») se vérifie à sa source avant d'être cru : en base pour une offre (`Offer`, `OfferWhitelisting` de la
+marque) ou un accès (requête ci-dessous), dans les boîtes ou les notes pour un message. Le 27/10 au soir, Bloon Paris
+(« Vérifier l'envoi à Mégane de la présentation et des profils promis le 29/09 (offre ouverte le 01/10) ») était rangé
+parmi les relances : ni la présentation ni les profils n'étaient partis (trois boîtes lues), et « offre ouverte »
+désignait l'invitation de Mégane à la plateforme, acceptée le 01/10 ; aucune offre n'existait en base.
 
 **Un accès plateforme promis se vérifie en base**, il ne se laisse jamais « à vérifier ». `<bc>` est la marque de la
 company du deal (`sales.processed_items`, `source = 'business_client'`, ou par domaine dans `"BusinessClient"`) :
 ```sql
-select 'invitation' as quoi, i.email, i.status, i.created_at, i.expires_at
+select 'invitation' as quoi, i.id, i.email, i.status, i.created_at, i.expires_at, i.reminded_at
 from public.invitations i
 where i.business_client_id = '<bc>' and i.email not ilike '%@gang4.io'
 union all
-select 'compte', p.email, null, p.created_at, null
+select 'compte', null, p.email, null, p.created_at, null, null
 from public.profiles p
 where (p.business_client_id = '<bc>' or p.active_business_client_id = '<bc>'
        or p.id in (select u.profile_id from public."UserAuthorizedBusinessClient" u where u.business_client_id = '<bc>'))
@@ -432,13 +440,17 @@ Un compte, ou une invitation `accepted`, d'une adresse de la marque ou d'un cont
 domaine (Séverin Dor, contact@sevcorp.fr, pour Gourmandiz) → l'accès est ouvert. Une invitation `pending` encore
 valide → le lien existe, et il a pu partir de deux façons. Créée depuis l'app marque (business.gang4.io, par la
 marque ou par quelqu'un de Gang4 connecté à l'app), la plateforme l'envoie elle-même par email (edge function
-`send-invitation-email`) ; créée dans l'admin (Orga › <marque> › Utilisateurs), elle n'envoie rien. Les logs Supabase
-des edge functions (gardés environ 24 h) tranchent : une ligne `[invite-transport] INVITE_SENT` qui porte son `id`
-(`invitationId`) → envoyée par la plateforme, donc transmise. Sinon, elle compte comme transmise si l'une des trois
-boîtes a écrit au contact depuis `created_at` un email qui contient le lien (`accept-invitation`) ou qui annonce
-l'accès (« je viens de t'ajouter sur la plateforme ») ; sinon la carte est l'email qui le transmet. Le 27/10, Samuel a
-invité Yoann Ros (Bricks) depuis l'app à 18:14 (`INVITE_SENT`) et l'a prévenu à 18:16, sans le lien : l'accès était
-transmis. Seulement
+`send-invitation-email` ; un rappel de `send-invitation-reminder` pose `reminded_at`) ; créée dans l'admin
+(Orga › <marque> › Utilisateurs), elle n'envoie rien. Les logs des edge functions tranchent (gardés au moins
+28 jours ; un appel couvre 24 h au plus) : `query_logs` sur le projet, `sql` = `select timestamp from logs where source
+= 'function_logs' and event_message like '%INVITE_SENT%<id>%'`, `iso_timestamp_start` = `created_at` − 5 min et
+`iso_timestamp_end` = `created_at` + 1 h (en UTC, avec `Z`). Une ligne trouvée, ou `reminded_at` posé → envoyée par la
+plateforme, donc transmise ; un email de Gang4 qui annonce l'accès sans le lien suffit alors. Sinon, seul un email des
+trois boîtes au contact depuis `created_at` qui contient le lien (`in:sent accept-invitation`) vaut transmission ;
+sans lui, la carte est l'email qui le transmet. Logs illisibles → la carte reste l'email, et `avant_envoi` dit
+« vérifier que <prénom> a reçu l'email d'invitation de la plateforme, sinon copier son lien dans Orga › <marque> ›
+Utilisateurs ». Le 27/10, Samuel a invité Yoann Ros (Bricks) depuis l'app à 18:14 (`INVITE_SENT`) et l'a prévenu à
+18:16, sans le lien : l'accès était transmis. Seulement
 une invitation `pending` dont `expires_at` est passé → elle a expiré : la révoquer et refaire l'invitation (nouveau
 lien, 7 jours) dans Orga › <marque> › Utilisateurs. Aucune ligne → l'invitation n'est pas partie : la carte est
 l'email qui transmet le lien (`[à compléter : lien d'invitation de <prénom>]`) et `avant_envoi` dit de créer
@@ -486,8 +498,8 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   5. Pour les actions `faite` des 14 derniers jours dont l'email est parti, compare l'envoyé au brouillon préparé :
      ce qui a été changé à la main avant l'envoi est une correction de plus.
 - Le style de l'expéditeur dans le fil : « Hello <Prénom>, », tutoiement si le fil tutoie, phrases
-  courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots, une seule demande claire (un créneau, un
-  accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
+  courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots (moins pour une simple relance ou pour l'email
+  qui accompagne une pièce jointe promise), une seule demande claire (un créneau, un accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
   réservation de `docs/FUNNEL.md` (étape 3), jamais le dernier lien envoyé : démo Partnership Ad pour une démo,
   onboarding pour un onboarding. Ces pages réservent dans l'agenda de Samuel : depuis la boîte de Lucie ou de Yacin,
   ou sans page du bon type dans la liste, demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de
@@ -535,8 +547,9 @@ l'envoi.
   Orga › Bricks › Utilisateurs »). Une action qui crée des créas inclut le lancement du batch. Pour une marque à
   créer, l'assistant `/admin/onboarding` va jusqu'à l'étape « Profils test », avec au moins un profil (« Créer un
   homme » ou « Créer une femme ») : sans profil whitelisting proposé ou validé, le Batch Planner refuse de générer le
-  plan. Des créas à joindre s'enregistrent une à une depuis le batch (« Agrandir », puis clic droit › Enregistrer
-  l'image), avant « Ajouter au pipeline » : `avant_envoi` le dit. Le 27/10 au soir, la carte Emily's Pillow disait
+  plan. Des créas à joindre s'enregistrent une à une depuis le batch (la loupe en haut à droite de la créa, au survol, puis
+  clic droit › Enregistrer l'image ; après « Ajouter au pipeline », elles sont dans l'onglet « Validées ») :
+  `avant_envoi` le dit. Le 27/10 au soir, la carte Emily's Pillow disait
   « créer la marque » puis « lancer son batch » : une marque arrêtée au Business client n'a pas de profil test, et son
   batch ne part pas.
 - **Appel** → l'email qui propose un créneau d'appel, ou qui pose par écrit la question de l'appel ; le numéro reste
@@ -725,8 +738,9 @@ fi
 Affiche les cartes en markdown court (rang, deal, qui le gère, pourquoi, objectif, avant l'envoi, objet de l'email), puis une ligne
 « + N autres candidats » avec les 2 ou 3 suivants en un mot chacun, puis chaque deal Balle Gang4 à échéance non
 retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Un deal dont le next step d'Attio nomme une
-promesse de Gang4 a un verdict qui cite cette promesse (« présentation et profils promis le 29/09, pas partis : 6e »),
-jamais « relance ». Ajoute une ligne par « Pas pertinent »
+promesse de Gang4 a un verdict qui cite cette promesse, jamais « relance » tant que l'envoi n'est pas trouvé dans les
+trois boîtes (« étude de cas promise le 11/09, pas partie : 7e ») ; partie, le verdict le dit (« présentation envoyée
+le JJ/MM : relance »). Ajoute une ligne par « Pas pertinent »
 traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`. Une source
 manquante a sa ligne, elle aussi dans `resume` ; pour la boîte de Yacin en repli : « Boîte de Yacin : repli
 ProspectTouch, retard jusqu'à 24 h (outil Get_many_messages_in_Yacin_Gmail absent ou en erreur) ». Termine par

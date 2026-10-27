@@ -41,8 +41,9 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 - **Longueur** : de 80 à 150 mots, moins pour une simple relance ou pour l'email qui accompagne une pièce jointe
   promise (étude de cas « ci-jointe »).
 - **Demande** : une seule, claire, en fin d'email (un créneau, un accès, une réponse), jamais au conditionnel d'une
-  autre question : « Vous y voyez plus clair ? Si oui, tu aurais 15 minutes ? » ne demande plus rien si la réponse est
-  non (Tikamoon, 27/10). C'est l'objectif de la carte, ni plus ni moins.
+  autre question : une question suivie de « Si oui, tu aurais 15 minutes … ? » ne demande plus rien si la réponse est
+  non (Tikamoon, 27/10). C'est l'objectif de la carte, ni plus ni moins (pour une simple réponse à une question du
+  prospect, l'objectif est qu'il ait sa réponse).
 - **Lien d'agenda** : celui du type de rendez-vous demandé (démo ou onboarding), pris dans la liste des pages de
   réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Ces pages réservent dans l'agenda de
   Samuel : depuis la boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
@@ -53,7 +54,8 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   indispensable (le prix d'une offre promise, par exemple), il reste marqué `[à compléter : …]` pour que Yacin le
   remplisse.
 - **Rien d'annoncé sans l'avoir vu** : des créas à valider, un batch, un accès ne s'annoncent que s'ils existent en base.
-  Une invitation à la plateforme est un lien à transmettre (l'admin n'envoie aucun email) : l'email le contient,
+  Une invitation créée dans l'admin est un lien à transmettre (l'admin n'envoie aucun email ; créée depuis l'app
+  marque, la plateforme l'envoie elle-même) : l'email le contient,
   `[à compléter : lien d'invitation de <prénom>]`, en copie de chaque personne invitée. Une étude de cas ou des créas
   à joindre sont annoncées « ci-jointes » : Yacin les joint au brouillon.
 - **Fil** : réponse dans le fil (« Re: <objet du fil> ») dès qu'un fil existe avec la bonne personne. Nouveau fil
