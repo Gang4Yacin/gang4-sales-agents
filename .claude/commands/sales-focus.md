@@ -296,7 +296,9 @@ Balle Gang4 à échéance n'est écarté que si l'action est déjà faite, si la
 pris, refus net), s'il est snoozé (étape 1, `plus_tard_jusqu_au` à venir ; verdict « snoozé jusqu'au JJ/MM »), s'il
 attend le jour de son objectif corrigé (étape 1 ; verdict « objectif corrigé, retour le JJ/MM »), si l'action elle-même ne
 peut pas se faire avant une date connue et à venir : elle livre un produit de Gang4 pas encore lancé (des exemples
-vidéo avant la sortie de l'offre vidéo), ou le prospect a fixé lui-même une date de reprise encore à venir (« je
+vidéo avant la sortie de l'offre vidéo ; date de sortie dans `docs/FUNNEL.md` §7, point 48 ; tant que la sortie n'est
+pas annoncée, le deal reste écarté même une fois cette date passée, verdict « attend la sortie de l'offre vidéo
+(annoncée pour le JJ/MM, à confirmer) », et `resume` demande la nouvelle date à Yacin), ou le prospect a fixé lui-même une date de reprise encore à venir (« je
 reviens vers toi après le 15/11 ») ; verdict « attend le JJ/MM : <raison> ». Ne s'écartent jamais ainsi : un contenu
 que Gang4 peut préparer aujourd'hui (offre commerciale, cas chiffré, créas statiques, récap), un prospect qui « devait
 revenir vers nous » sans date ou dont la date est passée (c'est une relance : Social Desk le 27/10, Circle
@@ -313,8 +315,10 @@ snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3).
 cartes.
 Classe sur des dossiers relus, pas sur le seul next step d'Attio : pour les `N + 3` premiers candidats d'après Attio
 (6 pour un top 3, 13 pour un top 10, pas plus), lis une fois le dernier échange avec le domaine dans chaque boîte
-(outils de Lucie et de Yacin : `q` = `<domaine>`, `receivedAfter` = il y a 90 jours, `limit` 3, `simple: true` et les
-autres paramètres de l'étape 2 ; Samuel : `<domaine> newer_than:90d`) et le dernier compte rendu Claap avant de les
+(outils de Lucie et de Yacin : `q` = `<domaine> -label:lemwarmup -label:Lemwarmup -subject:lemwarmup`, `receivedAfter` = il y a 90 jours, `limit` 3, `simple: true` et les
+autres paramètres de l'étape 2 ; Samuel : `search_threads` `<domaine> newer_than:90d -label:lemwarmup -label:Lemwarmup -subject:lemwarmup`, puis
+`get_thread` (`PLAIN_TEXT`) sur le fil le plus récent, car l'aperçu de la recherche ne montre que les 5 plus anciens
+messages d'un fil) et le dernier compte rendu Claap avant de les
 départager ; l'étape 5 ne relit ensuite que les heures écoulées depuis. À impact comparable, un livrable promis par
 Gang4 en retard depuis plus de 30 jours (créas, étude chiffrée, offre) passe devant une promesse de quelques jours.
 Le 27/10, Emily's Pillow (Hot, créas demandées par sa CMO le 21/09) et The Bradery (cas chiffrés demandés le 24/09)
@@ -333,15 +337,23 @@ proposait d'« envoyer le récap de la démo » que Yacin avait envoyé le 23/10
 
 **Avant de proposer un rendez-vous** (onboarding, call, démo), cherche si un rendez-vous **du même type** avec la
 marque a déjà été tenu ou est déjà calé : `list_events` sur les agendas de Samuel, Lucie et Yacin, des 60 derniers
-jours aux 30 prochains, `fullText` = le domaine de la marque (il couvre les invités et la description « Réservé
-par »), à défaut le nom du contact ; puis les comptes rendus Claap. Tenu = un compte rendu Claap, ou un participant de
-la marque présent ; une démo manquée, déclinée ou annulée n'est pas tenue (famille « Rendez-vous », étape 3). Déjà
+jours aux 30 prochains, `fullText` = chaque domaine de la company, puis le nom de chaque contact du deal, même si un
+domaine a déjà donné des résultats (il couvre les invités et la description « Réservé par » ; un consultant réserve
+depuis son propre domaine : la démo Gourmandiz du 09/10, réservée par contact@sevcorp.fr, ne sort que sur
+« Séverin ») ; puis les comptes rendus Claap (`get_recordings` par `companyName`, ou par `contactEmail` = l'adresse
+complète d'un contact : un domaine seul ne renvoie rien, « bricks.co » → 0, « yoann@bricks.co » → l'onboarding du
+13/10). Tenu = un enregistrement Claap où parle quelqu'un d'externe (`speakers[].isExternal`), avec son résumé, ou un
+participant de la marque présent ; un enregistrement sans intervenant externe ni résumé ne prouve rien (Les Commis :
+« Onboarding Gang4 (Romain Lacoste) » du 23/10, vide, onboarding calé au 30/10) ; une démo manquée, déclinée ou annulée n'est pas tenue (famille « Rendez-vous », étape 3). Déjà
 calé → pas de carte pour le caler. Déjà tenu → l'action est ce que Gang4 y a promis et qui n'est pas fait (actions du
 compte rendu Claap), jamais le même rendez-vous une deuxième fois. Une démo tenue n'empêche jamais de caler
-l'onboarding qui suit le go, et une entrée d'office (« Mauvais objectif », objectif corrigé, snooze) garde l'objectif
-de l'équipe. Agenda illisible (quota) → comptes rendus Claap et note « Sales <Mois> <Année> - auto » de la company ;
-sans preuve, la carte dit « Vérifier qu'aucun onboarding n'a eu lieu, sinon le caler » et `pourquoi` dit que l'agenda
-n'a pas été lu. Le 27/10, la carte Bricks proposait un point « pour ouvrir ton espace » alors que l'onboarding avait
+l'onboarding qui suit le go, et une entrée d'office (« Mauvais objectif », objectif corrigé, snooze), ou un deal dont le
+next step d'Attio est encore celui d'un « Mauvais objectif » traité (`motif_traitement` ; Gourmandiz le 28/10), garde
+l'objectif de l'équipe. Agenda illisible (quota, comme le 27/10 à 08:42) → comptes rendus Claap, notes « Sales <Mois> <Année> - auto » du
+deal (jamais sur la company), et emails de réservation des trois boîtes sur la même période (« Rendez-vous réservé »,
+« Invitation : », avec le domaine ou le nom du contact). Sans preuve, la carte garde son action et son contenu (l'email
+qui propose le rendez-vous) ; `quoi_faire` commence par « Vérifier dans l'agenda qu'aucun <onboarding|démo|call>
+n'est déjà calé avant l'envoi », et `pourquoi` dit que l'agenda n'a pas été lu. Le 27/10, la carte Bricks proposait un point « pour ouvrir ton espace » alors que l'onboarding avait
 eu lieu le 13/10.
 
 **Next step d'Attio** : quand il dit un engagement de Gang4 (« Envoyer à … promis le … »), c'est l'action, sauf s'il
@@ -362,10 +374,12 @@ where (p.business_client_id = '<bc>' or p.active_business_client_id = '<bc>'
        or p.id in (select u.profile_id from public."UserAuthorizedBusinessClient" u where u.business_client_id = '<bc>'))
   and p.email not ilike '%@gang4.io';
 ```
-Un compte, ou une invitation `accepted`, d'une adresse de la marque → l'accès est ouvert. Seulement une invitation
+Un compte, ou une invitation `accepted`, d'une adresse de la marque ou d'un contact du deal, quel que soit son
+domaine (Séverin Dor, contact@sevcorp.fr, pour Gourmandiz) → l'accès est ouvert. Seulement une invitation
 `pending` dont `expires_at` est passé → elle a expiré : la renvoyer depuis la page Utilisateurs de l'organisation dans
 l'admin. Aucune ligne → l'invitation n'est pas partie : la carte prépare son envoi (`document` « Plan d'action »,
-étape 6) avant tout email. Une adresse @gang4.io ou d'agence ne prouve pas l'accès de la marque.
+étape 6) avant tout email. Une adresse @gang4.io, ou celle d'une agence qui n'est pas contact du deal (growth-society, coudac), ne prouve pas
+l'accès de la marque.
 
 **On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
 ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
