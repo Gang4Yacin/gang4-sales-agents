@@ -341,7 +341,7 @@ rouvre jamais.
   de statut telles quelles (paiement → `Deal Won` et `Customer`, Meta connecté sans paiement → `Meta Connected`…).
   Balle, date et next step du passage en `Meta Connected` suivent les règles d'onboarding de §4b, seulement si le
   deal n'est pas sous une décision humaine (au sens de cette commande) postérieure à la connexion Meta
-  (`meta_connected_at`) ou dont le next step parle déjà de l'onboarding ; une décision plus ancienne, ou un next step
+  (`meta_connected_at`) ou dont le next step suit déjà la phase d'onboarding ; une décision plus ancienne, ou un next step
   que la connexion a accompli (« Obtenir l'accès BM »), cède comme dans §4b ; sinon, stage seul (la puce « promesse » de C4
   reste prioritaire). Normalement rien : une correction ici veut dire que `/sales-ops` l'a ratée.
 
@@ -381,9 +381,9 @@ réconciliation produit qui le fait).
 - Le dernier échange vient du prospect (message, ou appel où il demande quelque chose) et Gang4 n'a rien envoyé
   depuis → Balle Gang4, aujourd'hui, « Répondre à <prénom nom> (message du JJ/MM) ».
 - Gang4 a promis quelque chose et rien n'est parti → Balle Gang4, aujourd'hui, le livrable promis en next step
-  (« Envoyer à <prénom> <ce qui a été promis le JJ/MM> »). Si le livrable ne peut pas partir avant une date connue
-  (un produit de Gang4 pas encore sorti : les exemples vidéo de Payfit attendent l'offre vidéo), date = cette date,
-  pas aujourd'hui, et le next step la cite. On n'affirme jamais l'absence d'un envoi sur une boîte
+  (« Envoyer à <prénom> <ce qui a été promis le JJ/MM> »). Si le livrable attend un produit de Gang4 pas encore sorti
+  (les exemples vidéo de Payfit attendent l'offre vidéo, `docs/FUNNEL.md` §7, point 48), date = la sortie annoncée ou,
+  sans date annoncée, aujourd'hui + 14 j ; le next step dit qu'il attend cette sortie. On n'affirme jamais l'absence d'un envoi sur une boîte
   qu'on n'a pas lue à jour : boîte de Yacin en repli et promesse « à vérifier » (étape 2.4) → même Balle et même
   date, next step « Vérifier que <ce qui a été promis le JJ/MM> est parti », et la note d'audit dit que sa boîte
   n'a pas été lue à jour.
@@ -392,9 +392,9 @@ réconciliation produit qui le fait).
   relance n/3 ».
 - Balle `RDV calé` dont le rendez-vous est passé, quel que soit le stage → ligne T9 de la grille de `crm-sync`, sauf
   un rendez-vous d'onboarding d'une marque qui a donné son go (deal `Meta Connected`, ou verdict `meta_no_sub` /
-  `customer_no_meta`) : ligne « Rendez-vous d'onboarding » (R6) de la grille, y compris passé sans preuve
-  (« Confirmer la tenue de l'onboarding du JJ/MM ») ou annulé (« Re-caler l'onboarding avec <prénom nom> »), jamais
-  « Envoyer le récap / la proposition » ni le lien d'abonnement dans les 14 jours. Les phrases qui suivent valent pour
+  `customer_no_meta`) : ligne « Rendez-vous d'onboarding » (R6) de la grille (passé sans preuve : comme tenu ; annulé
+  ou manqué : « Re-caler l'onboarding avec <prénom nom> »), jamais « Envoyer le récap / la proposition » ni le lien
+  d'abonnement pendant la phase d'onboarding : l'onboarding n'est pas une action sales (Yacin, 27/10). Les phrases qui suivent valent pour
   les autres rendez-vous.
   Compte rendu : Balle Gang4, J+1, « Envoyer le récap / la proposition à <prénom nom> » (et `Qualified` par C2).
   Ni compte rendu ni échange depuis : Balle Gang4, aujourd'hui, « Confirmer la tenue du RDV du JJ/MM et faire le
