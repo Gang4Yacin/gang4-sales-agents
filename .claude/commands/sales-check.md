@@ -337,9 +337,11 @@ rouvre jamais.
   semaine ») ; aucune promesse de Gang4 ne lui est postérieure ; il est postérieur à la dernière réouverture ou
   reprise du deal. Un `later` ou un refus partiel relève de C4, jamais d'une fermeture. Exemple : Payfit reste
   ouvert (statics déclinées le 21/10, exemples vidéo promis par Samuel le 22/10).
-- **Réconciliation produit** : rejoue la requête de verdict de `crm-sync` §4b et applique ses décisions telles
-  quelles (paiement → `Deal Won` et `Customer`, Meta connecté sans paiement → `Meta Connected`…). Normalement
-  rien : une correction ici veut dire que `/sales-ops` l'a ratée.
+- **Réconciliation produit** : rejoue la requête de verdict de `crm-sync` §4b et applique ses décisions de stage et
+  de statut telles quelles (paiement → `Deal Won` et `Customer`, Meta connecté sans paiement → `Meta Connected`…).
+  Balle, date et next step du passage en `Meta Connected` suivent les règles d'onboarding de §4b, seulement si le
+  deal n'est pas sous décision humaine au sens de cette commande ; sinon, stage seul (la puce « promesse » de C4
+  reste prioritaire). Normalement rien : une correction ici veut dire que `/sales-ops` l'a ratée.
 
 ### C3. Fermetures de la semaine (lignes `fermé` et `créé et fermé` de l'étape 2.2)
 Un deal fermé sur un refus qui remplit les conditions de C2 reste fermé (« Garde tel quel »), même si une
@@ -377,18 +379,22 @@ réconciliation produit qui le fait).
 - Le dernier échange vient du prospect (message, ou appel où il demande quelque chose) et Gang4 n'a rien envoyé
   depuis → Balle Gang4, aujourd'hui, « Répondre à <prénom nom> (message du JJ/MM) ».
 - Gang4 a promis quelque chose et rien n'est parti → Balle Gang4, aujourd'hui, le livrable promis en next step
-  (« Envoyer à <prénom> <ce qui a été promis le JJ/MM> »). On n'affirme jamais l'absence d'un envoi sur une boîte
+  (« Envoyer à <prénom> <ce qui a été promis le JJ/MM> »). Si le livrable ne peut pas partir avant une date connue
+  (un produit de Gang4 pas encore sorti : les exemples vidéo de Payfit attendent l'offre vidéo), date = cette date,
+  pas aujourd'hui, et le next step la cite. On n'affirme jamais l'absence d'un envoi sur une boîte
   qu'on n'a pas lue à jour : boîte de Yacin en repli et promesse « à vérifier » (étape 2.4) → même Balle et même
   date, next step « Vérifier que <ce qui a été promis le JJ/MM> est parti », et la note d'audit dit que sa boîte
   n'a pas été lue à jour.
 - Balle Gang4 posée par un agent alors que le dernier message est de Gang4, qu'il attend une réponse et qu'aucune
   promesse n'est due → Balle Prospect, envoi + 7 j (aujourd'hui si c'est passé), « Relancer <prénom nom> —
   relance n/3 ».
-- Balle `RDV calé` dont le rendez-vous est passé, quel que soit le stage → ligne T9 de la grille de `crm-sync`.
+- Balle `RDV calé` dont le rendez-vous est passé, quel que soit le stage → ligne T9 de la grille de `crm-sync`, sauf
+  un rendez-vous d'onboarding d'un deal `Meta Connected` : ligne « Rendez-vous d'onboarding » (R6) de la grille,
+  jamais « Envoyer le récap / la proposition » ni le lien d'abonnement dans les 14 jours.
   Compte rendu : Balle Gang4, J+1, « Envoyer le récap / la proposition à <prénom nom> » (et `Qualified` par C2).
   Ni compte rendu ni échange depuis : Balle Gang4, aujourd'hui, « Confirmer la tenue du RDV du JJ/MM et faire le
   récap ». Rendez-vous annulé, décliné ou manqué : Balle Gang4, J+2, « Re-caler le RDV avec <prénom nom> ».
-  Exemple : Les Commis, `Meta Connected`, Balle `RDV calé` au 23/10.
+  Exemple : Les Commis, `Meta Connected`, Balle `RDV calé` au 23/10 ; son onboarding du 30/10 relève de R6.
 - **« Clôturer ? »** seulement si toutes ces conditions sont réunies : dernier signal du prospect à plus de 60
   jours (appels décrochés avec résumé compris), au moins 3 relances de Gang4 sans réponse depuis, dont une au
   moins par un autre canal que l'email (appel, même non joint, LinkedIn, ou le remplaçant indiqué dans une

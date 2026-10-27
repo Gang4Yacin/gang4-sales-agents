@@ -154,9 +154,9 @@ Pour le `run_id`, la fenêtre temporelle, et les 2 JSON `email-expert` + `meetin
 
 | Système | Tools |
 |---|---|
-| Attio (LECTURE) | `mcp__cd391ece-*` : `list-records` (filtres par domaine, email, stage, owner, company), `search-records` (texte libre : nom, domaine, email), `get-records-by-ids`, `list-records-in-list` (liste `agencies`), `list-attribute-definitions`, `search-notes-by-metadata`, `get-note-body`, `search-meetings` (onboarding, section 4b), `list-tasks` |
+| Attio (LECTURE) | `mcp__cd391ece-*` : `list-records` (filtres par domaine, email, stage, owner, company), `search-records` (texte libre : nom, domaine, email), `get-records-by-ids`, `list-records-in-list` (liste `agencies`), `list-attribute-definitions`, `search-notes-by-metadata`, `get-note-body`, `list-tasks` |
 | Attio (ÉCRITURE) | `mcp__cd391ece-*` : `create-record`, `update-record`, `upsert-record`, `create-note`, `update-note`, `update-task` (**uniquement** `is_completed = true` sur les deux tâches automatiques de la section 4d) |
-| Supabase | `mcp__1ba71441-*__execute_sql` (project_id=`bksiaeiqzmoaxvkdtspn`) : lecture/écriture du schéma `sales` ; **lecture seule** de `public` (`BusinessClient`, `OrganisationSubscription`, `MetaIntegration`, `DemoBatchRequest`, `ProspectTouch`) et `stripe` (`customers`, `invoices`) |
+| Supabase | `mcp__1ba71441-*__execute_sql` (project_id=`bksiaeiqzmoaxvkdtspn`) : lecture/écriture du schéma `sales` ; **lecture seule** de `public` (`BusinessClient`, `OrganisationSubscription`, `MetaIntegration`, `MetaConnexion` (`created_at` seulement, jamais de jeton), `DemoBatchRequest`, `ProspectTouch`, et pour l'accès plateforme de la section 4b `invitations`, `profiles`, `UserAuthorizedBusinessClient`) et `stripe` (`customers`, `invoices`) |
 
 **INTERDIT** : Gmail/Calendar/Drive/Calendly/Claap/Fireflies/Lemlist/Allo (les experts ont déjà tout fait,
 leurs JSON sont dans ton prompt ; seule exception, la lecture des notes d'appels Allo d'Attio pour R10,
@@ -316,8 +316,10 @@ company existe déjà avec `description`+`icp` → ne re-cherche pas.
 **Balle, date et next step (R2 à R5, R7, R10, T6, T9)** — sur chaque deal ouvert touché par un signal
 frais, et sur chaque deal créé, écris **ensemble** `balle_dans_le_camp` (`Gang4` · `Prospect` · `RDV
 calé`), `prochaine_action_le` (AAAA-MM-JJ, jamais vide, jamais à plus de 90 j) et
-`next_step_description` (≤ 160 caractères, verbe en tête : Répondre · Relancer · Envoyer · Caler un RDV ·
-Confirmer · Re-caler · Obtenir l'accès BM · Activer l'abonnement · Identifier · Clôturer ? ; le détail va
+`next_step_description` (≤ 160 caractères, verbe en tête : Répondre · Relancer · Envoyer · Caler un RDV ou
+l'onboarding · Confirmer · Re-caler · Obtenir l'accès BM · Activer l'abonnement (jamais dans les 14 jours qui
+suivent l'onboarding, R6 en 4b) · Identifier · Clôturer ? ; « Démo du JJ/MM … » et « RDV du JJ/MM : … » (R4, R6)
+font exception au verbe en tête ; le détail va
 dans la note mensuelle). « Aujourd'hui » = date du run, heure de Paris. « J+n » = jours calendaires ;
 une date qui tombe un samedi ou un dimanche passe au lundi.
 
@@ -327,6 +329,7 @@ une date qui tombe un samedi ou un dimanche passe au lundi.
 | Notre message est le dernier, sans réponse (R3) | Prospect | envoi + 7 j | « Relancer <prénom nom> — relance n/3 » (n = `outbound_count_since_last_inbound`) |
 | Date donnée dans un message (`date_mentioned`, R3) | qui doit revenir | cette date | ce qui a été promis, ou « Relancer <prénom nom> (retour annoncé le JJ/MM) » |
 | Événement futur avec un externe du deal (R4, prime sur les lignes email et appel) | RDV calé | date de l'événement | « Démo du JJ/MM avec <prénom nom> » ou « RDV du JJ/MM : <objet> » |
+| Rendez-vous d'onboarding (titre qui contient « Onboarding ») d'un deal `Meta Connected` (R6 ; prime sur R4 et T9) | à venir : RDV calé ; tenu : Prospect, ou Gang4 si une promesse de Gang4 faite à l'onboarding n'est pas faite | à venir : sa date ; tenu : onboarding + 14 j, ou J+1 pour une promesse | « RDV du JJ/MM : onboarding avec <prénom nom> » ; tenu : « Relancer <prénom nom> : upload des créas (onboarding du JJ/MM) » ou « Envoyer à <prénom nom> <promesse> (onboarding du JJ/MM) » ; jamais « Envoyer le récap / la proposition » ni le lien d'abonnement dans les 14 jours |
 | Démo tenue avec compte rendu → `Qualified` (R2, T9) | Gang4 | J+1 | « Envoyer le récap / la proposition à <prénom nom> » |
 | Démo passée sans compte rendu ni message entrant (`attendance = unknown`, T9) | Gang4 | aujourd'hui | « Confirmer la tenue de la démo du JJ/MM et faire le récap » |
 | Démo annulée, déclinée par l'externe ou no-show (T9) | Gang4 | J+2 | « Re-caler la démo avec <prénom nom> » |
@@ -392,6 +395,9 @@ v as (
          coalesce(s.has_past_due, false) as has_past_due,
          i.last_paid_at::date as last_paid, i.last_open_at::date as last_open,
          exists (select 1 from public."MetaIntegration" mi where mi.business_client_id = bc.id) as has_meta,
+         (select max(mc.created_at) from public."MetaIntegration" mi
+            join public."MetaConnexion" mc on mc.id = mi.meta_connexion_id
+          where mi.business_client_id = bc.id) as meta_connected_at,
          (s.organisation_id is not null or i.last_paid_at is not null) as has_paid_once
   from bc
   left join subs s on s.organisation_id = bc.organisation_id
@@ -449,33 +455,69 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
 | `invoice_pending` (facture ouverte ≤ 45 j, rien de payé) | rien | rien |
 | `churn` : a payé, plus d'abonnement actif ni de facture payée ≤ 45 j, ou marque `LOST` dans l'Admin (T14) | rien (le deal reste `Deal Won`) | `Customer` → `Lost` |
 | `conflit` : marque `LOST` dans l'Admin mais abonnement actif | rien | rien ; signale-le (ex. Circular, En Cavale) |
-| `meta_no_sub` : CUSTOMER + Meta connecté, jamais payé (T15) | deal en `Prospect identified` / `Demo scheduled` / `Qualified` → `Meta Connected` ; Balle, date et next step selon l'onboarding (ci-dessous), jamais une relance d'abonnement | rien |
+| `meta_no_sub` : CUSTOMER + Meta connecté, jamais payé (T15) | deal en `Prospect identified` / `Demo scheduled` / `Qualified` → `Meta Connected` ; Balle, date et next step selon l'onboarding (ci-dessous), jamais une relance d'abonnement ou de paiement | rien |
 | `customer_no_meta` : CUSTOMER sans Meta, jamais payé (T15) | deal en `Prospect identified` / `Demo scheduled` → `Qualified` ; Balle `Prospect`, J+7, « Obtenir l'accès Business Manager » | rien |
 
 - `meta_no_sub` et `customer_no_meta` ne touchent jamais un deal fermé (`Deal Won`, `Deal Lost`,
   `Archived`, `Hors ICP`) et ne créent pas de deal (le go peut être ancien) : une marque sans deal va
-  dans « Notes ». Balle, date et next step ne s'écrivent qu'au changement de stage ou si l'un des trois
-  est vide ; ensuite ils appartiennent à Lucie (R5).
-- **Décision humaine récente** : avant d'écrire Balle, date et next step pour `meta_no_sub` ou
-  `customer_no_meta`, lis les notes du deal (`search-notes-by-metadata`). Une note « Objectif corrigé - auto » ou
-  « Correction depuis Sales Actions - auto » de moins de 60 jours, une note « Snooze - auto » dont le jour n'est pas
-  passé, ou une note de moins de 60 jours qui contient « décision de Yacin », « à la demande de Yacin » ou « go de
-  Yacin » → change **seulement le stage** et garde les trois champs : ce sont des décisions de l'équipe (page
-  `/admin/sales-actions` ou Yacin). `reasoning` le dit (« stage seul : objectif corrigé le JJ/MM »). Le 27/10 au
-  soir, sans cette règle, Gourmandiz (Meta connecté à 14:35) aurait perdu l'objectif « Caler l'onboarding avec
-  Séverin Dor » que Yacin venait de corriger sur la page, remplacé par « Activer l'abonnement — relance 1/3 ».
-- **Au passage en `Meta Connected`** (`meta_no_sub`), Balle, date et next step suivent l'onboarding : après lui,
-  la marque uploade d'abord ses créas, et aucun lien ni relance d'abonnement ne part dans les 14 jours qui suivent
-  (Yacin, 23/10, Araw). Le lien d'abonnement vient ensuite, préparé par `/sales-focus` (« argent qui attend »).
-  L'onboarding se cherche dans les meetings des experts, les notes du deal et de la company (la note mensuelle
-  « Sales <Mois> <Année> - auto » liste les rendez-vous) et `search-meetings` d'Attio sur la company : un rendez-vous
-  dont le titre contient « Onboarding » avec un participant de la marque.
-  - aucun onboarding tenu ni calé → Balle `Gang4`, J+1, « Caler l'onboarding avec <prénom nom> (Meta connecté le
-    JJ/MM) » ;
+  dans « Notes ». Balle, date et next step s'écrivent au changement de stage ; sans changement de stage, seul un
+  champ vide se remplit (comme 4d.2), avec la valeur des règles ci-dessous pour un deal `Meta Connected`. Ensuite
+  ils appartiennent à Lucie (R5). Au changement de stage, le garde-fou R5 « date postérieure » ne garde que la date :
+  Balle et next step s'écrivent toujours, sauf dans les trois cas de priorité ci-dessous.
+- **Priorités, dans cet ordre** (au changement de stage ; dans ces cas, change **seulement le stage**, garde les trois
+  champs et dis-le dans `reasoning`, « stage seul : <raison> ») :
+  1. **Signal frais du même run** : une ligne de la grille de la section 4 (R3-entrant, R3-sortant, R3-appel,
+     R3-appel-refus, R4) a déjà écrit Balle, date et next step sur ce deal pendant ce run.
+  2. **Décision humaine récente** : lis les notes du deal de moins de 60 jours (`search-notes-by-metadata`, puis
+     `get-note-body` sur chacune ; les notes « Sales <Mois> <Année> - auto » ne comptent jamais). Compte une note
+     « Objectif corrigé - auto » ou « Correction depuis Sales Actions - auto », ou une note qui fixe la Balle ou le
+     next step « sur décision de Yacin » ou « à la demande de Yacin » (une « Création du deal - auto » ou une
+     « Revue de la fermeture du deal - auto » qui ne fixe pas le next step ne compte pas), si les trois conditions
+     tiennent : le next step en place est encore celui qu'elle a fixé (sa ligne « Après : ») ; aucune ligne
+     `update_next_step` `applied` d'un run `sales-ops` ou `sales-check` n'est postérieure sur ce deal ; elle est
+     postérieure à `meta_connected_at`, ou son next step parle déjà de l'onboarding ou de Meta. Une décision plus
+     ancienne que la connexion Meta cède devant ce fait nouveau, de même qu'un next step que la connexion vient
+     d'accomplir (« Obtenir l'accès BM ») : applique les règles de l'onboarding et cite la décision dans
+     `reasoning`. Le 27/10 au soir, sans cette règle, Gourmandiz (Meta connecté à 14:35) aurait perdu l'objectif
+     « Caler l'onboarding avec Séverin Dor » que Yacin venait de corriger sur la page, remplacé par « Activer
+     l'abonnement — relance 1/3 ».
+  3. Une note « Snooze - auto » dont le jour n'est pas passé, sans « Snooze annulé - auto » postérieure, ne garde que
+     la date (comme `/sales-check`) : Balle et next step suivent les règles de l'onboarding.
+- **Au passage en `Meta Connected`** (`meta_no_sub`), Balle, date et next step suivent l'onboarding : après lui, la
+  marque valide puis uploade ses créas, et c'est l'upload qui lui demande sa CB (FUNNEL §1, étapes 10 et 11) ; aucun
+  lien ni relance d'abonnement ou de paiement dans les 14 jours qui suivent l'onboarding (Yacin, 23/10, Araw). Le lien
+  d'abonnement vient ensuite, préparé par `/sales-focus` (« argent qui attend »). L'onboarding se cherche, dans cet
+  ordre : la Balle et le next step en place (Balle `RDV calé`, next step qui cite un onboarding daté), les meetings
+  des experts, puis les notes du deal et de la company (la note mensuelle « Sales <Mois> <Année> - auto » liste les
+  rendez-vous : « 13/10 - Onboarding Bricks »). On cherche un rendez-vous dont le titre contient « Onboarding » avec
+  un contact du deal (`associated_people`), quel que soit son domaine (Séverin Dor écrit depuis sevcorp.fr pour
+  Gourmandiz). `search-meetings` d'Attio ne contient pas les rendez-vous externes : ne t'en sers pas ici.
+  - aucun onboarding tenu ni calé, et Gang4 ne l'a pas encore proposé → Balle `Gang4`, J+1, « Caler l'onboarding avec
+    <prénom nom> (Meta connecté le JJ/MM) » (date = `meta_connected_at` à l'heure de Paris ; inconnue → sans la
+    parenthèse) ;
+  - onboarding déjà proposé par Gang4 (son dernier message porte un lien d'onboarding ou des créneaux, sans réponse)
+    → Balle `Prospect`, envoi + 7 j, « Relancer <prénom nom> : créneau d'onboarding (proposé le JJ/MM) » ;
   - onboarding calé, à venir → Balle `RDV calé`, sa date, « RDV du JJ/MM : onboarding avec <prénom nom> » ;
-  - onboarding tenu → Balle `Prospect`, son jour + 14 j (aujourd'hui si ce jour est passé), « Relancer <prénom
-    nom> : upload des créas (onboarding du JJ/MM) ».
-  `rule = "R6"` dans les trois cas. La règle « Décision humaine récente » passe avant.
+  - onboarding tenu, et Gang4 y a promis quelque chose qui n'est pas fait (actions du compte rendu dans les meetings
+    des experts ou les notes ; un accès plateforme se vérifie en base, requête ci-dessous) ou le next step en place
+    est une promesse de Gang4 (« Envoyer à … promis le … ») → Balle `Gang4`, J+1, « Envoyer à <prénom nom> <ce qui a
+    été promis> (onboarding du JJ/MM) » ;
+  - onboarding tenu sans promesse due → Balle `Prospect`, son jour + 14 j (aujourd'hui si ce jour est passé),
+    « Relancer <prénom nom> : upload des créas (onboarding du JJ/MM) ».
+  `rule = "R6"`. Accès plateforme de la marque (une adresse @gang4.io ou d'agence ne prouve rien) :
+  ```sql
+  select 'invitation' as quoi, i.email, i.status, i.created_at, i.expires_at
+  from public.invitations i
+  where i.business_client_id = '<business_client_id>' and i.email not ilike '%@gang4.io'
+  union all
+  select 'compte', p.email, null, p.created_at, null
+  from public.profiles p
+  where (p.business_client_id = '<business_client_id>' or p.active_business_client_id = '<business_client_id>'
+         or p.id in (select u.profile_id from public."UserAuthorizedBusinessClient" u
+                     where u.business_client_id = '<business_client_id>'))
+    and p.email not ilike '%@gang4.io';
+  ```
+  Aucune ligne → l'invitation n'est pas partie ; seulement une invitation `pending` expirée → elle est à renvoyer.
 - `update_stage → Deal Won` et `update_company_status → Customer` vont **toujours** ensemble (deux
   lignes d'audit). Un deal qui passe `Deal Won` garde Balle/date/next step tels quels.
 - Company à créer (verdict `won`, domaine connu, introuvable même par nom) → `create_company` avec le
