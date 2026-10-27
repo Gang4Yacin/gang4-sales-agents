@@ -40,7 +40,9 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 - **Ton** : phrases courtes, direct et chaleureux, sans formule creuse ni superlatif.
 - **Longueur** : de 80 à 150 mots, moins pour une simple relance.
 - **Demande** : une seule, claire, en fin d'email (un créneau, un accès, une réponse).
-- **Lien d'agenda** : celui que l'expéditeur a envoyé en dernier.
+- **Lien d'agenda** : celui du type de rendez-vous demandé (démo ou onboarding), pris dans la liste des pages de
+  réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Ces pages réservent dans l'agenda de
+  Samuel : depuis la boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
 - **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, un client, une fonctionnalité ou une
   promesse vient d'un email, d'un compte rendu ou de la base. Sinon, il n'est pas dans l'email ; s'il est

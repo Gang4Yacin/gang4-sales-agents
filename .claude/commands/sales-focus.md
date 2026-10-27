@@ -294,8 +294,16 @@ venir), les deals fermés et le customer success (hors argent). **Un contenu à 
 (Yacin, 22/10) : cas chiffré, offre, références, récap, créas, la carte prépare ce qu'il faut (étape 6). Un deal
 Balle Gang4 à échéance n'est écarté que si l'action est déjà faite, si la situation a changé (réponse, rendez-vous
 pris, refus net), s'il est snoozé (étape 1, `plus_tard_jusqu_au` à venir ; verdict « snoozé jusqu'au JJ/MM »), s'il
-attend le jour de son objectif corrigé (étape 1 ; verdict « objectif corrigé, retour le JJ/MM ») ou s'il vient après
-les `N` retenus.
+attend le jour de son objectif corrigé (étape 1 ; verdict « objectif corrigé, retour le JJ/MM »), si l'action elle-même ne
+peut pas se faire avant une date connue et à venir : elle livre un produit de Gang4 pas encore lancé (des exemples
+vidéo avant la sortie de l'offre vidéo), ou le prospect a fixé lui-même une date de reprise encore à venir (« je
+reviens vers toi après le 15/11 ») ; verdict « attend le JJ/MM : <raison> ». Ne s'écartent jamais ainsi : un contenu
+que Gang4 peut préparer aujourd'hui (offre commerciale, cas chiffré, créas statiques, récap), un prospect qui « devait
+revenir vers nous » sans date ou dont la date est passée (c'est une relance : Social Desk le 27/10, Circle
+Sportswear), un rendez-vous décliné à recaler (Tikamoon, Wopilo), une entrée d'office. Ou enfin s'il vient après les
+`N` retenus. Le 27/10, Payfit est passé en 3e avec « Préparer les exemples vidéo promis » alors que ces exemples
+attendaient la sortie de l'offre vidéo, annoncée pour la fin du mois (verdict attendu : « attend le 31/10 : offre
+vidéo pas encore sortie »).
 
 ## Étape 4 — Classer
 Score = **impact** (argent en jeu, taille de la marque : ICP Large > Medium > Small, `App / Service` ;
@@ -303,6 +311,14 @@ effet sur le pipeline) × **urgence** (jours d'attente, échéance, temps fort c
 Garde les `N` meilleurs deals (3 par défaut, voir Arguments), après ceux qui entrent d'office (« Mauvais objectif »,
 snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3). Moins de `N` candidats sérieux → moins de
 cartes.
+Classe sur des dossiers relus, pas sur le seul next step d'Attio : pour les `N + 3` premiers candidats d'après Attio
+(6 pour un top 3, 13 pour un top 10, pas plus), lis une fois le dernier échange avec le domaine dans chaque boîte
+(outils de Lucie et de Yacin : `q` = `<domaine>`, `receivedAfter` = il y a 90 jours, `limit` 3, `simple: true` et les
+autres paramètres de l'étape 2 ; Samuel : `<domaine> newer_than:90d`) et le dernier compte rendu Claap avant de les
+départager ; l'étape 5 ne relit ensuite que les heures écoulées depuis. À impact comparable, un livrable promis par
+Gang4 en retard depuis plus de 30 jours (créas, étude chiffrée, offre) passe devant une promesse de quelques jours.
+Le 27/10, Emily's Pillow (Hot, créas demandées par sa CMO le 21/09) et The Bradery (cas chiffrés demandés le 24/09)
+sont restés derrière Payfit, faute d'avoir relu leurs fils.
 
 ## Étape 5 — Vérifier à date
 Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures dans les boîtes de Samuel,
@@ -314,6 +330,42 @@ action déjà faite ou une situation qui a changé remplace la carte par la cand
 Payfit écarté, Samuel avait répondu à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor
 proposait d'« envoyer le récap de la démo » que Yacin avait envoyé le 23/10 à 16:54, sa boîte n'étant lue que par
 `ProspectTouch` (jusqu'à 10:38).
+
+**Avant de proposer un rendez-vous** (onboarding, call, démo), cherche si un rendez-vous **du même type** avec la
+marque a déjà été tenu ou est déjà calé : `list_events` sur les agendas de Samuel, Lucie et Yacin, des 60 derniers
+jours aux 30 prochains, `fullText` = le domaine de la marque (il couvre les invités et la description « Réservé
+par »), à défaut le nom du contact ; puis les comptes rendus Claap. Tenu = un compte rendu Claap, ou un participant de
+la marque présent ; une démo manquée, déclinée ou annulée n'est pas tenue (famille « Rendez-vous », étape 3). Déjà
+calé → pas de carte pour le caler. Déjà tenu → l'action est ce que Gang4 y a promis et qui n'est pas fait (actions du
+compte rendu Claap), jamais le même rendez-vous une deuxième fois. Une démo tenue n'empêche jamais de caler
+l'onboarding qui suit le go, et une entrée d'office (« Mauvais objectif », objectif corrigé, snooze) garde l'objectif
+de l'équipe. Agenda illisible (quota) → comptes rendus Claap et note « Sales <Mois> <Année> - auto » de la company ;
+sans preuve, la carte dit « Vérifier qu'aucun onboarding n'a eu lieu, sinon le caler » et `pourquoi` dit que l'agenda
+n'a pas été lu. Le 27/10, la carte Bricks proposait un point « pour ouvrir ton espace » alors que l'onboarding avait
+eu lieu le 13/10.
+
+**Next step d'Attio** : quand il dit un engagement de Gang4 (« Envoyer à … promis le … »), c'est l'action, sauf s'il
+est fait, si un fait plus récent du prospect le remplace, ou s'il ne peut pas aboutir avant une date connue (étape 3 :
+Payfit, « Envoyer des exemples vidéo à Julie Florin (promis le 22/10) », attend l'offre vidéo). Le 27/10, Attio
+portait pour Bricks « Envoyer à Yoann Ros l'invitation à la plateforme promise le 13/10 (prévue le 16/10) ».
+
+**Un accès plateforme promis se vérifie en base**, il ne se laisse jamais « à vérifier ». `<bc>` est la marque de la
+company du deal (`sales.processed_items`, `source = 'business_client'`, ou par domaine dans `"BusinessClient"`) :
+```sql
+select 'invitation' as quoi, i.email, i.status, i.created_at, i.expires_at
+from public.invitations i
+where i.business_client_id = '<bc>' and i.email not ilike '%@gang4.io'
+union all
+select 'compte', p.email, null, p.created_at, null
+from public.profiles p
+where (p.business_client_id = '<bc>' or p.active_business_client_id = '<bc>'
+       or p.id in (select u.profile_id from public."UserAuthorizedBusinessClient" u where u.business_client_id = '<bc>'))
+  and p.email not ilike '%@gang4.io';
+```
+Un compte, ou une invitation `accepted`, d'une adresse de la marque → l'accès est ouvert. Seulement une invitation
+`pending` dont `expires_at` est passé → elle a expiré : la renvoyer depuis la page Utilisateurs de l'organisation dans
+l'admin. Aucune ligne → l'invitation n'est pas partie : la carte prépare son envoi (`document` « Plan d'action »,
+étape 6) avant tout email. Une adresse @gang4.io ou d'agence ne prouve pas l'accès de la marque.
 
 **On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
 ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
@@ -354,7 +406,11 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      ce qui a été changé à la main avant l'envoi est une correction de plus.
 - Le style de l'expéditeur dans le fil : « Hello <Prénom>, », tutoiement si le fil tutoie, phrases
   courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots, une seule demande claire (un créneau, un
-  accès, une réponse). S'il faut un lien d'agenda, prends le dernier que l'expéditeur a envoyé.
+  accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
+  réservation de `docs/FUNNEL.md` (étape 3), jamais le dernier lien envoyé : démo Partnership Ad pour une démo,
+  onboarding pour un onboarding. Ces pages réservent dans l'agenda de Samuel : depuis la boîte de Lucie ou de Yacin,
+  ou sans page du bon type dans la liste, demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de
+  Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel.
 - **Jamais d'invention** : aucun chiffre, prix, remise, délai ou promesse qui ne soit déjà dans les
   emails, les comptes rendus ou la base.
 
@@ -383,8 +439,11 @@ corps en markdown, complet et prêt à relire. « Valider » le dépose dans un 
 - **Récap, lien d'abonnement** → l'email : le récap suit le compte rendu Claap, à défaut les notes Attio et les
   emails ; le lien est celui que la même boîte a déjà envoyé à d'autres marques (recherche ciblée).
 - **Ce que Gang4 ne peut pas produire ici** (des créas, un accès, une décision interne) → le `document` « Plan
-  d'action — <deal> » : les étapes concrètes, qui (Samuel, Lucie, Yacin), pour quand, avec quel outil (créas test d'une
-  marque PROSPECT et batch de démo : `docs/FUNNEL.md`, étapes 1 et 4), et le message au prospect pour la suite.
+  d'action — <deal> » : les étapes concrètes, qui (Samuel, Lucie, Yacin), pour quand, avec quel outil : la page de l'admin où le faire
+  (tu la trouves dans `docs/FUNNEL.md` §5.3, et étapes 1 et 4 pour les créas test et le batch de démo des statics),
+  écrite comme Yacin la voit (« Admin › Organisation Bricks › Utilisateurs »), jamais par un renvoi à la doc du repo ;
+  et le message au prospect pour la suite, qui part toujours de la boîte de Samuel, de Lucie ou de Yacin. Pas d'étape
+  « mettre à jour Attio » : `/sales-ops` le fait le soir à partir de ce message.
 - **Appel** → le `document` « Script d'appel — <contact> » : le numéro (Attio), l'objectif, le déroulé, les questions
   et les réponses aux objections connues.
 
@@ -430,7 +489,11 @@ returning run_id;
 - `contenu_initial` et `modifications` : `null` pour une carte neuve ; pour une carte que Yacin a modifiée ou une
   carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6).
 - `titre` : verbe en tête, 80 caractères au plus.
-- `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui).
+- `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui). Toutes les heures
+  écrites (`pourquoi`, `resume`, contenu) sont à l'heure de Paris : convertis tout horodatage UTC (Gmail, Supabase,
+  Claap) avec le fuseau Europe/Paris, jamais avec un décalage fixe (UTC+2 du dernier dimanche de mars au dernier
+  dimanche d'octobre, UTC+1 sinon ; en SQL, `at time zone 'Europe/Paris'`). Le 27/10, « 18:05 » (heure d'été
+  appliquée après le 25/10) et « 07:43 » (UTC non converti) étaient faux : 17:05 et 09:43.
 - `quoi_faire` : l'objectif, affiché « Objectif » sur la carte (« Je propose » jusqu'au 27/10) : ce que l'action doit
   obtenir, en une phrase de 160 caractères au plus, sans répéter le titre (« Obtenir la date de lancement du test
   Lui Bien » plutôt que « Relancer Benjamin pour caler le lancement du test »).
