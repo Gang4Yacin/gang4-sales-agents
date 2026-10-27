@@ -135,11 +135,13 @@ order by status, target_record_id;
 
 - **`/sales-focus`** (`.claude/commands/sales-focus.md`) : chaque matin à 8:30 (Paris). Choisit les 3 deals où
   une action de Gang4 compte le plus aujourd'hui (un deal par carte), vérifie les derniers emails, et prépare
-  pour chacun le contenu prêt : l'email à envoyer, le document à produire (plan d'étude de cas, étude, script
-  d'appel) ou le plan d'action. Le calcul va dans Supabase
+  pour chacun l'email prêt à envoyer : depuis le 27/10, une carte est toujours un email (une étude de cas y est
+  annoncée « ci-jointe » et Yacin la joint au brouillon ; ce que Gang4 doit faire avant l'envoi est dit dans
+  « Pourquoi maintenant »), avec à côté du nom un tag « qui gère le deal » (Samuel, Lucie, Yacin ou Autre, colonne
+  `responsable`). Le calcul va dans Supabase
   (`SalesFocusRun`, `SalesFocusAction`). Sur la page admin `/admin/sales-actions`, « Voir la source » montre
   l'extrait au survol, l'email se modifie ou se réécrit sur consigne, et « Valider » crée le brouillon Gmail
-  (ou le Google Doc) par le flow n8n « Préparer l'action » ; l'envoi reste manuel. Après chaque calcul, un message
+  par le flow n8n « Préparer l'action » ; l'envoi reste manuel. Après chaque calcul, un message
   court dans `#sales-ops` annonce le top (les 3 premiers deals, une demi-phrase chacun) avec le lien vers la page.
   Lancé à la main avec `/sales-focus manuel 10`, il propose jusqu'à 10 cartes ; une carte que Yacin a modifiée et
   encore ouverte est reprise telle quelle au calcul suivant.

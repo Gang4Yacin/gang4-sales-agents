@@ -13,8 +13,8 @@ l'action » crée alors le brouillon dans la boîte Gmail qui porte la conversat
 
 Tu n'écris **nulle part** sauf dans Supabase, tables `public."SalesFocusRun"` et `public."SalesFocusAction"`
 (migrations `20261021160000_sales_actions.sql`, `20261022090000_sales_focus_v2.sql`,
-`20261022170000_sales_focus_v3.sql`, `20261022190000_sales_focus_top10.sql` et `20261023190000_sales_focus_v5.sql`
-du repo de l'admin), et dans Attio pour un seul cas : un « Pas pertinent » de la page à traiter (étape 2 bis), sur
+`20261022170000_sales_focus_v3.sql`, `20261022190000_sales_focus_top10.sql`, `20261023190000_sales_focus_v5.sql` et
+`20261027180000_sales_focus_responsable.sql` du repo de l'admin), et dans Attio pour un seul cas : un « Pas pertinent » de la page à traiter (étape 2 bis), sur
 son deal (`update-record` : next step, date, Balle ; `create-note`), tracé dans `sales.run_log` et
 `sales.applied_actions`. Un seul message part : une courte notification dans Slack `#sales-ops`, une fois le calcul
 écrit, avec le lien vers la page (étape 8). Ni n8n, ni Lemlist, ni email.
@@ -24,8 +24,8 @@ Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d
 
 ## Les règles de Yacin (22/10)
 - **Une carte = un deal.** Jamais une action qui regroupe plusieurs deals.
-- Sur la carte : le deal, pourquoi maintenant, ce que tu proposes, le contenu prêt. Rien d'autre : pas de
-  propriétaire, de famille, d'impact ni de liste de preuves.
+- Sur la carte : le deal, qui le gère (`responsable`, en tag depuis le 27/10), pourquoi maintenant, l'objectif, l'email
+  prêt. Rien d'autre : pas de famille, d'impact ni de liste de preuves.
 - Le contenu est **prêt à l'emploi** : Yacin le valide tel quel ou passe.
 - La vérification « à date » se fait **ici, au calcul** : tu relis les derniers emails juste avant d'écrire.
 - (22/10, v3) « Voir la source » montre au survol l'extrait qui justifie la carte (`source`), pas un lien. Yacin
@@ -68,8 +68,8 @@ order by r.computed_at desc;
   `erreur` : Attio n'a pas été décalé, dis-le dans le verdict et dans `resume` (tu n'y écris pas pour autant).
   Le jour venu (`plus_tard_jusqu_au` ≤ aujourd'hui, aucune carte du deal calculée depuis le snooze), la carte revient
   d'office dans le top avec la même `cle` et compte dans les `N` cartes. Si l'étape 5 ne trouve rien de nouveau,
-  reprends tels quels son `contenu`, son `contenu_initial` et ses `modifications` (étape 6) ; sinon, écris un nouveau
-  contenu et dis-le dans `resume`.
+  reprends tels quels son `contenu`, son `contenu_initial` et ses `modifications` (étape 6), sauf un contenu `document`
+  (étape 6 : il devient un email) ; sinon, écris un nouveau contenu et dis-le dans `resume`.
 - `pas_pertinente`, selon `pas_pertinent_motif` :
   - `mauvais_objectif` : la carte visait le mauvais objectif, pas le mauvais deal. Pas de règle des 30 jours. À
     traiter (étape 2 bis) tant que `motif_traite_at` est vide. Une fois traité (`motif_traite_at` posé), l'ancienne
@@ -81,7 +81,14 @@ order by r.computed_at desc;
   - sans motif (cartes d'avant le 23/10) : comme `autre`, sans traitement.
   Lis `statut_raison` et évite les propositions du même genre ailleurs.
 - `faite` (validée, brouillon ou document préparé) : le deal ne revient qu'avec un fait nouveau postérieur
-  à la préparation (réponse du prospect, rendez-vous, paiement).
+  à la préparation (réponse du prospect, rendez-vous, paiement). Sauf une carte `faite` dont le contenu est un
+  `document` (plan d'action, plan d'étude ; calculs jusqu'au 27/10 inclus, `preparation->>'type' = 'document'`) : le
+  Google Doc n'a préparé aucun email. Si l'email au prospect n'est pas parti (étape 5, trois boîtes), le deal reste
+  candidat sans attendre de fait nouveau, et la carte est cet email (même `cle`) ; elle reprend le message au prospect
+  écrit dans le document s'il y en a un, et `pourquoi` le dit (« Plan validé le JJ/MM en Google Doc, email jamais
+  préparé »). Exemple : Emily's Pillow, plan validé le 27/10 à 16:41, email à Emmanuelle Brussaut à préparer. Pour ces
+  règles, les `cle` `:plan-etude` et `:etude` valent `:envoi-etude` (Foodvisor : « Plus besoin d'étude de cas », posé
+  sur `:plan-etude`, vaut pour l'envoi).
 - `ouverte` sans geste : reste candidate, avec la même `cle` si c'est la même action. Si Yacin a modifié la carte
   (`contenu_initial` posé), tu reprends son contenu tel quel (étape 6) : ton calcul remplace le précédent sur la page
   et effacerait ses changements.
@@ -146,8 +153,9 @@ Un appel en erreur se corrige et se relance une fois ; une source restée muette
 de `ProspectTouch` (`source = 'gmail:yacin'`). Elles ont jusqu'à 24 h de retard : n8n ne les charge qu'à 10:46.
 Avec ce repli, n'affirme jamais qu'un email n'est pas parti quand Yacin a pu l'envoyer : il anime les démos et
 organise les invitations. Regarde aussi les invitations agenda envoyées par yacin@ après un meeting (agenda de
-Yacin, ou reçues dans les boîtes de Samuel et de Lucie) : c'est un signe de suivi. Si un doute reste, la carte dit
-« Vérifier que <le récap, l'offre…> est parti » au lieu de proposer de l'envoyer. Le repli se dit dans `resume`
+Yacin, ou reçues dans les boîtes de Samuel et de Lucie) : c'est un signe de suivi. Si un doute reste, la carte reste l'email
+(le récap, l'offre…) et `pourquoi` finit par « Avant l'envoi : vérifier dans la boîte de Yacin que <le récap> n'est
+pas déjà parti (boîte lue jusqu'au JJ/MM HH:MM) ». Le repli se dit dans `resume`
 et dans la sortie (étape 9).
 
 ## Étape 2 bis — Traiter les « Pas pertinent »
@@ -351,7 +359,8 @@ where t.match_method = 'unmatched' and t.occurred_at > now() - interval '14 days
   and (t.subject ilike '%<marque>%' or t.snippet ilike '%<marque>%'
        or t.prospect_email = any(array['<adresse externe 1>', '<adresse externe 2>']))
 order by t.occurred_at;
-``` Le 27/10, Bookinou a été écarté avec « rien
+```
+Le 27/10, Bookinou a été écarté avec « rien
 n'est parti » alors que Samuel avait envoyé la présentation le 26/10 à 10:29 à marketing@pimely.com. Une
 action déjà faite ou une situation qui a changé remplace la carte par la candidate suivante. Exemples : le 22/10,
 Payfit écarté, Samuel avait répondu à Julie Florin à 9:43 ; dans la nuit du 23 au 24/10, une carte Foodvisor
@@ -375,8 +384,8 @@ corrigé, snooze), ou un deal dont le next step d'Attio est encore celui d'un «
 attend »). Agenda illisible (quota, comme le 27/10 à 08:42) → comptes rendus Claap, notes « Sales <Mois> <Année> - auto » du
 deal (jamais sur la company), et emails de réservation des trois boîtes sur la même période (« Rendez-vous réservé »,
 « Invitation : », avec le domaine ou le nom du contact). Sans preuve, la carte garde son action et son contenu (l'email
-qui propose le rendez-vous) ; `quoi_faire` commence par « Vérifier dans l'agenda qu'aucun <onboarding|démo|call>
-n'est déjà calé avant l'envoi », et `pourquoi` dit que l'agenda n'a pas été lu. Le 27/10, la carte Bricks proposait un point « pour ouvrir ton espace » alors que l'onboarding avait
+qui propose le rendez-vous), et `pourquoi` finit par « Avant l'envoi : vérifier dans les agendas de Samuel, Lucie et
+Yacin qu'aucun <onboarding|démo|call> n'est déjà calé (agenda illisible au calcul) ». Le 27/10, la carte Bricks proposait un point « pour ouvrir ton espace » alors que l'onboarding avait
 eu lieu le 13/10.
 
 **Next step d'Attio** : quand il dit un engagement de Gang4 (« Envoyer à … promis le … »), c'est l'action, sauf s'il
@@ -409,7 +418,8 @@ l'invitation avant l'envoi (étape 6). Une adresse @gang4.io, ou celle d'une age
 
 **On n'affirme jamais l'absence d'un envoi sur une boîte qu'on n'a pas lue à jour.** « Aucun récap n'est parti »
 ne s'écrit que si les trois boîtes ont été lues jusqu'à maintenant. Boîte de Yacin en repli (étape 2) : la carte
-dit « Vérifier que <le récap> est parti », et `pourquoi` dit que sa boîte n'a pas été lue à jour.
+reste l'email, et `pourquoi` finit par « Avant l'envoi : vérifier que <le récap> n'est pas déjà parti (boîte de Yacin
+pas lue à jour) ».
 
 ## Étape 6 — Préparer le contenu
 **Carte que Yacin a modifiée** (étape 1, même `cle`) : si l'étape 5 ne trouve rien de nouveau, reprends tels quels son
@@ -458,20 +468,23 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   batch) sans l'avoir vue en base (créas à valider par la marque = `ad_creative.state = 'GANG4_VALIDATED'` ;
   `GENERATED` n'est pas visible par la marque et `GANG4_REJECTED` n'existe pas pour elle ; batch = un `BatchRun`
   d'une `BatchConfiguration` de la marque créé après l'onboarding ; accès = `invitations` et `profiles`, étape 5) : le 27/10, le message Bricks
-  annonçait « les premières créas » alors que les 17 créas de la marque étaient rejetées et le batch pas lancé.
+  annonçait « les premières créas » alors que les 17 créas de la marque étaient rejetées et le batch pas lancé. Seule
+  exception : le geste de la phrase « Avant l'envoi » de `pourquoi` (créas à joindre, invitation à créer), que l'email
+  suppose fait, avec ce qui en sort marqué `[à compléter : …]`. Des créas jointes ne s'annoncent jamais « à valider
+  sur la plateforme ».
 
 **Toujours un email** (Yacin, 27/10) : « Valider » crée le brouillon dans la boîte. Plus de `document` (plan d'étude,
 étude de cas, plan d'action, script d'appel). Ce que Gang4 doit faire avant l'envoi tient en une phrase à la fin de
-`pourquoi` : « Avant l'envoi : <l'action> (<page de l'admin, nommée comme Yacin la voit : liste « Pages citées dans
-une carte » de `docs/FUNNEL.md` §5.3>) ». Pas d'étape « mettre à jour Attio » : `/sales-ops` le fait le soir de
+`pourquoi` : « Avant l'envoi : <l'action> (<page de l'admin quand le geste s'y fait, nommée comme Yacin la voit : liste « Pages
+citées dans une carte » de `docs/FUNNEL.md` §5.3>) ». Pas d'étape « mettre à jour Attio » : `/sales-ops` le fait le soir de
 l'envoi.
 
 **Quand l'action demande un contenu qu'on n'a pas encore** (Yacin, 22/10 : on ne bloque pas, on prépare) :
 - **Étude de cas, cas chiffré** → l'email qui l'envoie, `cle` `deal:<id>:envoi-etude`. L'étude est « ci-jointe » : tu
   ne la rédiges pas, tu ne calcules pas ses chiffres et tu ne la joins pas ; Yacin la joint au brouillon (plus tard, il
-  dira où la trouver pour qu'elle soit jointe d'office). L'email rappelle la demande du prospect avec ses mots
-  (« comme promis, les cas chiffrés par verticale »), dit en une phrase ce que l'étude couvre, sans chiffre, et finit par
-  une seule demande. `pourquoi` finit par « Avant l'envoi : joindre l'étude de cas <sujet> ». Retour de Yacin du 27/10 :
+  dira où la trouver pour qu'elle soit jointe d'office). L'email ne décrit l'étude que par la demande du prospect,
+  avec ses mots (« comme promis, les cas chiffrés par verticale que tu nous avais demandés »), sans client, verticale,
+  période ni chiffre, et finit par une seule demande. `pourquoi` finit par « Avant l'envoi : joindre l'étude de cas <sujet> ». Retour de Yacin du 27/10 :
   le plan d'étude détaillé était trop compliqué.
 - **Offre promise** → l'email qui la fait : ce qui a été dit en démo (Claap), les conditions des offres déjà envoyées
   par la même boîte (recherche ciblée dans les envoyés : « offre », « proposition », « tarif », 90 jours), le modèle de
@@ -512,7 +525,8 @@ group by 1, 2, 3;
 ```
 
 Ce que tu ne trouves nulle part (un prix, un chiffre, un lien) n'est jamais inventé : s'il est indispensable, il reste
-marqué `[à compléter : …]` dans le contenu, et `quoi_faire` le dit (Yacin le remplit d'un double-clic sur la page).
+marqué `[à compléter : …]` dans le contenu, et la phrase « Avant l'envoi : compléter <ce qui manque> » de `pourquoi` le
+dit (Yacin le remplit d'un double-clic sur la page, ou dans le brouillon : n8n recopie le corps tel quel).
 
 ## Étape 7 — Écrire le calcul
 Une seule requête :
@@ -538,9 +552,10 @@ returning run_id;
 ```
 - `rang` : de 1 à `N`, sans trou (la base refuse au-delà de 10).
 - `contenu_initial` et `modifications` : `null` pour une carte neuve ; pour une carte que Yacin a modifiée ou une
-  carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6).
+  carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6), sauf un contenu `document` (devenu un email).
 - `titre` : verbe en tête, 80 caractères au plus.
-- `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui). Toutes les heures
+- `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui), puis, s'il y a lieu,
+  une seule phrase « Avant l'envoi : … », toujours la dernière (plusieurs gestes s'y séparent par « ; »). Toutes les heures
   écrites (`pourquoi`, `resume`, contenu) sont à l'heure de Paris : convertis tout horodatage UTC (Gmail, Supabase,
   Claap) avec le fuseau Europe/Paris, jamais avec un décalage fixe (UTC+2 du dernier dimanche de mars au dernier
   dimanche d'octobre, UTC+1 sinon ; en SQL, `at time zone 'Europe/Paris'`). Le 27/10, « 18:05 » (heure d'été
@@ -549,10 +564,12 @@ returning run_id;
   obtenir, en une phrase de 160 caractères au plus, sans répéter le titre (« Obtenir la date de lancement du test
   Lui Bien » plutôt que « Relancer Benjamin pour caler le lancement du test »).
 - `deal_nom` : le nom du deal tel qu'affiché dans Attio, sans « - Deal ».
-- `responsable` : qui gère le deal, affiché en tag à côté de son nom (Yacin, 27/10) : la personne de Gang4 qui a mené
-  l'échange avec le prospect, c'est-à-dire l'expéditeur du dernier message de Gang4 dans le fil de la carte, à défaut
-  l'organisateur du dernier rendez-vous. `samuel`, `lucie`, `yacin`, ou `autre` (quelqu'un d'autre de Gang4, ou un
-  échange qu'on ne voit pas, comme un LinkedIn hors campagne). C'est le plus souvent la `boite` de l'email.
+- `responsable` : qui gère le deal, affiché en tag à côté de son nom (Yacin, 27/10). C'est l'expéditeur du dernier
+  message écrit par quelqu'un de Gang4 dans le fil de la carte (ni confirmation de réservation, ni invitation
+  d'agenda). À défaut, la personne de Gang4 qui a mené le dernier rendez-vous : l'intervenant interne du compte rendu
+  Claap, Yacin pour une démo qu'il anime même réservée dans l'agenda de Samuel, puis l'organisateur. `samuel`, `lucie`,
+  `yacin`, ou `autre` (une autre personne de Gang4). Si on ne voit pas l'échange (un LinkedIn hors campagne, par
+  exemple), mets la `boite` de l'email.
 - `source_url` : l'email ou le compte rendu qui justifie la carte (gardé en base, plus affiché).
 - `source` : ce que Yacin lit au survol de « Voir la source », sans lien :
   `{"type": "email|compte_rendu|agenda|note", "de": "...", "le": "...", "titre": "...", "extrait": "..."}`.
@@ -670,8 +687,8 @@ la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : no
 ## Règles strictes
 - `N` cartes au plus (3 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
   contenu ne dit que ce qui est vérifiable (ce qui manque reste `[à compléter : …]`, étape 6).
-- Jamais l'absence d'un envoi affirmée sur une boîte qu'on n'a pas lue à jour : dans le doute, « Vérifier que … est
-  parti » (étape 5).
+- Jamais l'absence d'un envoi affirmée sur une boîte qu'on n'a pas lue à jour : dans le doute, l'email, avec « Avant
+  l'envoi : vérifier que … n'est pas déjà parti » dans `pourquoi` (étape 5).
 - Aucune écriture hors de `SalesFocusRun` et `SalesFocusAction` (et `sales_focus_motif_traite`), sauf pour un
   « Pas pertinent » à traiter (étape 2 bis) : son deal dans Attio (`update-record`, `create-note`), tracé dans
   `sales.run_log` et `sales.applied_actions`. Jamais d'autre écriture dans Attio. Aucun email envoyé, aucun
