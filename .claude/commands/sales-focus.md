@@ -368,10 +368,10 @@ corps en markdown, complet et prêt à relire. « Valider » le dépose dans un 
   (`public."MetaAdInsight"` et `"MetaAdInsightEur"` : dépense, impressions, clics, conversions par pub ;
   `ad_creative_meta_ad` pour isoler les pubs des créas Gang4 ; requêtes agrégées par marque et par période) et leur
   valeur quand tu l'as déjà calculée ; les verbatims (comptes rendus Claap) ; la structure de l'étude (une page) ;
-  l'accord du client à demander avant l'envoi ; les autres deals que l'étude débloque. `quoi_faire` : « Valide le
-  plan : je rédige l'étude au calcul suivant. » Plan validé → au calcul suivant, l'étude rédigée (`document`, `cle`
+  l'accord du client à demander avant l'envoi ; les autres deals que l'étude débloque. `quoi_faire` : « Valider le
+  plan pour que l'étude soit rédigée au calcul suivant. » Plan validé → au calcul suivant, l'étude rédigée (`document`, `cle`
   `deal:<id>:etude`, chaque chiffre avec sa période) ; étude validée → l'email qui l'envoie (`cle`
-  `deal:<id>:envoi-etude`, `quoi_faire` : joindre l'étude en PDF).
+  `deal:<id>:envoi-etude`, `quoi_faire` : que l'étude parte en PDF).
 - **Offre promise** → l'email qui la fait : ce qui a été dit en démo (Claap), les conditions des offres déjà envoyées
   par la même boîte (recherche ciblée dans les envoyés : « offre », « proposition », « tarif », 90 jours), le modèle de
   facturation en base (`public."BillingPlan"` : commission, seuil de franchise ; `"OrganisationSubscription"` :
@@ -419,7 +419,7 @@ select run.id, v.rang, v.titre, v.pourquoi, v.quoi_faire, v.deal, v.deal_nom, v.
        v.contenu::jsonb, v.contenu_initial::jsonb, coalesce(v.modifications::jsonb, '[]'::jsonb), v.cle,
        array[v.deal], array[v.company], v.domaines::text[]
 from run, (values
-  (1, '<titre>', '<pourquoi>', '<je propose>', '<deal_id>', '<nom du deal>', '<company_id>', '<url>',
+  (1, '<titre>', '<pourquoi>', '<objectif>', '<deal_id>', '<nom du deal>', '<company_id>', '<url>',
    '<source json>', '<contenu json>', null, null, 'deal:<deal_id>:<verbe>', '{<domaine>}')
   -- , (2, …), jusqu'à N
 ) as v(rang, titre, pourquoi, quoi_faire, deal, deal_nom, company, source_url, source, contenu, contenu_initial,
@@ -431,7 +431,9 @@ returning run_id;
   carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6).
 - `titre` : verbe en tête, 80 caractères au plus.
 - `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui).
-- `quoi_faire` : ce que tu proposes, en une phrase de 160 caractères au plus.
+- `quoi_faire` : l'objectif, affiché « Objectif » sur la carte (« Je propose » jusqu'au 27/10) : ce que l'action doit
+  obtenir, en une phrase de 160 caractères au plus, sans répéter le titre (« Obtenir la date de lancement du test
+  Lui Bien » plutôt que « Relancer Benjamin pour caler le lancement du test »).
 - `deal_nom` : le nom du deal tel qu'affiché dans Attio, sans « - Deal ».
 - `source_url` : l'email ou le compte rendu qui justifie la carte (gardé en base, plus affiché).
 - `source` : ce que Yacin lit au survol de « Voir la source », sans lien :
@@ -539,7 +541,7 @@ fi
 - Rien en base pour ce message : ni colonne, ni `resume` à reprendre.
 
 ## Étape 9 — Restituer
-Affiche les cartes en markdown court (rang, deal, pourquoi, je propose, objet de l'email), puis une ligne
+Affiche les cartes en markdown court (rang, deal, pourquoi, objectif, objet de l'email), puis une ligne
 « + N autres candidats » avec les 2 ou 3 suivants en un mot chacun, puis chaque deal Balle Gang4 à échéance non
 retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Ajoute une ligne par « Pas pertinent »
 traité (étape 2 bis) : le deal et ce qui a été fait, ou l'échec Attio ; elle va aussi dans `resume`. Une source
