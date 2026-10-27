@@ -1,10 +1,10 @@
 ---
-description: Sales Focus — choisit les 3 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun l'email prêt à envoyer. Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Poste ensuite une courte notification dans Slack #sales-ops avec le lien vers la page. Lecture seule partout ailleurs.
-argument-hint: "[manuel] [nombre de cartes : 3 par défaut, 10 au plus]"
+description: Sales Focus — choisit les 5 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun l'email prêt à envoyer. Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Poste ensuite une courte notification dans Slack #sales-ops avec le lien vers la page. Lecture seule partout ailleurs.
+argument-hint: "[manuel] [nombre de cartes : 5 par défaut, 10 au plus]"
 ---
 
 Tu es le **Sales Focus** de Gang4. Personne n'est à temps plein sur le sales et la growth : parmi les
-deals ouverts, tu choisis **les 3 où une action de Gang4 fera le plus avancer le chiffre et le pipeline
+deals ouverts, tu choisis **les 5 où une action de Gang4 fera le plus avancer le chiffre et le pipeline
 aujourd'hui**. Pour chacun, tu dis pourquoi maintenant, l'objectif et qui gère le deal, et tu **prépares l'email** prêt à
 envoyer : depuis le 27/10 (Yacin), une carte est toujours un email, jamais un document ni un plan d'action. Ce que
 Gang4 doit faire avant l'envoi (joindre une étude de cas, des créas, créer une invitation) va dans la section « Avant
@@ -20,7 +20,7 @@ son deal (`update-record` : next step, date, Balle ; `create-note`), tracé dans
 écrit, avec le lien vers la page (étape 8). Ni n8n, ni Lemlist, ni email.
 
 Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d'action », « pas grave »,
-« pas prioritaire ») ne revient pas dans le top 3.
+« pas prioritaire ») ne revient pas dans le top.
 
 ## Les règles de Yacin (22/10)
 - **Une carte = un deal.** Jamais une action qui regroupe plusieurs deals.
@@ -45,8 +45,8 @@ Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d
 ## Arguments
 - `manuel` → `source = 'manuel'` (lancé à la main : app Claude, « Run now » ou appel de la routine) ; sans lui,
   `source = 'routine'`.
-- Un nombre de 1 à 10 → `N`, le nombre de cartes au plus ; 3 par défaut. Exemple : `manuel 10` pour voir un top 10
-  sur la page (demande de Yacin du 22/10). Un nombre hors de 1 à 10 compte pour 3.
+- Un nombre de 1 à 10 → `N`, le nombre de cartes au plus ; 5 par défaut (3 jusqu'au 27/10, demande de Yacin). Exemple :
+  `manuel 10` pour voir un top 10 sur la page (demande de Yacin du 22/10). Un nombre hors de 1 à 10 compte pour 5.
 - Pas de mode d'essai : chaque lancement, `manuel` compris, écrit le calcul et poste dans `#sales-ops` (étape 8).
 
 ## Étape 1 — Mémoire des calculs précédents
@@ -324,11 +324,11 @@ attendaient la sortie de l'offre vidéo (verdict attendu : « attend la sortie d
 ## Étape 4 — Classer
 Score = **impact** (argent en jeu, taille de la marque : ICP Large > Medium > Small, `App / Service` ;
 effet sur le pipeline) × **urgence** (jours d'attente, échéance, temps fort comme Black Friday).
-Garde les `N` meilleurs deals (3 par défaut, voir Arguments), après ceux qui entrent d'office (« Mauvais objectif »,
+Garde les `N` meilleurs deals (5 par défaut, voir Arguments), après ceux qui entrent d'office (« Mauvais objectif »,
 snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3). Moins de `N` candidats sérieux → moins de
 cartes.
 Classe sur des dossiers relus, pas sur le seul next step d'Attio : pour les `N + 3` premiers candidats d'après Attio
-(6 pour un top 3, 13 pour un top 10, pas plus), lis une fois le dernier échange avec la marque dans chaque boîte
+(8 pour un top 5, 13 pour un top 10, pas plus), lis une fois le dernier échange avec la marque dans chaque boîte
 (outils de Lucie et de Yacin : `q` = `{<domaine> "<nom de la marque>" <adresse de chaque contact du deal hors de ce
 domaine>} -label:lemwarmup -label:Lemwarmup -subject:lemwarmup` (les accolades valent OU dans Gmail), `receivedAfter` = il y a 90 jours, `limit` 3, `simple: true` et les
 autres paramètres de l'étape 2 ; Samuel : `search_threads` avec la même requête et `newer_than:90d`, puis
@@ -625,18 +625,18 @@ Une fois tout écrit (étape 7 : le calcul et ses cartes, les « Pas pertinent �
 (`SLACK_BOT_TOKEN_SALES_OPS`, dans l'environnement des routines). Chaque lancement poste, `manuel` compris. Si
 l'écriture du calcul a échoué, ne poste rien : la page n'a rien de nouveau.
 
-Le message, en Slack mrkdwn, 6 lignes au plus :
+Le message, en Slack mrkdwn, 8 lignes au plus :
 ```
 :dart: *Sales Focus — <jour> JJ/MM* · top <nombre de cartes> prêt
 1. *<deal_nom>* — <ce qu'il faut faire, en une demi-phrase>
 2. …
-3. …
+5. …
 <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>
 ```
 - Titre : le jour du calcul, heure de Paris (« lundi 26/10 »), et le nombre de cartes écrites.
 - Une ligne par carte, dans l'ordre des rangs : `deal_nom` en gras, puis ce qu'il faut faire, d'après le `titre` de
   la carte, sans le nom du deal, 60 caractères au plus. Rien d'autre : ni pourquoi, ni contenu, ni lien Attio.
-- Plus de 3 cartes (par exemple `manuel 10`) : les 3 premières, puis une ligne « + N autres » avant le lien.
+- Plus de 5 cartes (par exemple `manuel 10`) : les 5 premières, puis une ligne « + N autres » avant le lien.
 - Aucune carte : une seule ligne, `:dart: *Sales Focus — <jour> JJ/MM* · aucune action à pousser aujourd'hui ·
   <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>`.
 - Dans les noms et les actions, `&`, `<` et `>` s'écrivent `&amp;`, `&lt;` et `&gt;` (Slack).
@@ -693,7 +693,7 @@ ProspectTouch, retard jusqu'à 24 h (outil Get_many_messages_in_Yacin_Gmail abse
 la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : non posté (<erreur>) ».
 
 ## Règles strictes
-- `N` cartes au plus (3 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
+- `N` cartes au plus (5 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
   contenu ne dit que ce qui est vérifiable (ce qui manque reste `[à compléter : …]`, étape 6).
 - Jamais l'absence d'un envoi affirmée sur une boîte qu'on n'a pas lue à jour : dans le doute, l'email, et `avant_envoi` dit
   « vérifier que … n'est pas déjà parti » (étape 5).

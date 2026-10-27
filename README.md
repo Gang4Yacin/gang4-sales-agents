@@ -131,9 +131,9 @@ order by status, target_record_id;
   `sales.deal_snapshot`, un message court « Contrôle CRM » dans `#sales-ops` (une ligne par deal corrigé).
   `/sales-check essai` fait le contrôle sans rien écrire.
 
-## Top 3 du jour
+## Top 5 du jour
 
-- **`/sales-focus`** (`.claude/commands/sales-focus.md`) : chaque matin à 8:30 (Paris). Choisit les 3 deals où
+- **`/sales-focus`** (`.claude/commands/sales-focus.md`) : chaque matin à 8:30 (Paris). Choisit les 5 deals (3 jusqu'au 27/10) où
   une action de Gang4 compte le plus aujourd'hui (un deal par carte), vérifie les derniers emails, et prépare
   pour chacun l'email prêt à envoyer : depuis le 27/10, une carte est toujours un email (une étude de cas y est
   annoncée « ci-jointe » et Yacin la joint au brouillon ; ce que Gang4 doit faire avant l'envoi est dans la
@@ -142,7 +142,7 @@ order by status, target_record_id;
   (`SalesFocusRun`, `SalesFocusAction`). Sur la page admin `/admin/sales-actions`, « Voir la source » montre
   l'extrait au survol, l'email se modifie ou se réécrit sur consigne, et « Valider » crée le brouillon Gmail
   par le flow n8n « Préparer l'action » ; l'envoi reste manuel. Après chaque calcul, un message
-  court dans `#sales-ops` annonce le top (les 3 premiers deals, une demi-phrase chacun) avec le lien vers la page.
+  court dans `#sales-ops` annonce le top (les 5 premiers deals, une demi-phrase chacun) avec le lien vers la page.
   Lancé à la main avec `/sales-focus manuel 10`, il propose jusqu'à 10 cartes ; une carte que Yacin a modifiée et
   encore ouverte est reprise telle quelle au calcul suivant.
 - **Snooze et Pas pertinent** (v5, 23/10) : « Snooze » masque la carte jusqu'à un jour choisi (3, 7 ou 14 jours, ou
