@@ -305,7 +305,13 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   pas candidate (phase d'onboarding de `crm-sync` §4b, suivie sur la page Onboarding de l'admin ; verdict « en
   onboarding jusqu'au JJ/MM »), sauf une promesse de Gang4 faite au prospect et non tenue (Bricks : invitation à la
   plateforme promise pour le 16/10). Ni « caler l'onboarding », ni « proposer l'onboarding » ne sont des cartes
-  (Yacin, 27/10 : Gourmandiz, Meta connecté le jour même, sortait en n°1).
+  (Yacin, 27/10 : Gourmandiz, Meta connecté le jour même, sortait en n°1). Une promesse est un engagement sans
+  condition ; une offre conditionnée à l'accord du prospect (« si tu veux », « si ça t'intéresse, dis-nous ») laisse
+  la balle au prospect tant qu'il n'a pas dit oui, même si Attio la note « promis » : relis le transcript du compte
+  rendu. Un module se lit dans `business_module_access` (`module_slug`, `is_enabled`) : `moderation` (répondre aux
+  commentaires en tant que marque) n'est pas `social_proof` (des testeurs commentent les pubs, offre payante). Le
+  30/10, Gourmandiz est sorti en n°1 avec « activer le module de modération promis le 29/10 » : à l'onboarding,
+  Samuel avait proposé un mois gratuit du Social Proof si Séverin Dor le voulait, et Séverin allait en discuter.
 - **Prospect qui attend Gang4** : son dernier message appelle une réponse, ou un livrable promis après un
   échange (récap, offre, créas) n'est pas parti, vérifié dans les trois boîtes (étape 5).
 - **Rendez-vous** : démo refusée, annulée ou manquée à recaler ; rendez-vous à fort enjeu dans les 48 h
