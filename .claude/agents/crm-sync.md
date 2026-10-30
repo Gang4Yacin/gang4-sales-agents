@@ -502,7 +502,13 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
   - une promesse de Gang4 faite au prospect n'est pas faite (actions d'un compte rendu, ou next step en place
     « Envoyer à … promis le … » ; un accès plateforme promis se vérifie en base, requête ci-dessous) → Balle `Gang4`,
     J+1, « Envoyer à <prénom nom> <ce qui a été promis> (promis le JJ/MM) ». C'est la seule action de Gang4 qui reste
-    dans le pipeline sales pendant l'onboarding (Bricks : invitation promise pour le 16/10, jamais partie).
+    dans le pipeline sales pendant l'onboarding (Bricks : invitation promise pour le 16/10, jamais partie). Une promesse
+    est un engagement sans condition (« je t'envoie », « je t'active ») ; une offre conditionnée à l'accord du prospect
+    (« si tu veux », « si ça t'intéresse, dis-nous ») n'en est pas une tant qu'il n'a pas dit oui, et une action
+    d'activation ou d'offre tirée du résumé Claap se vérifie dans le transcript. Le 29/10, « activer le module de
+    modération (promis le 29/10) » pour Gourmandiz venait d'un mois d'essai du Social Proof proposé à l'onboarding
+    (« si demain ça t'intéresse, n'hésite pas à nous dire ») ; Séverin Dor allait en discuter : phase d'onboarding,
+    Balle Prospect.
   `rule = "R6"`. Accès plateforme de la marque (une adresse @gang4.io ou d'agence ne prouve rien) :
   ```sql
   select 'invitation' as quoi, i.id, i.email, i.status, i.created_at, i.expires_at, i.reminded_at
