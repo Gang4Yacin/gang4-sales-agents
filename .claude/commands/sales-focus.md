@@ -109,7 +109,7 @@ Puis les **corrections de Yacin** des 60 derniers jours : ses consignes de réé
 avais proposé (`contenu_initial`) et ce qui a été retenu (`contenu`). Une carte reprise d'un calcul à l'autre n'y
 compte qu'une fois, dans sa dernière version.
 ```sql
-select deal_nom, jour, statut, consignes, propose, retenu from (
+select deal_nom, jour, statut, consignes, propose, retenu, pj_propose, pj_retenu, retouches_routine from (
   select distinct on (a.cle, a.contenu_initial) a.deal_nom, r.computed_at::date as jour, a.statut,
          (select string_agg(m->>'consigne', ' | ') from jsonb_array_elements(a.modifications) m
            where m->>'consigne' is not null) as consignes,
@@ -117,7 +117,9 @@ select deal_nom, jour, statut, consignes, propose, retenu from (
          (select string_agg(p->>'nom', ', ') from jsonb_array_elements(
             coalesce(a.contenu_initial->'pieces_jointes', '[]'::jsonb)) p) as pj_propose,
          (select string_agg(p->>'nom', ', ') from jsonb_array_elements(
-            coalesce(a.contenu->'pieces_jointes', '[]'::jsonb)) p) as pj_retenu
+            coalesce(a.contenu->'pieces_jointes', '[]'::jsonb)) p) as pj_retenu,
+         (select count(*) from jsonb_array_elements(a.modifications) m
+           where m->>'source' = 'sales-focus') as retouches_routine
   from public."SalesFocusAction" a join public."SalesFocusRun" r on r.id = a.run_id
   where a.contenu_initial is not null and r.computed_at > now() - interval '60 days' and a.cle not like 'test:%'
   order by a.cle, a.contenu_initial, r.computed_at desc
@@ -127,7 +129,9 @@ limit 20;
 ```
 Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même longueur visée, mêmes
 documents joints (depuis le 03/11, « Demander une modification » ajoute ou retire aussi des documents : un écart entre
-`pj_propose` et `pj_retenu` est une leçon sur le choix des documents, étape 6). Une correction
+`pj_propose` et `pj_retenu` est une leçon sur le choix des documents, étape 6). Une carte à `retouches_routine` non nul a
+été retouchée par toi à une reprise (document ajouté, lien de la présentation, étape 6) : ces écarts-là sont les tiens,
+pas des corrections de Yacin ; seules ses `consignes` et ce qu'elles ont changé comptent. Une correction
 vue deux fois devient une règle : applique-la partout et cite-la dans `resume`, pour qu'elle entre dans la section
 « Corrections de Yacin » de `docs/STYLE-EMAILS.md`.
 
@@ -504,7 +508,12 @@ couvre (règle ci-dessous) : ajouté à `pieces_jointes` sans toucher au corps (
 retiré d'`avant_envoi` ; `resume` le dit. De même, une carte reprise dont `avant_envoi` dit « joindre la présentation
 Gang4 » (cartes d'avant le soir du 03/11) reçoit le lien de la présentation dans le corps, à la place de son annonce
 « ci-jointe » (« voici la présentation de Gang4 : https://gang4.io/presentation »), seul changement du corps, et ce
-geste sort d'`avant_envoi`. Les gestes repris sans préfixe reçoivent « ⏳ » (étape 7). Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
+geste sort d'`avant_envoi`. Les gestes repris sans préfixe reçoivent « ⏳ » (étape 7). Toute retouche d'une carte
+reprise (document ajouté, lien, gestes retirés ou préfixés) s'ajoute à la fin de ses `modifications` reprises, pour
+que « Annuler la dernière » défasse d'abord la tienne et jamais à moitié : `{"le": "<maintenant, ISO>", "par": null,
+"consigne": null, "source": "sales-focus", "avant": {"objet": <objet d'avant>, "corps": <corps d'avant>,
+"pieces_jointes": <d'avant, ou null>, "avant_envoi": <d'avant, ou null>}}`, `objet` et `corps` toujours présents,
+`pieces_jointes` et `avant_envoi` seulement s'ils changent. Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
 écris un nouveau contenu, sans `contenu_initial` ni `modifications`, et dis-le dans `resume` : ses corrections restent
 des leçons (étape 1). Une carte d'avant le 27/10 dont le contenu est un `document` (plan d'étude, plan d'action) ne se
 reprend pas : écris l'email qui la remplace (« Toujours un email », ci-dessous).
@@ -521,8 +530,10 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
 `{"type": "email", "boite": "samuel|lucie|yacin", "a": [...], "cc": [...], "objet": "...", "corps": "...", "gmail_thread_id": "...", "pieces_jointes": [{"id": "...", "nom": "...", "fichier": "..."}]}`
 - `pieces_jointes` : les documents à `fichier` de `SalesDocument` que « Valider » joint au brouillon (`id`, `nom` et
   `fichier` recopiés de la table), deux au plus d'habitude (règle ci-dessous), jamais plus de 5 ni plus de 15 Mo en
-  tout (`taille_octets` ; la base et n8n refusent au-delà) ; absent ou `[]` sans document. Jamais un document à `url`
-  (il va dans le corps). Le flow n8n télécharge chaque fichier du bucket `sales-documents` et l'ajoute au brouillon ;
+  tout. Vérifie-le toi-même avec la requête de l'étape 2 : chaque document a un `fichier` et une `taille_octets` (un
+  fichier pas encore déposé ne se joint pas : geste « ⏳ »), et la somme des `taille_octets` reste sous 15 000 000. La
+  base ne contrôle que les modifications de la page ; ce que tu écris passe tel quel, et n8n refuserait à « Valider »
+  (`contenu_invalide`, `piece_jointe`). Absent ou `[]` sans document. Jamais un document à `url` (il va dans le corps). Le flow n8n télécharge chaque fichier du bucket `sales-documents` et l'ajoute au brouillon ;
   la carte les montre sous l'objet et en ✅ dans « Avant l'envoi ».
 - `boite` : la boîte qui porte la conversation (Samuel : connecteur Gmail ; Lucie : Gmail de Lucie ; Yacin
   quand la conversation n'existe que chez lui).
