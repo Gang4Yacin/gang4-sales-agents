@@ -58,7 +58,9 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   marque, la plateforme l'envoie elle-même) : l'email le contient,
   `[à compléter : lien d'invitation de <prénom>]`, en copie de chaque personne invitée. Une étude de cas jointe est
   nommée (« l'étude de cas Perifit, ci-jointe ») : « Valider » la joint au brouillon (documents sales, `/sales-focus`
-  étape 6). Des créas à joindre sont annoncées « ci-jointes » : Gang4 les joint avant l'envoi.
+  étape 6). La présentation Gang4 est un lien, jamais une pièce jointe : son url dans le corps (« voici la présentation
+  de Gang4 : https://gang4.io/presentation », `/presentation/en` pour un email en anglais). Des créas à joindre sont
+  annoncées « ci-jointes » : Gang4 les joint avant l'envoi.
 - **Fil** : réponse dans le fil (« Re: <objet du fil> ») dès qu'un fil existe avec la bonne personne. Nouveau fil
   seulement s'il n'y en a pas : après une démo réservée en ligne, le seul fil est souvent la confirmation.
 
@@ -75,7 +77,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 | **Go donné, Meta à connecter ou accès Business Manager à donner** | Le go en une phrase (sa date), puis l'étape suivante précise et ce qu'elle débloque. | Donner l'accès, ou un court appel pour le faire ensemble. |
 | **Offre promise** | L'offre telle que discutée (compte rendu de la démo), avec les conditions réelles : offres déjà envoyées par la même boîte, modèle de facturation en base. Ce qui manque reste `[à compléter : …]`. | Un oui, ou un court appel pour la caler. |
 | **Références clients demandées** | Deux ou trois marques clientes du même secteur ou de la même taille, avec un résultat chiffré quand on l'a. Jamais leurs coordonnées : une mise en relation que l'équipe organise. | L'étape suivante (l'accès, le test). |
-| **Étude de cas à envoyer** | La demande du prospect avec ses mots (« comme promis, les cas chiffrés par verticale »), puis ce qui est joint, nommé, avec ce qui en fait un exemple proche s'il l'est vraiment (« l'étude de cas Little Cigogne / Plumaïa, une box de mode par abonnement, ci-jointe ») ; sinon le document pour ce qu'il est, sans parler de proximité. Au plus un chiffre de l'étude, mot pour mot avec sa période. Ce que l'étude ne couvre pas se dit simplement (« je reviens vers toi pour les autres verticales »). « Valider » joint le document au brouillon. | Un retour, ou un créneau. |
+| **Étude de cas à envoyer** | La demande du prospect avec ses mots (« comme promis, les cas chiffrés par verticale »), puis ce qui est joint, nommé, avec ce qui en fait un exemple proche s'il l'est vraiment (« l'étude de cas Little Cigogne / Plumaïa, une box de mode par abonnement, ci-jointe ») ; sinon le document pour ce qu'il est, sans parler de proximité. Au plus un chiffre de l'étude, mot pour mot avec sa période. Ce que l'étude ne couvre pas se dit simplement (« je reviens vers toi pour les autres verticales »). « Valider » joint le document au brouillon ; une présentation promise part dans le même email, en lien. | Un retour, ou un créneau. |
 | **Facture ouverte** | Factuel et neutre : facture, montant et date tels qu'en base, lien de paiement s'il existe. | Le règlement, ou la question qui le bloque. |
 | **Conversation chaude qui retombe** (intérêt clair, puis rien depuis 10 jours ou plus) | L'intérêt exprimé, avec ses mots à lui, puis l'étape suivante concrète. | Un créneau. |
 
