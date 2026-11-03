@@ -339,7 +339,8 @@ l'offre vidéo »), ou le prospect a fixé lui-même une date de reprise encore 
 reviens vers toi après le 15/11 ») ; verdict « attend le JJ/MM : <raison> ». Ne s'écartent jamais ainsi : un contenu
 que Gang4 peut préparer aujourd'hui (offre commerciale, cas chiffré, créas statiques, récap), un prospect qui « devait
 revenir vers nous » sans date ou dont la date est passée (c'est une relance : Social Desk le 27/10, Circle
-Sportswear), un rendez-vous décliné à recaler (Tikamoon, Wopilo), une entrée d'office. Ou enfin s'il vient après les
+Sportswear), un rendez-vous décliné à recaler (Tikamoon, Wopilo), une étude de cas absente des documents sales
+(étape 6), une entrée d'office. Ou enfin s'il vient après les
 `N` retenus. Le 27/10, Payfit est passé en 3e avec « Préparer les exemples vidéo promis » alors que ces exemples
 attendaient la sortie de l'offre vidéo (verdict attendu : « attend la sortie de l'offre vidéo »). Un refus net est
 un refus qui remplit les conditions de fermeture de `/sales-check` C2 : `negative` écrit, dernier signal du prospect,
@@ -488,13 +489,17 @@ pas lue à jour) ».
 **Carte que Yacin a modifiée** (étape 1, même `cle`) : si l'étape 5 ne trouve rien de nouveau, reprends tels quels son
 `contenu`, son `contenu_initial` et ses `modifications` (étape 7), sans rien réécrire ; seuls `pourquoi` et `source`
 changent si un fait daté s'ajoute ; `avant_envoi` est repris lui aussi, sans le geste que l'étape 5 montre fait depuis
-(invitation créée, batch lancé). Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
+(invitation créée, batch lancé). Une carte d'avant le 03/11 qui annonce une étude de cas « ci-jointe » sans
+`pieces_jointes`, avec « joindre l'étude de cas … » dans `avant_envoi`, reçoit le document de `SalesDocument` qui la
+couvre (règle ci-dessous) : ajouté à `pieces_jointes` sans toucher au corps (« ci-jointe » reste vrai), et ce geste
+retiré d'`avant_envoi` ; `resume` le dit. Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
 écris un nouveau contenu, sans `contenu_initial` ni `modifications`, et dis-le dans `resume` : ses corrections restent
 des leçons (étape 1). Une carte d'avant le 27/10 dont le contenu est un `document` (plan d'étude, plan d'action) ne se
 reprend pas : écris l'email qui la remplace (« Toujours un email », ci-dessous).
 
 **Carte snoozée revenue à son jour** (étape 1, même `cle`) : comme une carte modifiée, son `contenu`, son
-`contenu_initial` et ses `modifications` sont repris tels quels si l'étape 5 ne trouve rien de nouveau.
+`contenu_initial` et ses `modifications` sont repris tels quels si l'étape 5 ne trouve rien de nouveau (une étude de
+cas sans `pieces_jointes` reçoit son document, comme ci-dessus).
 
 **Carte « Mauvais objectif »** (étape 2 bis) : un contenu neuf pour le nouvel objectif, sans `contenu_initial` ni
 `modifications`, avec la `cle` du nouvel objectif. Le texte de l'équipe vaut consigne, et `pourquoi` le cite avec son
@@ -559,16 +564,23 @@ l'envoi.
      modèle (box, abonnement, objet connecté), même ordre de budget Meta, même ambition internationale ;
   3. à égalité, celui dont les `chiffres_cles` parlent le plus à ce que le prospect cherche (CPA, nouveaux marchés).
   Deux documents au plus. Jamais l'étude d'une marque à cette marque ni à son concurrent direct (même produit).
-  L'email nomme ce qui est joint, avec ce qui en fait un exemple proche (« l'étude de cas Little Cigogne / Plumaïa, une
-  box de mode par abonnement, ci-jointe »), et peut citer au plus un chiffre de `chiffres_cles`, mot pour mot avec sa
-  période ; il finit par une seule demande. `pourquoi` dit le document choisi et pourquoi.
+  L'email nomme ce qui est joint, avec ce qui en fait un exemple proche s'il est réel (même secteur, même modèle ou
+  même marché, lu dans `secteur`, `mots_cles` et `resume` : « l'étude de cas Little Cigogne / Plumaïa, une box de mode
+  par abonnement, ci-jointe ») ; sinon il nomme le document pour ce qu'il est, sans parler de proximité (Wopilo,
+  literie : « les études de cas Perifit et Little Cigogne / Plumaïa, deux marques e-commerce, ci-jointes »). Il peut
+  citer au plus un chiffre de `chiffres_cles`, mot pour mot avec sa période et son périmètre, et finit par une seule
+  demande. `pourquoi` dit le document choisi et pourquoi, ou qu'aucun n'est de son secteur.
   Ce qu'aucun document ne couvre ne s'invente pas. Une demande en partie couverte (The Bradery : cas chiffrés par
   verticale, mode, maison, food et beauté ; seule la mode l'est) : joins ce qui s'en approche, l'email le dit
   simplement (« pour la mode, l'étude de cas Little Cigogne / Plumaïa, ci-jointe ; je reviens vers toi pour les autres
-  verticales »), et `avant_envoi` dit ce qui manque (« aucune étude de cas maison, food ni beauté dans les documents
-  sales : la joindre à la main si elle existe »). Aucun document ne convient (une étude vidéo avant la sortie de l'offre
-  vidéo, `docs/FUNNEL.md` §7 point 48) : l'action attend (étape 3). Un type absent de la table (la présentation Gang4,
-  au 03/11) reste un geste d'`avant_envoi` (« joindre la présentation Gang4 »), annoncé « ci-jointe ».
+  verticales »), et `avant_envoi` dit ce qui manque (« joindre une étude de cas maison, food ou beauté si elle existe
+  hors des documents sales, et retirer alors « je reviens vers toi pour les autres verticales » du corps »). Aucun
+  document ne couvre la demande : une étude vidéo avant la sortie de l'offre vidéo (`docs/FUNNEL.md` §7, point 48) →
+  l'action attend (étape 3, verdict « attend la sortie de l'offre vidéo ») ; sinon la carte reste l'email (un contenu
+  à produire ne bloque jamais, 22/10) : l'étude est annoncée « ci-jointe » sans être décrite, `pieces_jointes` vide, et
+  `avant_envoi` dit « joindre l'étude de cas <sujet> (aucune dans les documents sales) ». Un type absent de la table
+  (la présentation Gang4, au 03/11) reste un geste d'`avant_envoi` (« joindre la présentation Gang4 »), annoncé
+  « ci-jointe ».
 - **Offre promise** → l'email qui la fait : ce qui a été dit en démo (Claap), les conditions des offres déjà envoyées
   par la même boîte (recherche ciblée dans les envoyés : « offre », « proposition », « tarif », 90 jours), le modèle de
   facturation en base (`public."BillingPlan"` : commission, seuil de franchise ; `"OrganisationSubscription"` :
