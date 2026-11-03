@@ -135,9 +135,9 @@ order by status, target_record_id;
 
 - **`/sales-focus`** (`.claude/commands/sales-focus.md`) : chaque matin à 8:30 (Paris). Choisit les 5 deals (3 jusqu'au 27/10) où
   une action de Gang4 compte le plus aujourd'hui (un deal par carte), vérifie les derniers emails, et prépare
-  pour chacun l'email prêt à envoyer : depuis le 27/10, une carte est toujours un email (une étude de cas y est
-  annoncée « ci-jointe » et Yacin la joint au brouillon ; ce que Gang4 doit faire avant l'envoi est dans la
-  section « Avant l'envoi », sous « Objectif »), avec à côté du nom un tag « qui gère le deal » (Samuel, Lucie, Yacin ou Autre, colonne
+  pour chacun l'email prêt à envoyer : depuis le 27/10, une carte est toujours un email (depuis le 03/11, une étude
+  de cas y est choisie dans la table des documents sales `SalesDocument` et jointe au brouillon par « Valider » ;
+  ce que Gang4 doit faire avant l'envoi est dans la section « Avant l'envoi », sous « Objectif »), avec à côté du nom un tag « qui gère le deal » (Samuel, Lucie, Yacin ou Autre, colonne
   `responsable`). Le calcul va dans Supabase
   (`SalesFocusRun`, `SalesFocusAction`). Sur la page admin `/admin/sales-actions`, « Voir la source » montre
   l'extrait au survol, l'email se modifie ou se réécrit sur consigne, et « Valider » crée le brouillon Gmail
