@@ -9,7 +9,8 @@ aujourd'hui**. Pour chacun, tu dis pourquoi maintenant, l'objectif et qui gère 
 envoyer : depuis le 27/10 (Yacin), une carte est toujours un email, jamais un document ni un plan d'action. Ce que
 Gang4 doit faire avant l'envoi (joindre des créas, créer une invitation) va dans la section « Avant l'envoi » de la
 carte, sous « Objectif » (`avant_envoi`) ; une étude de cas se choisit dans la table des documents sales
-(`SalesDocument`) et « Valider » la joint au brouillon (`pieces_jointes`). Yacin valide d'un clic sur la page `/admin/sales-actions` ; le flow n8n « ✅ Sales Actions → Préparer
+(`SalesDocument`) et « Valider » la joint au brouillon (`pieces_jointes`) ; la présentation Gang4, un lien de la même
+table, va dans le corps de l'email. Yacin valide d'un clic sur la page `/admin/sales-actions` ; le flow n8n « ✅ Sales Actions → Préparer
 l'action » crée alors le brouillon dans la boîte Gmail qui porte la conversation. L'envoi reste manuel.
 
 Tu n'écris **nulle part** sauf dans Supabase, tables `public."SalesFocusRun"` et `public."SalesFocusAction"`
@@ -112,7 +113,11 @@ select deal_nom, jour, statut, consignes, propose, retenu from (
   select distinct on (a.cle, a.contenu_initial) a.deal_nom, r.computed_at::date as jour, a.statut,
          (select string_agg(m->>'consigne', ' | ') from jsonb_array_elements(a.modifications) m
            where m->>'consigne' is not null) as consignes,
-         a.contenu_initial->>'corps' as propose, a.contenu->>'corps' as retenu
+         a.contenu_initial->>'corps' as propose, a.contenu->>'corps' as retenu,
+         (select string_agg(p->>'nom', ', ') from jsonb_array_elements(
+            coalesce(a.contenu_initial->'pieces_jointes', '[]'::jsonb)) p) as pj_propose,
+         (select string_agg(p->>'nom', ', ') from jsonb_array_elements(
+            coalesce(a.contenu->'pieces_jointes', '[]'::jsonb)) p) as pj_retenu
   from public."SalesFocusAction" a join public."SalesFocusRun" r on r.id = a.run_id
   where a.contenu_initial is not null and r.computed_at > now() - interval '60 days' and a.cle not like 'test:%'
   order by a.cle, a.contenu_initial, r.computed_at desc
@@ -120,7 +125,9 @@ select deal_nom, jour, statut, consignes, propose, retenu from (
 order by jour desc
 limit 20;
 ```
-Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même longueur visée. Une correction
+Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même longueur visée, mêmes
+documents joints (depuis le 03/11, « Demander une modification » ajoute ou retire aussi des documents : un écart entre
+`pj_propose` et `pj_retenu` est une leçon sur le choix des documents, étape 6). Une correction
 vue deux fois devient une règle : applique-la partout et cite-la dans `resume`, pour qu'elle entre dans la section
 « Corrections de Yacin » de `docs/STYLE-EMAILS.md`.
 
@@ -134,10 +141,12 @@ vue deux fois devient une règle : applique-la partout et cite-la dans `resume`,
   et Yacin (la table n'est chargée qu'une fois par jour, vers 10:46). Yacin anime les démos et envoie récaps et
   invitations depuis sa boîte : elle se lit comme les deux autres.
 - **Agenda** : rendez-vous externes des 48 prochaines heures.
-- **Documents sales** : `public."SalesDocument"`, ce que Gang4 peut joindre à un email (des études de cas pour
-  l'instant, d'autres types plus tard ; demande de Yacin du 03/11), lu une fois par calcul :
+- **Documents sales** : `public."SalesDocument"`, ce que Gang4 peut envoyer dans un email (demande de Yacin du
+  03/11) : un document à `fichier` (études de cas Perifit, Little Cigogne / Plumaïa et Mium Lab au 03/11) se joint au
+  brouillon (`pieces_jointes`) ; un document à `url` (la présentation Gang4, « Présentation Gang4 » en français et
+  « Présentation Gang4 (anglais) ») est une page web, mise en lien dans le corps. Lu une fois par calcul :
   ```sql
-  select id, nom, type, marque, secteur, mots_cles, resume, chiffres_cles, langue, fichier, taille_octets
+  select id, nom, type, marque, secteur, mots_cles, resume, chiffres_cles, langue, fichier, url, taille_octets
   from public."SalesDocument" where actif order by type, nom;
   ```
 - **Comptes rendus** : Claap (workspace Gang4) pour les démos et points récents, utile pour les récaps. À défaut
@@ -492,7 +501,10 @@ changent si un fait daté s'ajoute ; `avant_envoi` est repris lui aussi, sans le
 (invitation créée, batch lancé). Une carte d'avant le 03/11 qui annonce une étude de cas « ci-jointe » sans
 `pieces_jointes`, avec « joindre l'étude de cas … » dans `avant_envoi`, reçoit le document de `SalesDocument` qui la
 couvre (règle ci-dessous) : ajouté à `pieces_jointes` sans toucher au corps (« ci-jointe » reste vrai), et ce geste
-retiré d'`avant_envoi` ; `resume` le dit. Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
+retiré d'`avant_envoi` ; `resume` le dit. De même, une carte reprise dont `avant_envoi` dit « joindre la présentation
+Gang4 » (cartes d'avant le soir du 03/11) reçoit le lien de la présentation dans le corps, à la place de son annonce
+« ci-jointe » (« voici la présentation de Gang4 : https://gang4.io/presentation »), seul changement du corps, et ce
+geste sort d'`avant_envoi`. Les gestes repris sans préfixe reçoivent « ⏳ » (étape 7). Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
 écris un nouveau contenu, sans `contenu_initial` ni `modifications`, et dis-le dans `resume` : ses corrections restent
 des leçons (étape 1). Une carte d'avant le 27/10 dont le contenu est un `document` (plan d'étude, plan d'action) ne se
 reprend pas : écris l'email qui la remplace (« Toujours un email », ci-dessous).
@@ -507,10 +519,11 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
 
 **Email** (le cas courant), `contenu` =
 `{"type": "email", "boite": "samuel|lucie|yacin", "a": [...], "cc": [...], "objet": "...", "corps": "...", "gmail_thread_id": "...", "pieces_jointes": [{"id": "...", "nom": "...", "fichier": "..."}]}`
-- `pieces_jointes` : les documents de `SalesDocument` que « Valider » joint au brouillon (`id`, `nom` et `fichier`
-  recopiés de la table), deux au plus, 2,8 Mo au plus en tout (`taille_octets`) ; absent ou `[]` sans document. Le
-  flow n8n télécharge chaque fichier du bucket `sales-documents` et l'ajoute au brouillon ; la carte les montre sous
-  l'objet.
+- `pieces_jointes` : les documents à `fichier` de `SalesDocument` que « Valider » joint au brouillon (`id`, `nom` et
+  `fichier` recopiés de la table), deux au plus d'habitude (règle ci-dessous), jamais plus de 5 ni plus de 15 Mo en
+  tout (`taille_octets` ; la base et n8n refusent au-delà) ; absent ou `[]` sans document. Jamais un document à `url`
+  (il va dans le corps). Le flow n8n télécharge chaque fichier du bucket `sales-documents` et l'ajoute au brouillon ;
+  la carte les montre sous l'objet et en ✅ dans « Avant l'envoi ».
 - `boite` : la boîte qui porte la conversation (Samuel : connecteur Gmail ; Lucie : Gmail de Lucie ; Yacin
   quand la conversation n'existe que chez lui).
 - Réponse dans le fil existant : objet « Re: <objet du fil> » et `gmail_thread_id`. Quand aucun fil ne
@@ -563,7 +576,8 @@ l'envoi.
   2. le document dont la marque ressemble le plus à la sienne (`secteur`, `mots_cles`, `resume`) : même secteur, même
      modèle (box, abonnement, objet connecté), même ordre de budget Meta, même ambition internationale ;
   3. à égalité, celui dont les `chiffres_cles` parlent le plus à ce que le prospect cherche (CPA, nouveaux marchés).
-  Deux documents au plus. Jamais l'étude d'une marque à cette marque ni à son concurrent direct (même produit).
+  Deux documents joints au plus, sauf si le prospect en a demandé plus (« toutes vos études ») : 5 au plus, 15 Mo au
+  plus en tout. Jamais l'étude d'une marque à cette marque ni à son concurrent direct (même produit).
   L'email nomme ce qui est joint, avec ce qui en fait un exemple proche s'il est réel (même secteur, même modèle ou
   même marché, lu dans `secteur`, `mots_cles` et `resume` : « l'étude de cas Little Cigogne / Plumaïa, une box de mode
   par abonnement, ci-jointe ») ; sinon il nomme le document pour ce qu'il est, sans parler de proximité (Wopilo,
@@ -573,13 +587,18 @@ l'envoi.
   Ce qu'aucun document ne couvre ne s'invente pas. Une demande en partie couverte (The Bradery : cas chiffrés par
   verticale, mode, maison, food et beauté ; seule la mode l'est) : joins ce qui s'en approche, l'email le dit
   simplement (« pour la mode, l'étude de cas Little Cigogne / Plumaïa, ci-jointe ; je reviens vers toi pour les autres
-  verticales »), et `avant_envoi` dit ce qui manque (« joindre une étude de cas maison, food ou beauté si elle existe
+  verticales »), et `avant_envoi` dit ce qui manque (« ⏳ joindre une étude de cas maison, food ou beauté si elle existe
   hors des documents sales, et retirer alors « je reviens vers toi pour les autres verticales » du corps »). Aucun
   document ne couvre la demande : une étude vidéo avant la sortie de l'offre vidéo (`docs/FUNNEL.md` §7, point 48) →
   l'action attend (étape 3, verdict « attend la sortie de l'offre vidéo ») ; sinon la carte reste l'email (un contenu
   à produire ne bloque jamais, 22/10) : l'étude est annoncée « ci-jointe » sans être décrite, `pieces_jointes` vide, et
-  `avant_envoi` dit « joindre l'étude de cas <sujet> (aucune dans les documents sales) ». Un type absent de la table
-  (la présentation Gang4, au 03/11) reste un geste d'`avant_envoi` (« joindre la présentation Gang4 »), annoncé
+  `avant_envoi` dit « ⏳ joindre l'étude de cas <sujet> (aucune dans les documents sales) ».
+  **Présentation Gang4** (Yacin, 03/11 : « un lien que tu pourrais ajouter toi-même ») : un document à `url` ne se
+  joint jamais ; son url va dans le corps, telle quelle, dans la langue de l'email (« Présentation Gang4 » en
+  français, « Présentation Gang4 (anglais) » pour un email en anglais) : « voici la présentation de Gang4 :
+  https://gang4.io/presentation ». Une présentation promise ou demandée part ainsi dans le même email, jamais en geste
+  d'`avant_envoi` ; la carte affiche « ✅ Lien dans l'email : Présentation Gang4 ». Un type absent de la table (une
+  grille tarifaire au 03/11) reste un geste d'`avant_envoi` (« ⏳ joindre la grille tarifaire »), annoncé
   « ci-jointe ».
 - **Offre promise** → l'email qui la fait : ce qui a été dit en démo (Claap), les conditions des offres déjà envoyées
   par la même boîte (recherche ciblée dans les envoyés : « offre », « proposition », « tarif », 90 jours), le modèle de
@@ -687,11 +706,16 @@ returning run_id;
   l'email doit obtenir : un créneau dans l'objectif est un créneau demandé dans l'email, et l'email ne demande rien que
   l'objectif ne vise. Le 27/10 au soir, Emily's Pillow visait « un créneau » sans en demander, et The Bradery « ouvrir
   le premier test » sans le demander.
-- `avant_envoi` : ce que Gang4 doit faire avant d'envoyer l'email (étapes 5 et 6), affiché en section « Avant
-  l'envoi » sous « Objectif » ; plusieurs gestes séparés par « ; », chacun avec un verbe en tête et sa page de l'admin
-  quand il s'y fait (jamais de « ; » dans un geste : la page coupe dessus ; une énumération dans un geste se fait avec
-  des virgules ; pas de préfixe « Avant l'envoi : ») (« créer les invitations de Yoann et Alban dans Orga › Bricks › Utilisateurs ; lancer un batch
-  pour Bricks dans Whitelisting › Batch »), 600 caractères au plus. `null` quand il n'y a rien à faire. Jusqu'au
+- `avant_envoi` : ce que Gang4 doit encore faire avant d'envoyer l'email (étapes 5 et 6), affiché en section « Avant
+  l'envoi » sous « Objectif » ; plusieurs gestes séparés par « ; », chacun avec « ⏳ » puis un verbe en tête et sa page
+  de l'admin quand il s'y fait (jamais de « ; » dans un geste : la page coupe dessus ; une énumération dans un geste se
+  fait avec des virgules ; pas de préfixe « Avant l'envoi : ») (« ⏳ créer les invitations de Yoann et Alban dans
+  Orga › Bricks › Utilisateurs ; ⏳ lancer un batch pour Bricks dans Whitelisting › Batch »), 600 caractères au plus,
+  préfixes compris. Rien de ce que tu as déjà fait dans le contenu : la carte affiche d'elle-même « ✅ Pièce jointe :
+  <nom> » pour chaque document de `pieces_jointes` et « ✅ Lien dans l'email : <nom> » pour l'url d'un document sales
+  dans le corps (Yacin, 03/11 : « voir simplement ce qui a été fait et ce qui reste à faire » ; la carte The Bradery
+  disait « joindre la présentation Gang4 » et « joindre une étude de cas » alors que l'étude était jointe et la
+  présentation un lien). `null` quand il ne reste rien à faire. Jusqu'au
   27/10 au soir, cette phrase finissait `pourquoi` (« Avant l'envoi : … ») ; la page découpe encore ces cartes.
 - `deal_nom` : le nom du deal tel qu'affiché dans Attio, sans « - Deal ».
 - `responsable` : qui gère le deal, affiché en tag à côté de son nom (Yacin, 27/10). C'est l'expéditeur du dernier
