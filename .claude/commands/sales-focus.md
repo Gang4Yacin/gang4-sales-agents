@@ -16,7 +16,9 @@ l'action » crée alors le brouillon dans la boîte Gmail qui porte la conversat
 Tu n'écris **nulle part** sauf dans Supabase, tables `public."SalesFocusRun"` et `public."SalesFocusAction"`
 (migrations `20261021160000_sales_actions.sql`, `20261022090000_sales_focus_v2.sql`,
 `20261022170000_sales_focus_v3.sql`, `20261022190000_sales_focus_top10.sql`, `20261023190000_sales_focus_v5.sql`,
-`20261027180000_sales_focus_responsable.sql` et `20261027200000_sales_focus_avant_envoi.sql` du repo de l'admin), et dans Attio pour un seul cas : un « Pas pertinent » de la page à traiter (étape 2 bis), sur
+`20261027180000_sales_focus_responsable.sql`, `20261027200000_sales_focus_avant_envoi.sql` et
+`20261105120000_sales_focus_historique_lecons.sql` du repo de l'admin) et `public."SalesCopyLecon"` (les leçons
+`envoi` seulement, étape 1), et dans Attio pour un seul cas : un « Pas pertinent » de la page à traiter (étape 2 bis), sur
 son deal (`update-record` : next step, date, Balle ; `create-note`), tracé dans `sales.run_log` et
 `sales.applied_actions`. Un seul message part : une courte notification dans Slack `#sales-ops`, une fois le calcul
 écrit, avec le lien vers la page (étape 8). Ni n8n, ni Lemlist, ni email.
@@ -128,7 +130,10 @@ order by a.statut_change_at desc limit 15;
 cherche dans la boîte `preparation.boite` le message parti de Gang4 dans le fil `preparation.thread_id` (ou à
 `contenu.a[0]`) après `statut_change_at` (Samuel : `get_thread` ; Lucie et Yacin : leur outil, `q` = `in:sent
 to:<adresse>`, `receivedAfter` = la validation). Trouvé → une ligne, le corps sans la citation du fil (« Le … a écrit
-: » et ce qui suit), les pièces jointes par leur nom :
+: » et ce qui suit). Les pièces jointes s'écrivent des deux côtés sous le même nom : le `nom` du document (celui de
+`contenu.pieces_jointes[].nom`) ; un fichier du message envoyé dont le nom est la fin du `fichier` d'un document de
+`SalesDocument` (n8n nomme chaque PDF d'après son fichier du bucket) prend le `nom` de ce document, un autre fichier
+garde son nom :
 ```sql
 insert into public."SalesCopyLecon"
   (type, action_id, cle, deal_nom, boite, avant_objet, avant_corps, apres_objet, apres_corps,
@@ -140,19 +145,40 @@ on conflict (gmail_message_id) where gmail_message_id is not null do nothing;
 ```
 Pas encore parti → rien (le calcul suivant réessaie, 30 jours au plus).
 
-Puis lis les leçons des 90 derniers jours :
+Puis lis les leçons des 90 derniers jours, en deux lectures. D'abord les emails validés puis envoyés (les modèles de
+l'étape 6) :
 ```sql
-select l.created_at at time zone 'Europe/Paris' as le, l.type, l.deal_nom, l.consigne,
-       l.avant_corps, l.apres_corps, l.avant_pieces_jointes, l.apres_pieces_jointes
+select l.envoye_le at time zone 'Europe/Paris' as envoye, l.deal_nom, l.cle, l.boite, l.avant_objet, l.avant_corps,
+       l.apres_objet, l.apres_corps, l.avant_pieces_jointes, l.apres_pieces_jointes
 from public."SalesCopyLecon" l
-where l.annulee_le is null and l.created_at > now() - interval '90 days'
-order by l.created_at desc
-limit 40;
+where l.type = 'envoi' and l.annulee_le is null and l.created_at > now() - interval '90 days'
+order by l.envoye_le desc
+limit 30;
 ```
-Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même longueur visée, mêmes
-documents joints (un écart entre `avant_pieces_jointes` et `apres_pieces_jointes` est une leçon sur le choix des
-documents, étape 6). Pour une leçon `envoi`, compare ce que tu avais préparé à ce qui est parti : chaque écart est une
-correction (le 05/11, la relance Circle Sportswear préparée avec la présentation et des créas est partie courte, sans
+Puis une ligne par carte modifiée sur la page : ta version (premier « avant »), celle de Yacin (dernier « après ») et
+ses consignes dans l'ordre :
+```sql
+with l as (
+  select * from public."SalesCopyLecon"
+  where annulee_le is null and created_at > now() - interval '90 days' and type in ('consigne', 'main')
+)
+select coalesce(l.action_id::text, l.cle) as carte, max(l.cle) as cle, max(l.deal_nom) as deal_nom,
+       max(l.boite) as boite, max(l.created_at) at time zone 'Europe/Paris' as derniere,
+       array_agg(l.consigne order by l.created_at) filter (where l.consigne is not null) as consignes,
+       (array_agg(l.avant_objet order by l.created_at))[1] as avant_objet,
+       (array_agg(l.avant_corps order by l.created_at))[1] as avant_corps,
+       (array_agg(l.apres_objet order by l.created_at desc))[1] as apres_objet,
+       (array_agg(l.apres_corps order by l.created_at desc))[1] as apres_corps,
+       (array_agg(to_jsonb(l.avant_pieces_jointes) order by l.created_at))[1] as avant_pj,
+       (array_agg(to_jsonb(l.apres_pieces_jointes) order by l.created_at desc))[1] as apres_pj
+from l group by 1 order by max(l.created_at) desc limit 30;
+```
+La situation d'une leçon se lit dans sa `cle` (`deal:<id>:<verbe>`, le verbe de la carte) et sa boîte dans `boite`.
+Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même objet raccourci (un écart entre
+`avant_objet` et `apres_objet` est une leçon sur l'objet : le 27/10, « Social Desk x Gang4 : on lance le test ? » est
+devenu « Social Desk x Gang4 »), même longueur visée, mêmes documents joints (seul un document ajouté ou retiré entre
+`avant_pj` et `apres_pj` est une leçon sur le choix des documents, étape 6). Pour une leçon `envoi`, compare ce que tu
+avais préparé à ce qui est parti : chaque écart est une correction (le 05/11, la relance Circle Sportswear préparée avec la présentation et des créas est partie courte, sans
 elles, avec un rappel de ce qu'est Gang4). Une correction vue deux fois devient une règle : applique-la partout et
 cite-la dans `resume`, pour qu'elle entre dans la section « Corrections de Yacin » de `docs/STYLE-EMAILS.md`.
 Les retouches que tu as faites toi-même à une reprise (entrées `source: sales-focus` de `modifications`, étape 6) ne
@@ -454,8 +480,9 @@ Payfit écarté, Samuel avait répondu à Julie Florin à 9:43 ; dans la nuit du
 proposait d'« envoyer le récap de la démo » que Yacin avait envoyé le 23/10 à 16:54, sa boîte n'étant lue que par
 `ProspectTouch` (jusqu'à 10:38).
 
-**Avant de proposer un rendez-vous** (onboarding, call, démo), cherche si un rendez-vous **du même type** avec la
-marque a déjà été tenu ou est déjà calé : `list_events` sur les agendas de Samuel, Lucie et Yacin, des 60 derniers
+**Pour chaque deal retenu**, quelle que soit la carte (pour `historique.prochain_rdv`, étape 7), et **avant de proposer
+un rendez-vous** (onboarding, call, démo), pour savoir si un rendez-vous **du même type** avec la marque a déjà été
+tenu ou est déjà calé, cherche ses rendez-vous : `list_events` sur les agendas de Samuel, Lucie et Yacin, des 60 derniers
 jours aux 30 prochains, `fullText` = chaque domaine de la company, puis le nom de chaque contact du deal, même si un
 domaine a déjà donné des résultats (il couvre les invités et la description « Réservé par » ; un consultant réserve
 depuis son propre domaine : la démo Gourmandiz du 09/10, réservée par contact@sevcorp.fr, ne sort que sur
@@ -589,7 +616,9 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      demander, question du prospect, mauvais contact qui renvoie vers quelqu'un d'autre, go à concrétiser,
      facture, conversation qui retombe, offre promise, références clients, étude de cas à envoyer) et suis ce que
      le guide dit d'y écrire. Un point décliné à recaler : l'email dit ce que le point devait apporter, d'après le
-     compte rendu (Tikamoon, 27/10 : présenter Gang4 à ses collègues, notes Gemini du 04/09). Une démo manquée à
+     compte rendu, sans date ni personne ajoutée : Tikamoon, 05/11, « On a finalement annulé le point qu'on devait faire
+     pour parler des Partnership Ads en masse et des UGC gratuits en illimité que je t'avais présentés. Quand est-ce
+     que tu aurais 10/15 minutes pour qu'on en reparle ? » (version de Yacin). Une démo manquée à
      recaler : l'email dit ce qu'elle devait montrer, d'après l'envoi qui l'a fait réserver (séquence Lemlist, boîte de
      Lucie) et les créas de démo de la marque en base, avec leur nombre (« les 20 UGC qu'on a préparés pour
      Goodvest ») :
@@ -612,9 +641,13 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots (moins pour une simple relance ou pour l'email
   qui accompagne une pièce jointe promise), une seule demande claire (un créneau, un accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
   réservation de `docs/FUNNEL.md` (étape 3), jamais le dernier lien envoyé : démo Partnership Ad pour une démo,
-  onboarding pour un onboarding. Ces pages réservent dans l'agenda de Samuel : depuis la boîte de Lucie ou de Yacin,
+  onboarding pour un onboarding. Un call de reprise (relance après une démo, un point décliné ou reporté) prend la
+  page Partnership Ad, `https://calendar.app.google/rDKuiVpzooGZxc2H8`, avec « Je te laisse mon calendrier ici pour
+  trouver un créneau commun plus facilement : <lien> » (Yacin, 05/11 : The Bradery, Wopilo, Circle Sportswear,
+  depuis la boîte de Samuel). Ces pages réservent dans l'agenda de Samuel : depuis la boîte de Lucie ou de Yacin,
   ou sans page du bon type dans la liste, demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de
-  Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel.
+  Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel
+  (un onboarding n'est pas une démo ; un call de reprise, lui, en est une suite).
 - **Jamais d'invention** : aucun chiffre, prix, remise, délai, durée de rendez-vous ou promesse qui ne soit déjà
   dans les emails, les comptes rendus ou la base (la durée d'un point se reprend des envois de la même boîte : Samuel
   propose « 15 minutes », Yacin « 10/15 minutes »). Un message ne dit jamais qu'une chose existe sur la plateforme (créas à valider, accès,
@@ -649,7 +682,9 @@ l'envoi.
   par abonnement, ci-jointe ») ; sinon il nomme le document pour ce qu'il est, sans parler de proximité (Wopilo,
   literie : « les études de cas Perifit et Little Cigogne / Plumaïa, deux marques e-commerce, ci-jointes »). Il peut
   citer au plus un chiffre de `chiffres_cles`, mot pour mot avec sa période et son périmètre, et finit par une seule
-  demande. `pourquoi` dit le document choisi et pourquoi, ou qu'aucun n'est de son secteur.
+  demande. Exception : des documents promis il y a des mois, envoyés avec une demande de créneau, viennent après elle,
+  en une ligne (« D'ailleurs, tu m'avais demandé des études de cas à l'époque : voici celles de … ci-jointes » ;
+  Wopilo, 05/11). `pourquoi` dit le document choisi et pourquoi, ou qu'aucun n'est de son secteur.
   Ce qu'aucun document ne couvre ne s'invente pas. Une demande en partie couverte (The Bradery : cas chiffrés par
   verticale, mode, maison, food et beauté ; seule la mode l'est) : joins ce qui s'en approche, l'email le dit
   simplement (« pour la mode, l'étude de cas Little Cigogne / Plumaïa, ci-jointe ; je reviens vers toi pour les autres
@@ -955,7 +990,8 @@ la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : no
   contenu ne dit que ce qui est vérifiable (ce qui manque reste `[à compléter : …]`, étape 6).
 - Jamais l'absence d'un envoi affirmée sur une boîte qu'on n'a pas lue à jour : dans le doute, l'email, et `avant_envoi` dit
   « vérifier que … n'est pas déjà parti » (étape 5).
-- Aucune écriture hors de `SalesFocusRun` et `SalesFocusAction` (et `sales_focus_motif_traite`), sauf pour un
+- Aucune écriture hors de `SalesFocusRun` et `SalesFocusAction` (et `sales_focus_motif_traite`), et des leçons
+  `envoi` de `SalesCopyLecon` (étape 1, jamais une autre ligne de cette table), sauf pour un
   « Pas pertinent » à traiter (étape 2 bis) : son deal dans Attio (`update-record`, `create-note`), tracé dans
   `sales.run_log` et `sales.applied_actions`. Jamais d'autre écriture dans Attio. Aucun email envoyé, aucun
   brouillon créé : c'est « Valider » qui prépare.

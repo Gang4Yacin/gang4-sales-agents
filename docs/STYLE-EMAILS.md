@@ -44,13 +44,17 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 - **Ton** : phrases courtes, direct et chaleureux, sans formule creuse ni superlatif.
 - **Longueur** : de 80 à 150 mots, moins pour une simple relance ou pour l'email qui accompagne une pièce jointe
   promise (étude de cas « ci-jointe »).
-- **Demande** : une seule, claire, en fin d'email (un créneau, un accès, une réponse), jamais au conditionnel d'une
+- **Demande** : une seule, claire, en fin d'email (un créneau, un accès, une réponse ; des documents promis il y a des
+  mois et envoyés avec une demande de créneau viennent après elle, en une ligne « D'ailleurs… », Wopilo, 05/11), jamais
+  au conditionnel d'une
   autre question : une question suivie de « Si oui, tu aurais 15 minutes … ? » ne demande plus rien si la réponse est
   non (Tikamoon, 27/10). C'est l'objectif de la carte, ni plus ni moins (pour une simple réponse à une question du
   prospect, l'objectif est qu'il ait sa réponse).
 - **Lien d'agenda** : celui du type de rendez-vous demandé (démo ou onboarding), pris dans la liste des pages de
-  réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Ces pages réservent dans l'agenda de
-  Samuel : depuis la boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
+  réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Un call de reprise (relance après une
+  démo, un point décliné ou reporté) prend la page Partnership Ad, avec « Je te laisse mon calendrier ici pour trouver
+  un créneau commun plus facilement : <lien> » (Yacin, 05/11). Ces pages réservent dans l'agenda de Samuel : depuis la
+  boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
 - **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, une durée de rendez-vous (reprise des
   envois de la même boîte : Samuel propose « 15 minutes », Yacin « 10/15 minutes »), un client, une fonctionnalité ou une promesse vient d'un
@@ -72,7 +76,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 
 | Situation | Ce que dit l'email | La demande |
 |---|---|---|
-| **Relance après un silence** | Le dernier échange en une phrase (quoi, quand). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
+| **Relance après un silence** | Le dernier échange en une phrase (quoi ; « lors de la démo », « lors de notre dernier call » plutôt qu'une date). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
 | **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase, d'après l'envoi qui l'a fait réserver (Lemlist ou email) et les créas de démo de la marque en base (Pimpant avait réservé pour voir les UGC préparés pour elle) ; pour un point de suivi décliné, ce qu'il devait apporter, d'après le compte rendu (Claap, à défaut les notes Gemini). | Recaler, avec le lien d'agenda. |
 | **Récap après une démo ou un appel** | Merci en une phrase. Ce qui a été dit, tel que dans le compte rendu : besoins, prochaines étapes, qui fait quoi. | La prochaine étape, datée si elle l'a été. |
 | **Gang4 a besoin d'informations** (accès, marques visées, éléments pour lancer) | Pourquoi on en a besoin, en une phrase. | La liste courte de ce qu'il faut, ou un court appel pour le faire ensemble. |
