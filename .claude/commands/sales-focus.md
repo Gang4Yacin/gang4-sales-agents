@@ -26,6 +26,14 @@ son deal (`update-record` : next step, date, Balle ; `create-note`), tracé dans
 Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d'action », « pas grave »,
 « pas prioritaire ») ne revient pas dans le top.
 
+**La routine tourne sans personne pour répondre** : aucune commande ne doit attendre une validation. Écris chaque
+fichier (cartes en JSON, scripts) avec l'outil Write, jamais par un heredoc Bash (`cat > … <<'EOF'`) ni par
+`python3 -c` avec du texte en ligne : une commande Bash qui contient des accolades et des guillemets demande une
+validation (« brace with quote character ») et bloque le calcul. Le 05/11 à 22:13, deux sous-agents ont écrit leurs
+cartes ainsi et la routine est restée bloquée. Bash ne sert qu'à des commandes simples sur des fichiers déjà écrits
+(`python3 -I <fichier>.py`, `python3 -m json.tool <fichier>.json`). Si tu confies des dossiers à des sous-agents,
+mets cette règle dans leur brief, mot pour mot.
+
 ## Les règles de Yacin (22/10)
 - **Une carte = un deal.** Jamais une action qui regroupe plusieurs deals.
 - Sur la carte : le deal, qui le gère (`responsable`, en tag depuis le 27/10), pourquoi maintenant, l'objectif, ce qu'il
@@ -1083,6 +1091,8 @@ la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : no
   brouillon créé : c'est « Valider » qui prépare.
 - Un seul message Slack, court, dans `#sales-ops` (étape 8), jamais ailleurs. Son échec n'arrête jamais le calcul.
 - Français, phrases courtes, noms complets d'Attio.
+- Aucune commande qui attend une validation : les fichiers avec l'outil Write, Bash pour des commandes simples
+  seulement (voir le début), sous-agents compris.
 
 ## Planification
 Routine claude.ai « 🎯 Routine « Sales Focus » (/sales-focus) » (`trig_01Sfwdw6t7dUhCFuvg48YYtx`), créée le 22/10
