@@ -924,6 +924,9 @@ returning run_id;
     invitation d'agenda est attribuée à son organisateur, avec ce que dit sa description (« voici l'invit pour te
     montrer les 20 UGC », Flotte, 10/07) ; des créas validées sont datées de leur validation, une réponse automatique
     (« Je quitte Smoon… », absence) se dit comme telle, un email qui rebondit aussi.
+  - **Des faits, pas des états** : aucune ligne datée de l'heure du calcul (« 16 UGC validés » ou « Aucun rendez-vous
+    calé » à 19:27 le 05/11) ; le nombre de créas prêtes va dans `resume`, l'absence de rendez-vous dans
+    `prochain_rdv`. Une ligne sans heure connue garde le jour seul (`AAAA-MM-JJ`), jamais `T00:00`.
   - **Rien d'important ne manque** : chaque réponse du prospect et chaque réponse de Gang4 qui la suit (Smoon, 20/10 :
     Samuel envoie son calendrier, Bastian réserve 9 minutes après), chaque rendez-vous calé, tenu, manqué ou décliné,
     chaque appel (Allo), chaque promesse ou annonce de Gang4 (Maju, 24/08 : « une cinquantaine de créas » annoncées),
