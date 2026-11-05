@@ -387,6 +387,17 @@ Gang4 ne doit que le créneau : la décision du prospect attend ce livrable. Un 
 Attio) est l'argent en jeu le plus sûr. Le 27/10 au soir, Bloon Paris (présentation et 15 à 30 profils promis à Mégane
 Pouchot pour le 02/10, budget Meta de 30 à 150 k€ par mois en France) est resté hors du top, derrière Pimpant (démo
 manquée le 23/09, Samuel s'était excusé le jour même avec son lien d'agenda).
+Une promesse de Gang4 non tenue se cherche sur tous les candidats, pas seulement les `N + 3` relus : lis les notes
+Attio « - auto » de chaque deal candidat (« Sales <Mois> <Année> - auto », « Revue de la fermeture du deal - auto ») ;
+celui dont une note dit qu'un livrable promis n'est pas parti (proposition, présentation, créas, retour promis) entre
+dans les dossiers relus. Sont aussi des promesses non tenues : un brouillon de Gang4 jamais envoyé qui annonce le
+livrable, et une promesse liée à un fait de Gang4 une fois ce fait arrivé (« je te tiens au courant dès qu'on lance ces
+marchés », marché ouvert depuis). Un deal à relancer dont le dernier rendez-vous tenu a laissé une promesse de Gang4
+non tenue (étapes suivantes du compte rendu Claap, à défaut des notes Gemini) est un livrable promis, pas une relance.
+Le 05/11, le top 10 gardait Hindbag et Circle Sportswear comme relances et laissait dehors Alltricks (proposition
+promise au rendez-vous du 21/01 avec l'équipe acquisition, brouillons des 31/03 et 28/05 jamais partis) et Ultra Premium
+Direct (test promis dès l'ouverture des Pays-Bas le 23/03, marché ouvert depuis juin, la marque jamais prévenue) ;
+Circle Sportswear lui-même attendait la présentation et 2 à 3 visuels promis à sa démo du 08/07.
 
 ## Étape 5 — Vérifier à date
 Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures dans les boîtes de Samuel,
@@ -537,15 +548,29 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   la carte les montre sous l'objet et en ✅ dans « Avant l'envoi ».
 - `boite` : la boîte qui porte la conversation (Samuel : connecteur Gmail ; Lucie : Gmail de Lucie ; Yacin
   quand la conversation n'existe que chez lui).
-- Réponse dans le fil existant : objet « Re: <objet du fil> » et `gmail_thread_id`. Quand aucun fil ne
-  convient (par exemple, après une démo réservée en ligne, le seul fil est la confirmation), mets
+- Réponse dans le fil existant : objet « Re: <objet du fil> » et `gmail_thread_id`. Le fil est le plus récent où
+  Gang4 a écrit à ce contact, jamais un fil d'avant le rendez-vous quand un fil plus récent existe ; le tutoiement ou le
+  vouvoiement suit le dernier message de Gang4 à cette personne, tous fils confondus. Le 05/11, Hindbag répondait en
+  vouvoyant dans le fil d'avant la démo, alors que Samuel tutoyait Pierre depuis le 04/09 dans « Hindbag X Gang4 ».
+  Quand aucun fil ne convient (par exemple, après une démo réservée en ligne, le seul fil est la confirmation), mets
   `"nouveau_fil": true` et un objet neuf.
 - **Écris comme Gang4**, forme et fond, en suivant `docs/STYLE-EMAILS.md` :
   1. Repère la situation de la carte (relance après un silence, démo manquée à recaler, récap, informations à
      demander, question du prospect, mauvais contact qui renvoie vers quelqu'un d'autre, go à concrétiser,
      facture, conversation qui retombe, offre promise, références clients, étude de cas à envoyer) et suis ce que
      le guide dit d'y écrire. Un point décliné à recaler : l'email dit ce que le point devait apporter, d'après le
-     compte rendu (Tikamoon, 27/10). Avec un livrable promis, la carte suit les deux lignes (Wopilo, 27/10).
+     compte rendu (Tikamoon, 27/10 : présenter Gang4 à ses collègues, notes Gemini du 04/09). Une démo manquée à
+     recaler : l'email dit ce qu'elle devait montrer, d'après l'envoi qui l'a fait réserver (séquence Lemlist, boîte de
+     Lucie) et les créas de démo de la marque en base, avec leur nombre (« les 20 UGC qu'on a préparés pour
+     Goodvest ») :
+     ```sql
+     select bc.name, count(*) as creas from public.ad_creative ac
+     join public."BusinessClient" bc on bc.id = ac.business_client_id
+     where bc.name ilike '%<marque>%' and ac.state in ('GANG4_VALIDATED', 'B2B_VALIDATED') group by 1;
+     ```
+     Le 05/11, Pimpant (24 UGC prêts) et Goodvest (20) disaient seulement « comment Gang4 produit des créas UGC », et
+     Tikamoon ne disait plus ce que le point devait apporter. Avec un livrable promis, la carte suit les deux lignes
+     (Wopilo, 27/10).
   2. Relis tout le fil : tutoiement ou vouvoiement, salutation, signature, ce qui a déjà été dit.
   3. Lis au plus 3 emails envoyés par la même boîte dans une situation comparable : d'abord le libellé
      Gmail « Modèle », sinon une recherche ciblée dans les envoyés (mots de la situation, 90 derniers jours). Reprends
@@ -706,7 +731,13 @@ returning run_id;
   carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6), sauf un contenu `document` (devenu un email).
 - `titre` : verbe en tête, 80 caractères au plus.
 - `pourquoi` : une ou deux phrases avec le fait daté (JJ/MM, et l'heure si c'est aujourd'hui), sans ce qu'il faut
-  faire avant l'envoi (`avant_envoi`). Toutes les heures
+  faire avant l'envoi (`avant_envoi`). « Rien n'est reparti depuis <date> » part du dernier contact de Gang4, quel
+  qu'il soit : email, rendez-vous tenu, et envois des séquences Lemlist (boîte de Lucie, `ProspectTouch` source
+  `lemlist`), cités avec leur nombre et la date du dernier, rupture comprise. Le 05/11, Goodvest disait « sans suite
+  depuis » le 22/09 alors que trois emails de la séquence de Lucie (23/09, 30/09, rupture le 05/10) étaient restés sans
+  réponse, et Hindbag datait le silence de la démo du 04/09 alors que la présentation était partie le jour même et
+  qu'un point avait eu lieu le 10/09. La date d'une touche Lemlist se vérifie dans l'inbox Lemlist quand elle étonne
+  (une réponse de Pimpant du 21/01/2025 est datée du 10/09/2026 dans `ProspectTouch`). Toutes les heures
   écrites (`pourquoi`, `resume`, contenu) sont à l'heure de Paris : convertis tout horodatage UTC (Gmail, Supabase,
   Claap) avec le fuseau Europe/Paris, jamais avec un décalage fixe (UTC+2 du dernier dimanche de mars au dernier
   dimanche d'octobre, UTC+1 sinon ; en SQL, `at time zone 'Europe/Paris'`). Le 27/10, « 18:05 » (heure d'été
