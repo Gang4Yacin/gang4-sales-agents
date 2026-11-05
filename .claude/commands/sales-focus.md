@@ -140,12 +140,16 @@ garde son nom :
 ```sql
 insert into public."SalesCopyLecon"
   (type, action_id, cle, deal_nom, boite, avant_objet, avant_corps, apres_objet, apres_corps,
-   avant_pieces_jointes, apres_pieces_jointes, envoye_le, gmail_message_id)
+   avant_pieces_jointes, apres_pieces_jointes, envoye_le, gmail_message_id, gmail_thread_id, situation, contexte)
 values ('envoi', '<id>', '<cle>', '<deal>', '<boite>', $t$<objet préparé>$t$, $t$<corps préparé>$t$,
         $t$<objet envoyé>$t$, $t$<corps envoyé>$t$, '{<pj préparées>}', '{<pj envoyées>}', '<envoyé le, ISO>',
-        '<id du message Gmail>')
+        '<id du message Gmail>', '<id du fil>', '<situation>', $t$<contexte : une phrase>$t$)
 on conflict (gmail_message_id) where gmail_message_id is not null do nothing;
 ```
+`situation` : celle de la carte, parmi `relance_silence`, `demo_manquee`, `recap`, `infos`, `reponse_question`,
+`mauvais_contact`, `go_meta`, `offre`, `references`, `etude_de_cas`, `facture`, `conversation_retombe`, `prise_rdv`,
+`onboarding`, `autre` (situations de `docs/STYLE-EMAILS.md`) ; `contexte` : ce qui précédait l'email, en une phrase,
+sans citer le prospect.
 Pas encore parti → rien (le calcul suivant réessaie, 30 jours au plus).
 
 Puis lis les leçons des 90 derniers jours, en deux lectures. D'abord les emails validés puis envoyés (les modèles de
@@ -158,6 +162,8 @@ where l.type = 'envoi' and l.annulee_le is null and l.created_at > now() - inter
 order by l.envoye_le desc
 limit 30;
 ```
+Les **modèles** de l'équipe (`type = 'modele'`, depuis le 05/11 au soir : emails écrits à la main par Samuel, Lucie
+ou Yacin dans une vraie conversation, classés par situation) se lisent à l'étape 6, par situation.
 Puis une ligne par carte modifiée sur la page : ta version (premier « avant »), celle de Yacin (dernier « après ») et
 ses consignes dans l'ordre :
 ```sql
@@ -639,12 +645,25 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      Tikamoon ne disait plus ce que le point devait apporter. Avec un livrable promis, la carte suit les deux lignes
      (Wopilo, 27/10).
   2. Relis tout le fil : tutoiement ou vouvoiement, salutation, signature, ce qui a déjà été dit.
-  3. Lis au plus 3 emails envoyés dans une situation comparable : d'abord les leçons `envoi` de l'étape 1 (emails
-     validés puis envoyés, même situation, même boîte si possible), puis le libellé Gmail « Modèle », sinon une
-     recherche ciblée dans les envoyés (mots de la situation, 90 derniers jours). Reprends leur structure et leurs
-     tournures, jamais leurs faits. Ne parcours jamais une boîte en masse.
+  3. Lis de 3 à 5 emails de l'équipe dans la même situation (Yacin, 05/11 au soir : « il y a beaucoup plus d'emails
+     pertinents envoyés par Samuel, Yacin et Lucie en fonction des cas et des situations ») :
+     - d'abord les leçons `envoi` de l'étape 1 (emails validés puis envoyés, même situation, même boîte si possible) ;
+     - puis les modèles de la même situation :
+       ```sql
+       select l.envoye_le::date as le, l.boite, l.deal_nom, l.contexte, l.apres_objet, l.apres_corps
+       from public."SalesCopyLecon" l
+       where l.type = 'modele' and l.situation = '<situation de la carte>'
+       order by (l.boite = '<boîte de la carte>') desc, l.envoye_le desc
+       limit 5;
+       ```
+     - puis le libellé Gmail « Modèle », puis une recherche ciblée dans les envoyés de la boîte (mots de la
+       situation, 12 derniers mois), quelques emails écrits à la main dans une conversation (jamais une étape de
+       séquence Lemlist).
+     Reprends leur structure et leurs tournures, jamais leurs faits. Ne parcours jamais une boîte en masse. Tu lis les
+     modèles, tu n'en écris pas (la table ne reçoit de la routine que les leçons `envoi`).
   4. Applique les leçons de l'étape 1 et les « Corrections de Yacin » de `docs/STYLE-EMAILS.md` (le 05/11 : aucune
-     personne ajoutée au créneau demandé, peu de dates, relance courte et chaleureuse avec un rappel de ce qu'est Gang4).
+     personne ajoutée au créneau demandé, pas de date pour en mettre, relance courte et chaleureuse avec un rappel de ce
+     qu'est Gang4).
 - Le style de l'expéditeur dans le fil : « Hello <Prénom>, », tutoiement si le fil tutoie, phrases
   courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots (moins pour une simple relance ou pour l'email
   qui accompagne une pièce jointe promise), une seule demande claire (un créneau, un accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
@@ -785,9 +804,11 @@ marqué `[à compléter : …]` dans le contenu, et `avant_envoi` le dit (« com
 **Relis chaque email avant de l'écrire, point par point, et corrige-le** (le 05/11 au soir, 8 emails sur 10 citaient
 encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel de Gang4, alors que ces règles
 étaient écrites) :
-1. **Aucune date passée, aucun mois** : ni « fin juillet », « en avril », « en juin », « fin août », « de septembre »,
-   ni « du 22/09 », « du 28/10 », « à partir d'octobre ». Écris « lors de la démo », « lors de notre dernier call »,
-   « suite au message de Florence », « comme convenu ». Seuls un rendez-vous à venir ou une échéance gardent leur date.
+1. **Pas de date pour en mettre** (Yacin, 05/11 au soir : « tu peux mettre des dates si pertinent, mais ne cherche pas
+   à tout prix à les mettre ») : « lors de la démo », « lors de notre dernier call », « suite au message de Florence »
+   suffisent le plus souvent ; une date reste quand elle aide le prospect à se situer (un rendez-vous à venir, une
+   échéance, une démo récente, une date que le prospect a lui-même donnée). Le 05/11, « fin juillet », « du 22/09 » ou
+   « en avril » n'apportaient rien.
 2. **Une seule question, la demande, en fin d'email** : pas de « Est-ce que vous avez pu en discuter ? », « Tu as eu
    le temps d'y jeter un œil ? » ni « si c'est toujours d'actualité ? » avant le créneau ; le contexte se dit en
    affirmant (« Tu m'avais dit vouloir lancer un test avec votre nouvelle agence. »).
@@ -873,7 +894,11 @@ returning run_id;
   incomplète, j'ai besoin de plus de détails, de manière claire et facilement scannable »), détaillée en éléments :
   `{"type": "email|compte_rendu|agenda|note", "de": "...", "le": "...", "titre": "...", "extrait": "...",
   "elements": [{"canal": "gmail|linkedin|lemlist|google_meet|claap|agenda|appel|attio|plateforme", "de": "...",
-  "a": "...", "le": "...", "titre": "...", "points": ["...", "..."], "extrait": "..."}]}`.
+  "a": "...", "le": "...", "titre": "...", "points": ["...", "..."], "extrait": "...", "gmail": {"boite":
+  "samuel|lucie|yacin", "thread_id": "..."}}]}`.
+  - `gmail` (05/11 au soir, Yacin : « ajouter un lien vers l'email quand c'est Gmail ») : pour un email lu dans une
+    boîte de Gang4, la boîte et l'identifiant du fil tels que l'outil Gmail les a rendus (`threadId`) ; la page en fait
+    le lien « Ouvrir l'email ». Jamais d'url écrite à la main ; sans identifiant sûr, pas de `gmail`.
   - `elements` : de 1 à 3, tout ce qui justifie la carte, **triés par `le` décroissant** (le plus récent en premier ;
     le 05/11, 7 cartes sur 10 les rangeaient à l'envers) : le message du prospect, le
     compte rendu du rendez-vous où la promesse a été faite, l'événement d'agenda (décliné, manqué), l'envoi de Gang4
@@ -903,7 +928,9 @@ returning run_id;
   `{"lu_le": "<maintenant, ISO>", "etape": "<stage Attio>", "resume": "...", "prochain_rdv": {"le": "...", "titre":
   "...", "canal": "google_meet|agenda|appel", "avec": ["..."]} | null, "contacts": [{"nom": "...", "role": "..."}],
   "evenements": [{"le": "...", "canal": "...", "sens": "entrant|sortant|rdv|interne", "qui": "...", "titre": "...",
-  "resume": "..."}]}`.
+  "resume": "...", "gmail": {"boite": "samuel|lucie|yacin", "thread_id": "..."}}]}`. La page les affiche du plus
+  récent au plus ancien (Yacin, 05/11 au soir), quel que soit l'ordre écrit ; `gmail` comme pour la source, sur chaque
+  email (et chaque étape Lemlist dont le fil est connu dans la boîte).
   - `resume` : deux ou trois phrases pour quelqu'un qui découvre le deal : qui est la marque (secteur, budget Meta s'il
     est connu), ce qui s'est passé, où on en est, ce qu'on attend.
   - `prochain_rdv` : le prochain rendez-vous avec la marque dans les agendas de Samuel, Lucie et Yacin (30 jours, étape

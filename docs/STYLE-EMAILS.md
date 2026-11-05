@@ -8,12 +8,15 @@ Pour la routine `/sales-focus` (étape 6, écrire le contenu prêt) et pour la r
 
 1. **Le fil lui-même.** Avant d'écrire, la routine relit tout le fil : tutoiement ou vouvoiement, salutation,
    signature, longueur des messages, ce qui a déjà été dit et promis.
-2. **Les envois de la même boîte dans la même situation.** Au moment d'écrire une carte, elle lit au plus 3 emails
-   envoyés par la même boîte dans une situation comparable :
+2. **Les envois de l'équipe dans la même situation.** Au moment d'écrire une carte, elle lit de 3 à 5 emails envoyés
+   dans une situation comparable, de la même boîte si possible :
    - d'abord les emails de la page validés puis envoyés (leçons `envoi`, point 3) : la version que l'équipe a jugée
      bonne ;
+   - puis les **modèles** de la même situation (`SalesCopyLecon`, type `modele`, depuis le 05/11 au soir) : emails
+     écrits à la main par Samuel, Lucie ou Yacin dans une vraie conversation, classés par situation (table vide au
+     05/11 : l'import des envois passés attend la décision de Yacin) ;
    - puis ceux qui portent le libellé Gmail **« Modèle »** ;
-   - sinon, une recherche ciblée dans les envoyés.
+   - sinon, une recherche ciblée dans les envoyés (12 derniers mois).
 
    Elle en reprend la structure et les tournures, jamais les faits. Elle ne parcourt jamais une boîte en masse.
 3. **Les leçons de copywriting** (`public."SalesCopyLecon"`, depuis le 05/11 : « stocker les modifications demandées
@@ -76,7 +79,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 
 | Situation | Ce que dit l'email | La demande |
 |---|---|---|
-| **Relance après un silence** | Le dernier échange en une phrase (quoi ; « lors de la démo », « lors de notre dernier call » plutôt qu'une date). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
+| **Relance après un silence** | Le dernier échange en une phrase (quoi ; une date seulement si elle aide, « lors de la démo » suffit souvent). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
 | **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase, d'après l'envoi qui l'a fait réserver (Lemlist ou email) et les créas de démo de la marque en base (Pimpant avait réservé pour voir les UGC préparés pour elle) ; pour un point de suivi décliné, ce qu'il devait apporter, d'après le compte rendu (Claap, à défaut les notes Gemini). | Recaler, avec le lien d'agenda. |
 | **Récap après une démo ou un appel** | Merci en une phrase. Ce qui a été dit, tel que dans le compte rendu : besoins, prochaines étapes, qui fait quoi. | La prochaine étape, datée si elle l'a été. |
 | **Gang4 a besoin d'informations** (accès, marques visées, éléments pour lancer) | Pourquoi on en a besoin, en une phrase. | La liste courte de ce qu'il faut, ou un court appel pour le faire ensemble. |
@@ -96,8 +99,10 @@ calculs ou d'une lecture de `SalesCopyLecon`.
 
 - **Proposer un call sans ajouter de personnes** (05/11) : « Quand est-ce que tu aurais 10/15 minutes pour qu'on en
   reparle ? », jamais « avec Tim si possible ». Qui vient au call se décide au call.
-- **Peu de dates** (05/11) : « lors de la démo », « lors de notre dernier call », « comme promis », plutôt que « à la
-  démo du 4 septembre ». Une date ne s'écrit que si elle compte pour le prospect (une échéance, un rendez-vous à venir).
+- **Pas de date pour en mettre** (05/11, précisé le soir : « tu peux mettre des dates si pertinent, mais ne cherche pas
+  à tout prix à les mettre ») : « lors de la démo », « lors de notre dernier call », « comme promis » suffisent le plus
+  souvent ; une date reste quand elle aide le prospect à se situer (un rendez-vous à venir, une échéance, une démo
+  récente, une date qu'il a donnée).
 - **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
   Gang4 en une ligne (« Petit rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs diffusées
   depuis le compte de vraies personnes, et des UGC statiques en illimité. »), puis le créneau. Pas de livrables que
