@@ -547,6 +547,10 @@ where id = '<run_id>';
 Puis présente le message et son lien.
 
 ## Règles strictes
+- La routine tourne sans personne pour répondre : aucune commande ne doit attendre une validation. Écris les
+  fichiers avec l'outil Write, jamais par un heredoc Bash (`cat > … <<'EOF'`) ni `python3 -c` avec du texte en ligne
+  (une commande avec accolades et guillemets demande une validation et bloque le run, Sales Focus le 05/11) ; Bash
+  pour des commandes simples seulement. Même règle pour les sous-agents (dans leur brief).
 - **Autonome** : aucune question, aucune demande de validation, aucun « à trancher ». Entre deux corrections
   possibles, prends la plus prudente (le stage le moins avancé ; un deal ouvert plutôt que fermé quand le
   prospect a montré de l'intérêt) et écris ton doute dans la note d'audit.

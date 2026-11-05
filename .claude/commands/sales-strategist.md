@@ -137,6 +137,10 @@ Récupère sa réponse :
 - `"skipped: ..."` ou `"failed: ..."` → mentionne aussi.
 
 ## Règles strictes
+- La routine tourne sans personne pour répondre : aucune commande ne doit attendre une validation. Écris les
+  fichiers avec l'outil Write, jamais par un heredoc Bash (`cat > … <<'EOF'`) ni `python3 -c` avec du texte en ligne
+  (une commande avec accolades et guillemets demande une validation et bloque le run, Sales Focus le 05/11) ; Bash
+  pour des commandes simples seulement. Même règle pour les sous-agents (dans leur brief).
 
 - Toi (orchestrateur) tu n'écris **JAMAIS** dans Attio. Tu n'envoies **JAMAIS** d'email. Tu ne crées pas de tâches. Lecture seule sur tout.
 - Le strategist non plus n'écrit pas dans Attio (cf. son prompt).

@@ -134,6 +134,10 @@ sa réponse :
 - `skipped: <raison>` → mentionne-le aussi (ex. « rien de nouveau, pas de notif »).
 
 ## Règles strictes
+- La routine tourne sans personne pour répondre : aucune commande ne doit attendre une validation. Écris les
+  fichiers avec l'outil Write, jamais par un heredoc Bash (`cat > … <<'EOF'`) ni `python3 -c` avec du texte en ligne
+  (une commande avec accolades et guillemets demande une validation et bloque le run, Sales Focus le 05/11) ; Bash
+  pour des commandes simples seulement. Même règle pour les sous-agents (dans leur brief).
 
 - Toi (orchestrateur) tu n'écris **jamais** directement dans Attio : c'est `crm-sync` qui le fait,
   tracé dans `sales.applied_actions`.
