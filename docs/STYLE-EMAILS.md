@@ -10,14 +10,18 @@ Pour la routine `/sales-focus` (étape 6, écrire le contenu prêt) et pour la r
    signature, longueur des messages, ce qui a déjà été dit et promis.
 2. **Les envois de la même boîte dans la même situation.** Au moment d'écrire une carte, elle lit au plus 3 emails
    envoyés par la même boîte dans une situation comparable :
-   - d'abord ceux qui portent le libellé Gmail **« Modèle »** ;
+   - d'abord les emails de la page validés puis envoyés (leçons `envoi`, point 3) : la version que l'équipe a jugée
+     bonne ;
+   - puis ceux qui portent le libellé Gmail **« Modèle »** ;
    - sinon, une recherche ciblée dans les envoyés.
 
    Elle en reprend la structure et les tournures, jamais les faits. Elle ne parcourt jamais une boîte en masse.
-3. **Les corrections de Yacin.** Chaque modification faite sur la page (à la main, ou par « Demander une
-   modification ») est gardée en base (`SalesFocusAction.modifications`, `contenu_initial`). Avant d'écrire, la
-   routine relit celles des 60 derniers jours. Elle relit aussi l'écart entre un brouillon préparé et l'email
-   finalement envoyé.
+3. **Les leçons de copywriting** (`public."SalesCopyLecon"`, depuis le 05/11 : « stocker les modifications demandées
+   pour améliorer au fur et à mesure le copywriting », et « les emails validés et envoyés sont une bonne source »).
+   Chaque consigne de « Demander une modification » et chaque modification à la main sur la page y sont gardées, avec
+   l'email avant et après ; chaque email validé puis envoyé aussi, avec ce que la routine avait préparé et ce qui est
+   vraiment parti (retouches dans Gmail comprises). Une modification annulée ne compte plus ; une correction
+   orthographique n'est pas une leçon. Avant d'écrire, la routine relit les leçons des 90 derniers jours.
 4. **Ce guide** : les règles et les situations ci-dessous. Une correction qui revient deux fois devient une règle de la
    section « Corrections de Yacin ».
 
@@ -49,7 +53,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   Samuel : depuis la boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
 - **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, une durée de rendez-vous (reprise des
-  envois de la même boîte : Samuel propose « 15 minutes »), un client, une fonctionnalité ou une promesse vient d'un
+  envois de la même boîte : Samuel propose « 15 minutes », Yacin « 10/15 minutes »), un client, une fonctionnalité ou une promesse vient d'un
   email, d'un compte rendu ou de la base. Sinon, il n'est pas dans l'email ; s'il est
   indispensable (le prix d'une offre promise, par exemple), il reste marqué `[à compléter : …]` pour que Yacin le
   remplisse.
@@ -83,7 +87,18 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 
 ## Corrections de Yacin
 
-Une ligne datée par correction qui revient deux fois, ajoutée à la main à partir du `resume` des calculs ou d'une
-lecture des `modifications`.
+Une ligne datée par correction qui revient deux fois ou que Yacin donne comme règle, ajoutée à partir du `resume` des
+calculs ou d'une lecture de `SalesCopyLecon`.
 
-- _(aucune au 22/10)_
+- **Proposer un call sans ajouter de personnes** (05/11) : « Quand est-ce que tu aurais 10/15 minutes pour qu'on en
+  reparle ? », jamais « avec Tim si possible ». Qui vient au call se décide au call.
+- **Peu de dates** (05/11) : « lors de la démo », « lors de notre dernier call », « comme promis », plutôt que « à la
+  démo du 4 septembre ». Une date ne s'écrit que si elle compte pour le prospect (une échéance, un rendez-vous à venir).
+- **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
+  Gang4 en une ligne (« Petit rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs diffusées
+  depuis le compte de vraies personnes, et des UGC statiques en illimité. »), puis le créneau. Pas de pièces jointes
+  ni de livrables d'il y a des mois quand le prospect a reporté ou décliné depuis : ils se reproposent au call.
+- **Le rendez-vous d'abord, les documents ensuite** (05/11, Wopilo) : la demande de créneau, puis « D'ailleurs, tu
+  m'avais demandé des études de cas à l'époque : voici celles de … ci-jointes ».
+- **« correction sans reformuler »** (05/11, deux fois) : quand Yacin ne veut que les fautes corrigées, le bouton
+  « Corriger l'orthographe » de la carte le fait sans toucher au texte.

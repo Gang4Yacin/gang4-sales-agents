@@ -105,35 +105,58 @@ where a.run_id = (select id from public."SalesFocusRun" order by computed_at des
   and a.statut = 'ouverte' and a.contenu_initial is not null and a.cle not like 'test:%';
 ```
 
-Puis les **corrections de Yacin** des 60 derniers jours : ses consignes de réécriture et l'écart entre ce que tu
-avais proposé (`contenu_initial`) et ce qui a été retenu (`contenu`). Une carte reprise d'un calcul à l'autre n'y
-compte qu'une fois, dans sa dernière version.
+Puis les **leçons de copywriting** (`public."SalesCopyLecon"`, demande de Yacin du 05/11 : « stocker les
+modifications demandées pour améliorer au fur et à mesure le copywriting », et « les emails validés et envoyés sont une
+bonne source »). Une ligne par leçon, écrite au moment où elle arrive :
+- `consigne` : une demande de « Demander une modification » (`consigne`), avec l'email avant et après ;
+- `main` : une modification à la main sur la page (avant / après) ;
+- `envoi` : un email validé puis envoyé : ce que tu avais préparé (`avant_corps`) et ce qui est vraiment parti
+  (`apres_corps`), retouches de Yacin dans Gmail comprises. C'est la version que l'équipe a jugée bonne : le meilleur
+  modèle pour la même situation (étape 6).
+Une modification annulée sur la page ne compte plus (`annulee_le`). Les corrections orthographiques n'y sont pas.
+
+D'abord, enregistre les envois qui manquent : pour chaque email validé des 30 derniers jours sans leçon `envoi`,
 ```sql
-select deal_nom, jour, statut, consignes, propose, retenu, pj_propose, pj_retenu, retouches_routine from (
-  select distinct on (a.cle, a.contenu_initial) a.deal_nom, r.computed_at::date as jour, a.statut,
-         (select string_agg(m->>'consigne', ' | ') from jsonb_array_elements(a.modifications) m
-           where m->>'consigne' is not null) as consignes,
-         a.contenu_initial->>'corps' as propose, a.contenu->>'corps' as retenu,
-         (select string_agg(p->>'nom', ', ') from jsonb_array_elements(
-            coalesce(a.contenu_initial->'pieces_jointes', '[]'::jsonb)) p) as pj_propose,
-         (select string_agg(p->>'nom', ', ') from jsonb_array_elements(
-            coalesce(a.contenu->'pieces_jointes', '[]'::jsonb)) p) as pj_retenu,
-         (select count(*) from jsonb_array_elements(a.modifications) m
-           where m->>'source' = 'sales-focus') as retouches_routine
-  from public."SalesFocusAction" a join public."SalesFocusRun" r on r.id = a.run_id
-  where a.contenu_initial is not null and r.computed_at > now() - interval '60 days' and a.cle not like 'test:%'
-  order by a.cle, a.contenu_initial, r.computed_at desc
-) c
-order by jour desc
-limit 20;
+select a.id, a.cle, a.deal_nom, a.contenu, a.preparation, a.statut_change_at
+from public."SalesFocusAction" a
+where a.statut = 'faite' and a.preparation->>'etat' = 'prete' and a.contenu->>'type' = 'email'
+  and a.statut_change_at > now() - interval '30 days' and a.cle not like 'test:%'
+  and not exists (select 1 from public."SalesCopyLecon" l
+                  where l.type = 'envoi' and l.cle = a.cle and l.envoye_le >= a.statut_change_at)
+order by a.statut_change_at desc limit 15;
+```
+cherche dans la boîte `preparation.boite` le message parti de Gang4 dans le fil `preparation.thread_id` (ou à
+`contenu.a[0]`) après `statut_change_at` (Samuel : `get_thread` ; Lucie et Yacin : leur outil, `q` = `in:sent
+to:<adresse>`, `receivedAfter` = la validation). Trouvé → une ligne, le corps sans la citation du fil (« Le … a écrit
+: » et ce qui suit), les pièces jointes par leur nom :
+```sql
+insert into public."SalesCopyLecon"
+  (type, action_id, cle, deal_nom, boite, avant_objet, avant_corps, apres_objet, apres_corps,
+   avant_pieces_jointes, apres_pieces_jointes, envoye_le, gmail_message_id)
+values ('envoi', '<id>', '<cle>', '<deal>', '<boite>', $t$<objet préparé>$t$, $t$<corps préparé>$t$,
+        $t$<objet envoyé>$t$, $t$<corps envoyé>$t$, '{<pj préparées>}', '{<pj envoyées>}', '<envoyé le, ISO>',
+        '<id du message Gmail>')
+on conflict (gmail_message_id) where gmail_message_id is not null do nothing;
+```
+Pas encore parti → rien (le calcul suivant réessaie, 30 jours au plus).
+
+Puis lis les leçons des 90 derniers jours :
+```sql
+select l.created_at at time zone 'Europe/Paris' as le, l.type, l.deal_nom, l.consigne,
+       l.avant_corps, l.apres_corps, l.avant_pieces_jointes, l.apres_pieces_jointes
+from public."SalesCopyLecon" l
+where l.annulee_le is null and l.created_at > now() - interval '90 days'
+order by l.created_at desc
+limit 40;
 ```
 Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même longueur visée, mêmes
-documents joints (depuis le 03/11, « Demander une modification » ajoute ou retire aussi des documents : un écart entre
-`pj_propose` et `pj_retenu` est une leçon sur le choix des documents, étape 6). Une carte à `retouches_routine` non nul a
-été retouchée par toi à une reprise (document ajouté, lien de la présentation, étape 6) : ces écarts-là sont les tiens,
-pas des corrections de Yacin ; seules ses `consignes` et ce qu'elles ont changé comptent. Une correction
-vue deux fois devient une règle : applique-la partout et cite-la dans `resume`, pour qu'elle entre dans la section
-« Corrections de Yacin » de `docs/STYLE-EMAILS.md`.
+documents joints (un écart entre `avant_pieces_jointes` et `apres_pieces_jointes` est une leçon sur le choix des
+documents, étape 6). Pour une leçon `envoi`, compare ce que tu avais préparé à ce qui est parti : chaque écart est une
+correction (le 05/11, la relance Circle Sportswear préparée avec la présentation et des créas est partie courte, sans
+elles, avec un rappel de ce qu'est Gang4). Une correction vue deux fois devient une règle : applique-la partout et
+cite-la dans `resume`, pour qu'elle entre dans la section « Corrections de Yacin » de `docs/STYLE-EMAILS.md`.
+Les retouches que tu as faites toi-même à une reprise (entrées `source: sales-focus` de `modifications`, étape 6) ne
+sont pas des leçons.
 
 ## Étape 2 — Lire l'état
 - **Attio** (lecture) : les deals ouverts (`Prospect identified`, `Demo scheduled`, `Qualified`,
@@ -396,8 +419,12 @@ marchés », marché ouvert depuis). Un deal à relancer dont le dernier rendez-
 non tenue (étapes suivantes du compte rendu Claap, à défaut des notes Gemini) est un livrable promis, pas une relance.
 Le 05/11, le top 10 gardait Hindbag et Circle Sportswear comme relances et laissait dehors Alltricks (proposition
 promise au rendez-vous du 21/01 avec l'équipe acquisition, brouillons des 31/03 et 28/05 jamais partis) et Ultra Premium
-Direct (test promis dès l'ouverture des Pays-Bas le 23/03, marché ouvert depuis juin, la marque jamais prévenue) ;
-Circle Sportswear lui-même attendait la présentation et 2 à 3 visuels promis à sa démo du 08/07.
+Direct (test promis dès l'ouverture des Pays-Bas le 23/03, marché ouvert depuis juin, la marque jamais prévenue).
+Un livrable promis avant que le prospect reporte ou décline (« on se recontacte à la rentrée ») ne part pas dans la
+relance : elle reste courte, avec un rappel de Gang4 en une ligne, et le livrable se repropose au call. Le 05/11, la
+relance de Circle Sportswear (présentation et 2 à 3 visuels promis à la démo du 08/07, Martin a reporté puis décliné le
+01/09) était préparée avec la présentation et des créas ; Yacin l'a envoyée courte, sans elles (« j'aurais plus fait
+un email de relance court sans envoyer la présentation et les quelques créas préparés »).
 
 ## Étape 5 — Vérifier à date
 Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures dans les boîtes de Samuel,
@@ -437,7 +464,10 @@ complète d'un contact : un domaine seul ne renvoie rien, « bricks.co » → 0,
 13/10). Tenu = un enregistrement Claap où parle quelqu'un d'externe (`speakers[].isExternal`), avec son résumé, ou un
 participant de la marque présent ; un enregistrement sans intervenant externe ni résumé ne prouve rien (Les Commis :
 « Onboarding Gang4 (Romain Lacoste) » du 23/10, vide, onboarding calé au 30/10) ; une démo manquée, déclinée ou annulée n'est pas tenue (famille « Rendez-vous », étape 3). Déjà
-calé → pas de carte pour le caler. Déjà tenu → l'action est ce que Gang4 y a promis et qui n'est pas fait (actions du
+calé → pas de carte pour le caler. Le prochain rendez-vous trouvé avec la marque, de tout type, va dans
+`historique.prochain_rdv` (étape 7) et change l'email de toute carte du deal (Yacin, 05/11 : « est-ce qu'il y a déjà un
+point planifié à venir, cela va forcément impacter ce qu'on va lui dire ») : il ne propose pas d'autre créneau, il peut
+s'y référer (« on en parle jeudi »). Déjà tenu → l'action est ce que Gang4 y a promis et qui n'est pas fait (actions du
 compte rendu Claap, à défaut des notes Gemini, étape 2 : toutes les promesses non tenues du rendez-vous, dans la même
 carte ou citées dans `pourquoi`), jamais le même rendez-vous une deuxième fois. Une entrée d'office (« Mauvais objectif », objectif
 corrigé, snooze), ou un deal dont le next step d'Attio est encore celui d'un « Mauvais objectif » traité
@@ -512,7 +542,7 @@ pas lue à jour) ».
 ## Étape 6 — Préparer le contenu
 **Carte que Yacin a modifiée** (étape 1, même `cle`) : si l'étape 5 ne trouve rien de nouveau, reprends tels quels son
 `contenu`, son `contenu_initial` et ses `modifications` (étape 7), sans rien réécrire ; seuls `pourquoi` et `source`
-changent si un fait daté s'ajoute ; `avant_envoi` est repris lui aussi, sans le geste que l'étape 5 montre fait depuis
+changent si un fait daté s'ajoute, et `historique` est toujours réécrit (étape 7) ; `avant_envoi` est repris lui aussi, sans le geste que l'étape 5 montre fait depuis
 (invitation créée, batch lancé). Une carte d'avant le 03/11 qui annonce une étude de cas « ci-jointe » sans
 `pieces_jointes`, avec « joindre l'étude de cas … » dans `avant_envoi`, reçoit le document de `SalesDocument` qui la
 couvre (règle ci-dessous) : ajouté à `pieces_jointes` sans toucher au corps (« ci-jointe » reste vrai), et ce geste
@@ -572,12 +602,12 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      Tikamoon ne disait plus ce que le point devait apporter. Avec un livrable promis, la carte suit les deux lignes
      (Wopilo, 27/10).
   2. Relis tout le fil : tutoiement ou vouvoiement, salutation, signature, ce qui a déjà été dit.
-  3. Lis au plus 3 emails envoyés par la même boîte dans une situation comparable : d'abord le libellé
-     Gmail « Modèle », sinon une recherche ciblée dans les envoyés (mots de la situation, 90 derniers jours). Reprends
-     leur structure et leurs tournures, jamais leurs faits. Ne parcours jamais une boîte en masse.
-  4. Applique les corrections de Yacin (étape 1).
-  5. Pour les actions `faite` des 14 derniers jours dont l'email est parti, compare l'envoyé au brouillon préparé :
-     ce qui a été changé à la main avant l'envoi est une correction de plus.
+  3. Lis au plus 3 emails envoyés dans une situation comparable : d'abord les leçons `envoi` de l'étape 1 (emails
+     validés puis envoyés, même situation, même boîte si possible), puis le libellé Gmail « Modèle », sinon une
+     recherche ciblée dans les envoyés (mots de la situation, 90 derniers jours). Reprends leur structure et leurs
+     tournures, jamais leurs faits. Ne parcours jamais une boîte en masse.
+  4. Applique les leçons de l'étape 1 et les « Corrections de Yacin » de `docs/STYLE-EMAILS.md` (le 05/11 : aucune
+     personne ajoutée au créneau demandé, peu de dates, relance courte et chaleureuse avec un rappel de ce qu'est Gang4).
 - Le style de l'expéditeur dans le fil : « Hello <Prénom>, », tutoiement si le fil tutoie, phrases
   courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots (moins pour une simple relance ou pour l'email
   qui accompagne une pièce jointe promise), une seule demande claire (un créneau, un accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
@@ -587,7 +617,7 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel.
 - **Jamais d'invention** : aucun chiffre, prix, remise, délai, durée de rendez-vous ou promesse qui ne soit déjà
   dans les emails, les comptes rendus ou la base (la durée d'un point se reprend des envois de la même boîte : Samuel
-  propose « 15 minutes »). Un message ne dit jamais qu'une chose existe sur la plateforme (créas à valider, accès,
+  propose « 15 minutes », Yacin « 10/15 minutes »). Un message ne dit jamais qu'une chose existe sur la plateforme (créas à valider, accès,
   batch) sans l'avoir vue en base (créas à valider par la marque = `ad_creative.state = 'GANG4_VALIDATED'` ;
   `GENERATED` n'est pas visible par la marque et `GANG4_REJECTED` n'existe pas pour elle ; batch = un `BatchRun`
   d'une `BatchConfiguration` de la marque créé après l'onboarding ; accès = `invitations` et `profiles`, étape 5) : le 27/10, le message Bricks
@@ -719,17 +749,18 @@ with run as (
 )
 insert into public."SalesFocusAction"
   (run_id, rang, titre, pourquoi, quoi_faire, attio_deal_id, deal_nom, source_url, source, contenu,
-   contenu_initial, modifications, cle, attio_deal_ids, attio_company_ids, domaines, responsable, avant_envoi)
+   contenu_initial, modifications, cle, attio_deal_ids, attio_company_ids, domaines, responsable, avant_envoi,
+   historique)
 select run.id, v.rang, v.titre, v.pourquoi, v.quoi_faire, v.deal, v.deal_nom, v.source_url, v.source::jsonb,
        v.contenu::jsonb, v.contenu_initial::jsonb, coalesce(v.modifications::jsonb, '[]'::jsonb), v.cle,
-       array[v.deal], array[v.company], v.domaines::text[], v.responsable, v.avant_envoi
+       array[v.deal], array[v.company], v.domaines::text[], v.responsable, v.avant_envoi, v.historique::jsonb
 from run, (values
   (1, '<titre>', '<pourquoi>', '<objectif>', '<deal_id>', '<nom du deal>', '<company_id>', '<url>',
    '<source json>', '<contenu json>', null, null, 'deal:<deal_id>:<verbe>', '{<domaine>}', '<samuel|lucie|yacin|autre>',
-   '<avant l''envoi, ou null>')
+   '<avant l''envoi, ou null>', '<historique json>')
   -- , (2, …), jusqu'à N
 ) as v(rang, titre, pourquoi, quoi_faire, deal, deal_nom, company, source_url, source, contenu, contenu_initial,
-       modifications, cle, domaines, responsable, avant_envoi)
+       modifications, cle, domaines, responsable, avant_envoi, historique)
 returning run_id;
 ```
 - `rang` : de 1 à `N`, sans trou (la base refuse au-delà de 10).
@@ -773,14 +804,44 @@ returning run_id;
   `yacin`, ou `autre` (une autre personne de Gang4). Si on ne voit pas l'échange (un LinkedIn hors campagne, par
   exemple), mets la `boite` de l'email.
 - `source_url` : l'email ou le compte rendu qui justifie la carte (gardé en base, plus affiché).
-- `source` : ce que Yacin lit au survol de « Voir la source », sans lien :
-  `{"type": "email|compte_rendu|agenda|note", "de": "...", "le": "...", "titre": "...", "extrait": "..."}`.
-  - `extrait` : le passage exact qui justifie la carte, 600 caractères au plus, « […] » pour une coupe. Ce sont les
-    mots du prospect pour un email, le passage du compte rendu Claap pour une démo. Un refus d'agenda sans texte se
-    décrit en une phrase.
-  - `de` : l'expéditeur, ou le rendez-vous (« Démo avec Benjamin Durand (Social Desk) »).
+- `source` : ce que Yacin lit au survol de « Voir la source », sans lien. Depuis le 05/11 (Yacin : « trop
+  incomplète, j'ai besoin de plus de détails, de manière claire et facilement scannable »), détaillée en éléments :
+  `{"type": "email|compte_rendu|agenda|note", "de": "...", "le": "...", "titre": "...", "extrait": "...",
+  "elements": [{"canal": "gmail|linkedin|lemlist|google_meet|claap|agenda|appel|attio|plateforme", "de": "...",
+  "a": "...", "le": "...", "titre": "...", "points": ["...", "..."], "extrait": "..."}]}`.
+  - `elements` : de 1 à 3, tout ce qui justifie la carte, du plus récent au plus ancien : le message du prospect, le
+    compte rendu du rendez-vous où la promesse a été faite, l'événement d'agenda (décliné, manqué), l'envoi de Gang4
+    resté sans réponse. Pour chacun : `canal` (Claap pour un compte rendu Claap, `google_meet` pour des notes Gemini
+    ou un rendez-vous Meet, `agenda` pour une invitation déclinée), `de` avec son rôle (« Emmanuelle Brussaut,
+    CMO »), `a`, `le`, `titre`, `points` (2 à 4 lignes courtes : les faits qui comptent pour la carte, qui a dit ou
+    promis quoi), `extrait` (la citation exacte, 400 caractères au plus, « […] » pour une coupe ; facultatif pour un
+    refus d'agenda sans texte).
+  - `type`, `de`, `le`, `titre`, `extrait` : ceux du premier élément (les cartes et les outils d'avant les lisent) ;
+    `extrait` est obligatoire (la base le refuse vide) : le passage exact qui justifie la carte, 600 caractères au
+    plus, ou un refus d'agenda décrit en une phrase.
   - `le` : `AAAA-MM-JJ`, ou l'instant avec son fuseau (`2026-10-16T10:03:00+02:00`).
-  - `titre` : l'objet de l'email ou le titre du rendez-vous.
+- `historique` : l'historique du deal, ouvert d'un clic sur son nom (Yacin, 05/11 : « un historique complet du deal,
+  bien structuré, facilement scannable, pour que quelqu'un qui n'a jamais vu le deal comprenne ce qui s'est passé et où
+  on en est », avec le canal de chaque échange et le prochain rendez-vous). Réécrit à chaque calcul, carte reprise
+  comprise :
+  `{"lu_le": "<maintenant, ISO>", "etape": "<stage Attio>", "resume": "...", "prochain_rdv": {"le": "...", "titre":
+  "...", "canal": "google_meet|agenda|appel", "avec": ["..."]} | null, "contacts": [{"nom": "...", "role": "..."}],
+  "evenements": [{"le": "...", "canal": "...", "sens": "entrant|sortant|rdv|interne", "qui": "...", "titre": "...",
+  "resume": "..."}]}`.
+  - `resume` : deux ou trois phrases pour quelqu'un qui découvre le deal : qui est la marque (secteur, budget Meta s'il
+    est connu), ce qui s'est passé, où on en est, ce qu'on attend.
+  - `prochain_rdv` : le prochain rendez-vous avec la marque dans les agendas de Samuel, Lucie et Yacin (30 jours, étape
+    5), ou `null`. Un rendez-vous calé change ce qu'on écrit : pas de carte pour en caler un autre, l'email n'en
+    propose pas, il peut le rappeler.
+  - `contacts` : les personnes de la marque dans les échanges, avec leur rôle quand il est connu.
+  - `evenements` : du premier contact à aujourd'hui, 8 à 25 lignes, chacune un fait daté (heure de Paris, fuseau
+    écrit) : emails des trois boîtes (`gmail`), séquence Lemlist regroupée en une ligne (« Séquence de Lucie : 4 emails
+    du 07/09 au 05/10, sans réponse »), messages LinkedIn (inbox Lemlist), rendez-vous calés, déclinés, manqués ou
+    tenus (`agenda`, puis `google_meet` ou `claap` avec ce que dit le compte rendu), appels (`appel`), notes Attio qui
+    comptent (`attio`, `interne`), compte, invitations, batch et créas sur la plateforme (`plateforme`). `titre` en 80
+    caractères au plus, `resume` en une ou deux phrases, `qui` (« Samuel → Martin Lesieur »). Rien d'inventé : chaque
+    ligne vient d'une source lue pendant le calcul (étapes 2 à 5), quelques lectures ciblées en plus au besoin
+    (inbox Lemlist, notes Attio du deal).
 - `cle` : stable d'un calcul à l'autre, `deal:<deal_id>:<verbe>`.
 - Mets des apostrophes droites et entoure les textes de `$t$…$t$`, le JSON de `$j$…$j$`.
 
