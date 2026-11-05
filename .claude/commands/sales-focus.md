@@ -96,7 +96,10 @@ order by r.computed_at desc;
   sur `:plan-etude`, vaut pour l'envoi).
 - `ouverte` sans geste : reste candidate, avec la même `cle` si c'est la même action. Si Yacin a modifié la carte
   (`contenu_initial` posé), tu reprends son contenu tel quel (étape 6) : ton calcul remplace le précédent sur la page
-  et effacerait ses changements.
+  et effacerait ses changements. **Sinon, tu la réécris entière** (contenu, source, historique), comme une carte
+  neuve, avec la relecture de l'étape 6, même si le calcul précédent date de quelques minutes : ses textes peuvent
+  venir de règles plus anciennes. Le 05/11 à 18:57, les 10 cartes de 18:26 ont été reprises telles quelles, avec les
+  dates et les doubles questions que la relecture devait retirer, et `resume` disait la relecture faite.
 - Ignore les lignes de test (`cle` qui commence par `test:`).
 
 Les cartes du dernier calcul, encore ouvertes, que Yacin a modifiées (à la main ou sur consigne) :
@@ -798,7 +801,8 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
    08/09 : « que tu me l'écrives par mail ») reçoit une demande d'avis, pas un créneau.
 7. Puis le tutoiement ou le vouvoiement, la boîte, le fil, la signature, le lien d'agenda (étape 6) et le nombre de
    mots.
-`resume` dit, pour chaque carte, que cette relecture est faite.
+`resume` dit, pour chaque carte, que cette relecture est faite, et seulement si tu l'as faite pendant ce calcul, sur
+le texte que tu écris.
 
 ## Étape 7 — Écrire le calcul
 Une seule requête :
