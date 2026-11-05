@@ -779,6 +779,27 @@ group by 1, 2, 3;
 Ce que tu ne trouves nulle part (un prix, un chiffre, un lien) n'est jamais inventé : s'il est indispensable, il reste
 marqué `[à compléter : …]` dans le contenu, et `avant_envoi` le dit (« compléter <ce qui manque> ») (Yacin le remplit d'un double-clic sur la page, ou dans le brouillon : n8n recopie le corps tel quel).
 
+**Relis chaque email avant de l'écrire, point par point, et corrige-le** (le 05/11 au soir, 8 emails sur 10 citaient
+encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel de Gang4, alors que ces règles
+étaient écrites) :
+1. **Aucune date passée, aucun mois** : ni « fin juillet », « en avril », « en juin », « fin août », « de septembre »,
+   ni « du 22/09 », « du 28/10 », « à partir d'octobre ». Écris « lors de la démo », « lors de notre dernier call »,
+   « suite au message de Florence », « comme convenu ». Seuls un rendez-vous à venir ou une échéance gardent leur date.
+2. **Une seule question, la demande, en fin d'email** : pas de « Est-ce que vous avez pu en discuter ? », « Tu as eu
+   le temps d'y jeter un œil ? » ni « si c'est toujours d'actualité ? » avant le créneau ; le contexte se dit en
+   affirmant (« Tu m'avais dit vouloir lancer un test avec votre nouvelle agence. »).
+3. **Relance après un silence de plus de deux semaines** : le rappel de Gang4 en une ligne, mot pour mot (« Petit
+   rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs diffusées depuis le compte de vraies
+   personnes, et des UGC statiques en illimité. »), puis la demande.
+4. **Les chiffres tels que le prospect les a entendus** : un nombre déjà annoncé (« les 20 UGC ») ne se contredit pas
+   avec le compte en base (16 validées pour Flotte le 05/11) ; s'ils diffèrent, l'email n'en cite aucun.
+5. **Les mots du prospect** : « déployer Gang4 » reste « déployer », pas « tester » (Biocyte).
+6. **La demande que le prospect a acceptée** : un prospect qui a dit vouloir juger les créas avant tout call (Vinci,
+   08/09 : « que tu me l'écrives par mail ») reçoit une demande d'avis, pas un créneau.
+7. Puis le tutoiement ou le vouvoiement, la boîte, le fil, la signature, le lien d'agenda (étape 6) et le nombre de
+   mots.
+`resume` dit, pour chaque carte, que cette relecture est faite.
+
 ## Étape 7 — Écrire le calcul
 Une seule requête :
 ```sql
@@ -849,13 +870,20 @@ returning run_id;
   `{"type": "email|compte_rendu|agenda|note", "de": "...", "le": "...", "titre": "...", "extrait": "...",
   "elements": [{"canal": "gmail|linkedin|lemlist|google_meet|claap|agenda|appel|attio|plateforme", "de": "...",
   "a": "...", "le": "...", "titre": "...", "points": ["...", "..."], "extrait": "..."}]}`.
-  - `elements` : de 1 à 3, tout ce qui justifie la carte, du plus récent au plus ancien : le message du prospect, le
+  - `elements` : de 1 à 3, tout ce qui justifie la carte, **triés par `le` décroissant** (le plus récent en premier ;
+    le 05/11, 7 cartes sur 10 les rangeaient à l'envers) : le message du prospect, le
     compte rendu du rendez-vous où la promesse a été faite, l'événement d'agenda (décliné, manqué), l'envoi de Gang4
     resté sans réponse. Pour chacun : `canal` (Claap pour un compte rendu Claap, `google_meet` pour des notes Gemini
     ou un rendez-vous Meet, `agenda` pour une invitation déclinée), `de` avec son rôle (« Emmanuelle Brussaut,
     CMO »), `a`, `le`, `titre`, `points` (2 à 4 lignes courtes : les faits qui comptent pour la carte, qui a dit ou
-    promis quoi), `extrait` (la citation exacte, 400 caractères au plus, « […] » pour une coupe ; facultatif pour un
-    refus d'agenda sans texte).
+    promis quoi, chacun pris dans cet élément-là et pas dans une note d'ailleurs), `extrait` (la citation exacte, mot
+    pour mot, 400 caractères au plus, « […] » pour une coupe, jamais réécrite ; facultatif pour un refus d'agenda sans
+    texte).
+  - **Aucun lien** dans un `extrait` ni un `point` : une url (présentation, Meet, agenda) devient « […] ».
+  - `de` est une personne avec son rôle, jamais le titre d'une note : une note « - auto » a pour `de` « /sales-ops
+    (note auto) », ou « Yacin (décision) » quand la note dit « sur décision de Yacin ». Un rendez-vous Meet tenu est
+    `google_meet` (avec les notes Gemini) ou `claap`, pas `agenda` ; une réservation a pour `de` la personne qui a
+    réservé.
   - `type`, `de`, `le`, `titre`, `extrait` : ceux du premier élément (les cartes et les outils d'avant les lisent) ;
     `extrait` est obligatoire (la base le refuse vide) : le passage exact qui justifie la carte, 600 caractères au
     plus, ou un refus d'agenda décrit en une phrase.
@@ -881,7 +909,22 @@ returning run_id;
     comptent (`attio`, `interne`), compte, invitations, batch et créas sur la plateforme (`plateforme`). `titre` en 80
     caractères au plus, `resume` en une ou deux phrases, `qui` (« Samuel → Martin Lesieur »). Rien d'inventé : chaque
     ligne vient d'une source lue pendant le calcul (étapes 2 à 5), quelques lectures ciblées en plus au besoin
-    (inbox Lemlist, notes Attio du deal).
+    (inbox Lemlist, notes Attio du deal, emails de la company dans Attio pour le premier contact).
+  - **L'heure et l'auteur de l'événement, pas ceux de la note** : un appel Allo est daté de l'appel (dans la note
+    « Allo Outbound Call », pas son heure de création, quelques minutes plus tard) et attribué à qui parle dans la
+    transcription (Yacin appelle depuis le compte Allo de Samuel : Vinci, 08/09, « C'est Yacine de Gang4 ») ; une
+    invitation d'agenda est attribuée à son organisateur, avec ce que dit sa description (« voici l'invit pour te
+    montrer les 20 UGC », Flotte, 10/07) ; des créas validées sont datées de leur validation, une réponse automatique
+    (« Je quitte Smoon… », absence) se dit comme telle, un email qui rebondit aussi.
+  - **Rien d'important ne manque** : chaque réponse du prospect et chaque réponse de Gang4 qui la suit (Smoon, 20/10 :
+    Samuel envoie son calendrier, Bastian réserve 9 minutes après), chaque rendez-vous calé, tenu, manqué ou décliné,
+    chaque appel (Allo), chaque promesse ou annonce de Gang4 (Maju, 24/08 : « une cinquantaine de créas » annoncées),
+    les créas de la marque sur la plateforme (une ligne `plateforme`), le premier contact même ancien (Smoon : Lucie dès
+    juillet 2024). Au moins 8 lignes quand les sources les ont.
+  - **`resume` d'accord avec `evenements`** : pas « pas relancé depuis le 14/09 » quand une ligne montre deux appels le
+    16/09 (Célims), pas « plus rien depuis 7 mois » quand Samuel a appelé en juin (Magimix) ; un chiffre avec sa
+    nature et sa période (« budget publicitaire de 30 à 35 k€ par mois, environ 75 % sur Meta », pas « 30 à 35 k€ sur
+    Meta » ; « 130 k€ dépensés sur Meta en août »).
 - `cle` : stable d'un calcul à l'autre, `deal:<deal_id>:<verbe>`.
 - Mets des apostrophes droites et entoure les textes de `$t$…$t$`, le JSON de `$j$…$j$`.
 
