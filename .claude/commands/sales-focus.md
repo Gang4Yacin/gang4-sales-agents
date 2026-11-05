@@ -169,15 +169,18 @@ select coalesce(l.action_id::text, l.cle) as carte, max(l.cle) as cle, max(l.dea
        (array_agg(l.avant_corps order by l.created_at))[1] as avant_corps,
        (array_agg(l.apres_objet order by l.created_at desc))[1] as apres_objet,
        (array_agg(l.apres_corps order by l.created_at desc))[1] as apres_corps,
-       (array_agg(to_jsonb(l.avant_pieces_jointes) order by l.created_at))[1] as avant_pj,
-       (array_agg(to_jsonb(l.apres_pieces_jointes) order by l.created_at desc))[1] as apres_pj
+       (array_agg(to_jsonb(l.avant_pieces_jointes) order by l.created_at)
+          filter (where l.avant_pieces_jointes is not null))[1] as avant_pj,
+       (array_agg(to_jsonb(l.apres_pieces_jointes) order by l.created_at desc)
+          filter (where l.apres_pieces_jointes is not null))[1] as apres_pj
 from l group by 1 order by max(l.created_at) desc limit 30;
 ```
 La situation d'une leçon se lit dans sa `cle` (`deal:<id>:<verbe>`, le verbe de la carte) et sa boîte dans `boite`.
 Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même objet raccourci (un écart entre
 `avant_objet` et `apres_objet` est une leçon sur l'objet : le 27/10, « Social Desk x Gang4 : on lance le test ? » est
 devenu « Social Desk x Gang4 »), même longueur visée, mêmes documents joints (seul un document ajouté ou retiré entre
-`avant_pj` et `apres_pj` est une leçon sur le choix des documents, étape 6). Pour une leçon `envoi`, compare ce que tu
+`avant_pj` et `apres_pj` est une leçon sur le choix des documents, étape 6 ; `null` des deux côtés : les documents
+n'ont pas changé sur cette carte). Pour une leçon `envoi`, compare ce que tu
 avais préparé à ce qui est parti : chaque écart est une correction (le 05/11, la relance Circle Sportswear préparée avec la présentation et des créas est partie courte, sans
 elles, avec un rappel de ce qu'est Gang4). Une correction vue deux fois devient une règle : applique-la partout et
 cite-la dans `resume`, pour qu'elle entre dans la section « Corrections de Yacin » de `docs/STYLE-EMAILS.md`.
@@ -446,8 +449,10 @@ non tenue (étapes suivantes du compte rendu Claap, à défaut des notes Gemini)
 Le 05/11, le top 10 gardait Hindbag et Circle Sportswear comme relances et laissait dehors Alltricks (proposition
 promise au rendez-vous du 21/01 avec l'équipe acquisition, brouillons des 31/03 et 28/05 jamais partis) et Ultra Premium
 Direct (test promis dès l'ouverture des Pays-Bas le 23/03, marché ouvert depuis juin, la marque jamais prévenue).
-Un livrable promis avant que le prospect reporte ou décline (« on se recontacte à la rentrée ») ne part pas dans la
-relance : elle reste courte, avec un rappel de Gang4 en une ligne, et le livrable se repropose au call. Le 05/11, la
+Un livrable que Gang4 a proposé avant que le prospect reporte ou décline (« on se recontacte à la rentrée » :
+présentation, créas) ne part pas dans la relance : elle reste courte, avec un rappel de Gang4 en une ligne, et le
+livrable se repropose au call. Des documents que le prospect a lui-même demandés (études de cas) partent, eux, après la
+demande de créneau, en une ligne « D'ailleurs… » (Wopilo, étape 6). Le 05/11, la
 relance de Circle Sportswear (présentation et 2 à 3 visuels promis à la démo du 08/07, Martin a reporté puis décliné le
 01/09) était préparée avec la présentation et des créas ; Yacin l'a envoyée courte, sans elles (« j'aurais plus fait
 un email de relance court sans envoyer la présentation et les quelques créas préparés »).

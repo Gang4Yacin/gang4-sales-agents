@@ -100,8 +100,10 @@ calculs ou d'une lecture de `SalesCopyLecon`.
   démo du 4 septembre ». Une date ne s'écrit que si elle compte pour le prospect (une échéance, un rendez-vous à venir).
 - **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
   Gang4 en une ligne (« Petit rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs diffusées
-  depuis le compte de vraies personnes, et des UGC statiques en illimité. »), puis le créneau. Pas de pièces jointes
-  ni de livrables d'il y a des mois quand le prospect a reporté ou décliné depuis : ils se reproposent au call.
+  depuis le compte de vraies personnes, et des UGC statiques en illimité. »), puis le créneau. Pas de livrables que
+  Gang4 avait proposés il y a des mois (présentation, créas) quand le prospect a reporté ou décliné depuis : ils se
+  reproposent au call. Des documents qu'il a lui-même demandés (études de cas) partent après la demande de créneau,
+  en une ligne « D'ailleurs… » (ligne suivante).
 - **Le rendez-vous d'abord, les documents ensuite** (05/11, Wopilo) : la demande de créneau, puis « D'ailleurs, tu
   m'avais demandé des études de cas à l'époque : voici celles de … ci-jointes ».
 - **« correction sans reformuler »** (05/11, deux fois) : quand Yacin ne veut que les fautes corrigées, le bouton
