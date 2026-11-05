@@ -640,6 +640,12 @@ l'envoi.
   par la même boîte (recherche ciblée dans les envoyés : « offre », « proposition », « tarif », 90 jours), le modèle de
   facturation en base (`public."BillingPlan"` : commission, seuil de franchise ; `"OrganisationSubscription"` :
   produit, palier).
+  Un tarif écrit dans un email est entier : formule, abonnement et commission, tels que dans une offre déjà envoyée
+  par la même boîte ou dans les formules de la présentation Gang4 (Starter, Scale, Enterprise) ; jamais la seule
+  commission par défaut de `BillingPlan` (9 %), qui n'est que celle de Starter. Sans formule choisie avec le prospect,
+  l'email renvoie aux formules de la présentation (lien) et propose d'en parler. Un chiffre de la présentation (« CPA
+  19 % plus bas ») n'a pas de période : il ne se cite pas, seuls les `chiffres_cles` d'une étude se citent. Le 05/11,
+  la carte Alltricks écrivait « on facture 9 % du budget diffusé » et « 19 % en moyenne ».
 - **Références clients** → l'email qui les donne : des marques clientes réelles du même secteur (lu dans leur fiche,
   `"BusinessClient".description` et catégories Attio, jamais à leur nom) ou de la même taille (Attio `company_status`
   `Customer`, `"BusinessClient".status = 'CUSTOMER'`), avec un résultat chiffré quand tu l'as (requête ci-dessous).
