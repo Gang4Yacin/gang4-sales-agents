@@ -895,7 +895,11 @@ returning run_id;
 - `historique` : l'historique du deal, ouvert d'un clic sur son nom (Yacin, 05/11 : « un historique complet du deal,
   bien structuré, facilement scannable, pour que quelqu'un qui n'a jamais vu le deal comprenne ce qui s'est passé et où
   on en est », avec le canal de chaque échange et le prochain rendez-vous). Réécrit à chaque calcul, carte reprise
-  comprise :
+  comprise, **reconstruit depuis les sources, jamais recopié d'un calcul précédent** (le 05/11 à 19:12, l'historique de
+  18:26 a été recopié avec ses erreurs). Pour chaque deal retenu, lis : les notes Attio du deal et de sa company (dont
+  « Allo Outbound Call » : heure de l'appel et transcription), les emails de la company dans Attio (le premier
+  contact), les fils Gmail des trois boîtes avec ses contacts, les agendas (étape 5), Claap, et ses créas en base
+  (`ad_creative`, date de validation). Un calcul relancé peu après un autre refait ces lectures :
   `{"lu_le": "<maintenant, ISO>", "etape": "<stage Attio>", "resume": "...", "prochain_rdv": {"le": "...", "titre":
   "...", "canal": "google_meet|agenda|appel", "avec": ["..."]} | null, "contacts": [{"nom": "...", "role": "..."}],
   "evenements": [{"le": "...", "canal": "...", "sens": "entrant|sortant|rdv|interne", "qui": "...", "titre": "...",
