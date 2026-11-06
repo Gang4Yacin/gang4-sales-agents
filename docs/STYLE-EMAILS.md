@@ -71,7 +71,9 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   nommée (« l'étude de cas Perifit, ci-jointe ») : « Envoyer » la joint à l'email (documents sales, `/sales-focus`
   étape 6). La présentation Gang4 est un lien, jamais une pièce jointe : son url dans le corps (« voici la présentation
   de Gang4 : https://gang4.io/presentation », `/presentation/en` pour un email en anglais). Des créas à joindre sont
-  annoncées « ci-jointes » : Gang4 les joint avant l'envoi.
+  annoncées « ci-jointes » : Gang4 les joint avant l'envoi, dans le brouillon Gmail, et le corps le marque d'une ligne
+  `[à compléter : joindre les créas dans le brouillon Gmail, puis retirer cette ligne]` (06/11 : seuls les documents
+  sales partent joints par « Envoyer », qui est refusé tant qu'un « [à compléter » reste).
 - **Fil** : réponse dans le fil (« Re: <objet du fil> ») dès qu'un fil existe avec la bonne personne. Nouveau fil
   seulement s'il n'y en a pas : après une démo réservée en ligne, le seul fil est souvent la confirmation.
 
