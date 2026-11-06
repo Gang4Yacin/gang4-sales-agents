@@ -110,9 +110,9 @@ calculs ou d'une lecture de `SalesCopyLecon`.
 - **Le rappel met les chiffres en avant** (06/11 : « met bien en avant les chiffres qu'on a… Recopie pas mot pour mot
   mais c'est une idée ») : la tournure varie, les faits non, et rien ne s'y ajoute. Partnership Ads (par défaut) :
   scaler les Partnership Ads en un clic, des centaines de créas diffusées depuis des centaines de profils, plus de 100
-  e-commerçants accompagnés (Caats, Wecasa, Tediber…), par exemple « Petit rappel : avec Gang4, vous scalez vos
+  e-commerçants accompagnés (Wecasa, Tediber, Spring…), par exemple « Petit rappel : avec Gang4, vous scalez vos
   Partnership Ads en un clic, avec des centaines de créas diffusées depuis des centaines de profils. On accompagne déjà
-  +100 e-com' (Caats, Wecasa, Tediber…). » Jamais la marque elle-même ni son concurrent direct en référence : le nombre
+  +100 e-com' (Wecasa, Tediber, Spring…). » Jamais la marque elle-même ni son concurrent direct en référence : le nombre
   reste, sans les noms.
 - **Le rappel parle de l'offre du prospect** (06/11, Magimix et Biocyte : « parle pas de Partnership Ads mais de social
   proof ») : quand la conversation est partie du Social Proof (avis ou commentaires sous les ads, testeuses, démo

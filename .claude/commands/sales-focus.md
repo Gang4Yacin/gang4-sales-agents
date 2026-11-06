@@ -854,9 +854,10 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
    pas mot pour mot mais c'est une idée »), puis la demande. La tournure change d'un email à l'autre ; les faits, eux,
    sont ceux-ci, sans rien y ajouter (pas d'autre chiffre, pas d'autre client) :
    - Partnership Ads (par défaut) : Gang4 permet de scaler les Partnership Ads en un clic, des centaines de créas
-     diffusées depuis des centaines de profils ; Gang4 accompagne déjà plus de 100 e-commerçants (Caats, Wecasa,
-     Tediber…). Par exemple : « Petit rappel : avec Gang4, vous scalez vos Partnership Ads en un clic, avec des centaines
-     de créas diffusées depuis des centaines de profils. On accompagne déjà +100 e-com' (Caats, Wecasa, Tediber…). »
+     diffusées depuis des centaines de profils ; Gang4 accompagne déjà plus de 100 e-commerçants (Wecasa, Tediber,
+     Spring…, jamais Caats : client perdu, Yacin le 06/11). Par exemple : « Petit rappel : avec Gang4, vous scalez vos
+     Partnership Ads en un clic, avec des centaines de créas diffusées depuis des centaines de profils. On accompagne
+     déjà +100 e-com' (Wecasa, Tediber, Spring…). »
    - Social Proof : Gang4 optimise les commentaires sous les ads, ce qui améliore le ROAS de 25 % en moyenne ; Gang4
      accompagne déjà plus de 100 e-commerçants, qui dépensent de 30 k€ à 300 k€ par mois sur Meta. Par exemple : « Petit
      rappel : Gang4 optimise les commentaires sous vos ads, ce qui améliore votre ROAS de 25 % en moyenne. On accompagne
