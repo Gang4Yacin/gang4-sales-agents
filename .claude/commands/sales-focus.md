@@ -115,6 +115,13 @@ order by r.computed_at desc;
   neuve, avec la relecture de l'étape 6, même si le calcul précédent date de quelques minutes : ses textes peuvent
   venir de règles plus anciennes. Le 05/11 à 18:57, les 10 cartes de 18:26 ont été reprises telles quelles, avec les
   dates et les doubles questions que la relecture devait retirer, et `resume` disait la relecture faite.
+- **Envoi à vérifier** (`statut = 'ouverte'` et `preparation->>'envoi' = 'lance'`, ou `preparation->>'erreur'` parmi
+  `envoi_incertain`, `erreur_envoi`, `envoye_non_enregistre`) : l'email a pu partir. La même action (sa `cle`) ne se
+  repropose pas tant que la carte n'est pas tranchée (« Marquer comme envoyé » sur la page, section « Envois à
+  vérifier ») ; la base refuserait d'ailleurs « Envoyer » (garde du 06/11). Regarde les envoyés de la boîte : si
+  l'email est parti, le deal suit la règle de `faite` ; dis la carte en attente dans `resume`.
+- Un email parti (`preparation->>'envoye' = 'true'`) il y a moins de 3 jours : pas de nouvelle carte de la même `cle`,
+  la base refuserait « Envoyer » ; une relance suit son délai habituel.
 - Ignore les lignes de test (`cle` qui commence par `test:`).
 
 Les cartes du dernier calcul, encore ouvertes, que Yacin a modifiées (à la main ou sur consigne) :
