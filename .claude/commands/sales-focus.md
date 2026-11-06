@@ -14,6 +14,11 @@ table, va dans le corps de l'email. Depuis le 06/11 (Yacin), on clique « Envoye
 confirme dans la fenêtre qui s'ouvre ; le flow n8n « ✅ Sales Actions → Préparer l'action » crée alors le brouillon dans la
 boîte Gmail qui porte la conversation **et l'envoie**. La même fenêtre propose « Créer un brouillon » (l'envoi se fait
 alors à la main, comme avant le 06/11). L'email peut donc partir tel que tu l'écris, sans relecture dans Gmail.
+Seuls les documents de `SalesDocument` (`pieces_jointes`) partent joints par « Envoyer » : tout autre fichier à joindre
+(créas, étude ou grille absente de la table) et tout ce qui reste à écrire à la main se marque dans le corps par une
+ligne `[à compléter : …]` (« [à compléter : joindre les créas dans le brouillon Gmail, puis retirer cette ligne] ») ;
+la page refuse alors « Envoyer » et ne propose que « Créer un brouillon » (relecture du 06/11 : des créas annoncées
+« ci-jointes » seraient parties sans elles).
 
 Tu n'écris **nulle part** sauf dans Supabase, tables `public."SalesFocusRun"` et `public."SalesFocusAction"`
 (migrations `20261021160000_sales_actions.sql`, `20261022090000_sales_focus_v2.sql`,
@@ -137,12 +142,19 @@ from public."SalesFocusAction" a
 where a.statut = 'faite' and a.preparation->>'etat' = 'prete' and a.contenu->>'type' = 'email'
   and a.statut_change_at > now() - interval '30 days' and a.cle not like 'test:%'
   and not exists (select 1 from public."SalesCopyLecon" l
-                  where l.type = 'envoi' and l.cle = a.cle and l.envoye_le >= a.statut_change_at)
+                  where l.type = 'envoi'
+                    and (l.action_id = a.id
+                         or (l.gmail_message_id is not null and l.gmail_message_id = a.preparation->>'message_id')
+                         or (l.cle = a.cle and l.envoye_le >= a.statut_change_at)))
 order by a.statut_change_at desc limit 15;
 ```
-Un email parti par « Envoyer » (depuis le 06/11 : `preparation.envoye = true`) a son message dans
-`preparation.message_id`, son fil dans `preparation.thread_id` et son heure dans `preparation.envoye_le` : lis ce
-message-là (sans retouche Gmail, c'est le contenu validé sur la page). Pour un brouillon envoyé à la main,
+Un email parti par « Envoyer » (depuis le 06/11 : `preparation.envoye = true` avec `preparation.message_id`) a son
+fil dans `preparation.thread_id` et son heure dans `preparation.envoye_le` : lis ce message-là (sans retouche Gmail,
+c'est le contenu validé sur la page). Samuel : `get_message` avec `preparation.message_id`. Lucie et Yacin : leur outil,
+`q` = `in:sent to:<contenu.a[0]>`, `receivedAfter` = `envoye_le` moins 2 minutes, et garde le message dont l'`id`
+vaut `preparation.message_id` ; l'objet envoyé est celui de Gmail (« Re: … » dans un fil), pas celui de la carte. Une
+carte fermée par « Marquer comme envoyé » (`preparation.envoi_confirme_le`, sans `message_id`) se cherche comme un
+brouillon envoyé à la main. Pour un brouillon envoyé à la main,
 cherche dans la boîte `preparation.boite` le message parti de Gang4 dans le fil `preparation.thread_id` (ou à
 `contenu.a[0]`) après `statut_change_at` (Samuel : `get_thread` ; Lucie et Yacin : leur outil, `q` = `in:sent
 to:<adresse>`, `receivedAfter` = la validation). Trouvé → une ligne, le corps sans la citation du fil (« Le … a écrit
@@ -732,15 +744,18 @@ l'envoi.
   hors des documents sales, et retirer alors « je reviens vers toi pour les autres verticales » du corps »). Aucun
   document ne couvre la demande : une étude vidéo avant la sortie de l'offre vidéo (`docs/FUNNEL.md` §7, point 48) →
   l'action attend (étape 3, verdict « attend la sortie de l'offre vidéo ») ; sinon la carte reste l'email (un contenu
-  à produire ne bloque jamais, 22/10) : l'étude est annoncée « ci-jointe » sans être décrite, `pieces_jointes` vide, et
-  `avant_envoi` dit « ⏳ joindre l'étude de cas <sujet> (aucune dans les documents sales) ».
+  à produire ne bloque jamais, 22/10) : l'étude est annoncée « ci-jointe » sans être décrite, `pieces_jointes` vide,
+  le corps porte la ligne `[à compléter : joindre l'étude de cas <sujet> dans le brouillon Gmail, puis retirer cette
+  ligne]` (« Envoyer » bloqué, 06/11), et `avant_envoi` dit « ⏳ joindre l'étude de cas <sujet> (aucune dans les
+  documents sales) ».
   **Présentation Gang4** (Yacin, 03/11 : « un lien que tu pourrais ajouter toi-même ») : un document à `url` ne se
   joint jamais ; son url va dans le corps, telle quelle, dans la langue de l'email (« Présentation Gang4 » en
   français, « Présentation Gang4 (anglais) » pour un email en anglais) : « voici la présentation de Gang4 :
   https://gang4.io/presentation ». Une présentation promise ou demandée part ainsi dans le même email, jamais en geste
   d'`avant_envoi` ; la carte affiche « ✅ Lien dans l'email : Présentation Gang4 ». Un type absent de la table (une
   grille tarifaire au 03/11) reste un geste d'`avant_envoi` (« ⏳ joindre la grille tarifaire »), annoncé
-  « ci-jointe ».
+  « ci-jointe », avec la ligne `[à compléter : joindre la grille tarifaire dans le brouillon Gmail, puis retirer cette
+  ligne]` dans le corps.
 - **Offre promise** → l'email qui la fait : ce qui a été dit en démo (Claap), les conditions des offres déjà envoyées
   par la même boîte (recherche ciblée dans les envoyés : « offre », « proposition », « tarif », 90 jours), le modèle de
   facturation en base (`public."BillingPlan"` : commission, seuil de franchise ; `"OrganisationSubscription"` :
@@ -759,7 +774,8 @@ l'envoi.
   notes Attio et les emails ; le lien est celui que la même boîte a déjà envoyé à d'autres marques (recherche ciblée).
 - **Ce que Gang4 doit faire avant** (créas à produire, invitation à créer, accès à donner, décision interne) → l'email
   qui suit cette action, écrit comme si elle était faite, avec ce qui reste à ajouter marqué `[à compléter : …]` :
-  des créas « en pièces jointes », le lien d'invitation. Une invitation de l'admin n'envoie aucun email : elle donne un
+  des créas « en pièces jointes » (avec la ligne `[à compléter : joindre les créas dans le brouillon Gmail, puis retirer
+  cette ligne]` : elles ne partent pas par « Envoyer »), le lien d'invitation. Une invitation de l'admin n'envoie aucun email : elle donne un
   lien valable 7 jours, que l'email contient (`[à compléter : lien d'invitation de <prénom>]`), en copie de chaque
   personne invitée. `avant_envoi` dit l'action et sa page (« créer les invitations de Yoann et Alban dans
   Orga › Bricks › Utilisateurs »). Une action qui crée des créas inclut le lancement du batch. Pour une marque à
