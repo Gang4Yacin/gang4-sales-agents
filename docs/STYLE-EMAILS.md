@@ -105,7 +105,13 @@ calculs ou d'une lecture de `SalesCopyLecon`.
   récente, une date qu'il a donnée).
 - **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
   Gang4 en une ligne (« Petit rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs diffusées
-  depuis le compte de vraies personnes, et des UGC statiques en illimité. »), puis le créneau. Pas de livrables que
+  depuis le compte de vraies personnes, et des UGC statiques en illimité. »), puis le créneau.
+- **Le rappel parle de l'offre du prospect** (06/11, Magimix et Biocyte : « parle pas de Partnership Ads mais de social
+  proof ») : quand la conversation est partie du Social Proof (avis ou commentaires sous les ads, testeuses, démo
+  Social Proof, contact venu d'une marque cliente du Social Proof), le rappel est « Petit rappel rapide : chez Gang4,
+  des testeuses et testeurs de notre communauté reçoivent vos produits, les testent et publient des commentaires sur
+  vos pubs Meta afin d'améliorer leurs performances (baisse du CPA). » Un temps fort proche peut s'ajouter en une ligne
+  (« Avec le Black Friday qui approche, ça peut être le moment idéal pour tester. », Biocyte, 06/11). Pas de livrables que
   Gang4 avait proposés il y a des mois (présentation, créas) quand le prospect a reporté ou décliné depuis : ils se
   reproposent au call. Des documents qu'il a lui-même demandés (études de cas) partent après la demande de créneau,
   en une ligne « D'ailleurs… » (ligne suivante).
