@@ -820,9 +820,18 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
 2. **Une seule question, la demande, en fin d'email** : pas de « Est-ce que vous avez pu en discuter ? », « Tu as eu
    le temps d'y jeter un œil ? » ni « si c'est toujours d'actualité ? » avant le créneau ; le contexte se dit en
    affirmant (« Tu m'avais dit vouloir lancer un test avec votre nouvelle agence. »).
-3. **Relance après un silence de plus de deux semaines** : le rappel de Gang4 en une ligne, mot pour mot (« Petit
-   rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs diffusées depuis le compte de vraies
-   personnes, et des UGC statiques en illimité. »), puis la demande.
+3. **Relance après un silence de plus de deux semaines** : le rappel de Gang4 en une ligne, mot pour mot, **sur l'offre
+   dont il est question avec ce prospect** (Yacin, 06/11, Magimix et Biocyte : « parle pas de Partnership Ads mais de
+   Social Proof »), puis la demande :
+   - Partnership Ads (par défaut) : « Petit rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs
+     diffusées depuis le compte de vraies personnes, et des UGC statiques en illimité. »
+   - Social Proof : « Petit rappel rapide : chez Gang4, des testeuses et testeurs de notre communauté reçoivent vos
+     produits, les testent et publient des commentaires sur vos pubs Meta afin d'améliorer leurs performances (baisse
+     du CPA). »
+   Social Proof quand la conversation est partie de là : une séquence ou un email sur les avis ou les commentaires sous
+   les ads, les testeuses, une réservation « Démo Gang4 - Social Proof », un contact venu d'une marque cliente du Social
+   Proof (Florence Sequero, des Petits Prodiges, pour Biocyte), ou le prospect qui en parle ; dans le doute, lis le
+   premier email de Gang4 du fil et le premier échange (étape 7, `historique`).
 4. **Les chiffres tels que le prospect les a entendus** : un nombre déjà annoncé (« les 20 UGC ») ne se contredit pas
    avec le compte en base (16 validées pour Flotte le 05/11) ; s'ils diffèrent, l'email n'en cite aucun.
 5. **Les mots du prospect** : « déployer Gang4 » reste « déployer », pas « tester » (Biocyte).
