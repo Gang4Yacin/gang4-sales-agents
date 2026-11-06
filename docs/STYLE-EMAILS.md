@@ -68,7 +68,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   Une invitation créée dans l'admin est un lien à transmettre (l'admin n'envoie aucun email ; créée depuis l'app
   marque, la plateforme l'envoie elle-même) : l'email le contient,
   `[à compléter : lien d'invitation de <prénom>]`, en copie de chaque personne invitée. Une étude de cas jointe est
-  nommée (« l'étude de cas Perifit, ci-jointe ») : « Valider » la joint au brouillon (documents sales, `/sales-focus`
+  nommée (« l'étude de cas Perifit, ci-jointe ») : « Envoyer » la joint à l'email (documents sales, `/sales-focus`
   étape 6). La présentation Gang4 est un lien, jamais une pièce jointe : son url dans le corps (« voici la présentation
   de Gang4 : https://gang4.io/presentation », `/presentation/en` pour un email en anglais). Des créas à joindre sont
   annoncées « ci-jointes » : Gang4 les joint avant l'envoi.
@@ -88,7 +88,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 | **Go donné, Meta à connecter ou accès Business Manager à donner** | Le go en une phrase (sa date), puis l'étape suivante précise et ce qu'elle débloque. | Donner l'accès, ou un court appel pour le faire ensemble. |
 | **Offre promise** | L'offre telle que discutée (compte rendu de la démo), avec les conditions réelles : offres déjà envoyées par la même boîte, modèle de facturation en base. Ce qui manque reste `[à compléter : …]`. | Un oui, ou un court appel pour la caler. |
 | **Références clients demandées** | Deux ou trois marques clientes du même secteur ou de la même taille, avec un résultat chiffré quand on l'a. Jamais leurs coordonnées : une mise en relation que l'équipe organise. | L'étape suivante (l'accès, le test). |
-| **Étude de cas à envoyer** | La demande du prospect avec ses mots (« comme promis, les cas chiffrés par verticale »), puis ce qui est joint, nommé, avec ce qui en fait un exemple proche s'il l'est vraiment (« l'étude de cas Little Cigogne / Plumaïa, une box de mode par abonnement, ci-jointe ») ; sinon le document pour ce qu'il est, sans parler de proximité. Au plus un chiffre de l'étude, mot pour mot avec sa période. Ce que l'étude ne couvre pas se dit simplement (« je reviens vers toi pour les autres verticales »). « Valider » joint le document au brouillon ; une présentation promise part dans le même email, en lien. | Un retour, ou un créneau. |
+| **Étude de cas à envoyer** | La demande du prospect avec ses mots (« comme promis, les cas chiffrés par verticale »), puis ce qui est joint, nommé, avec ce qui en fait un exemple proche s'il l'est vraiment (« l'étude de cas Little Cigogne / Plumaïa, une box de mode par abonnement, ci-jointe ») ; sinon le document pour ce qu'il est, sans parler de proximité. Au plus un chiffre de l'étude, mot pour mot avec sa période. Ce que l'étude ne couvre pas se dit simplement (« je reviens vers toi pour les autres verticales »). « Envoyer » joint le document à l'email ; une présentation promise part dans le même email, en lien. | Un retour, ou un créneau. |
 | **Facture ouverte** | Factuel et neutre : facture, montant et date tels qu'en base, lien de paiement s'il existe. | Le règlement, ou la question qui le bloque. |
 | **Conversation chaude qui retombe** (intérêt clair, puis rien depuis 10 jours ou plus) | L'intérêt exprimé, avec ses mots à lui, puis l'étape suivante concrète. | Un créneau. |
 
@@ -104,13 +104,21 @@ calculs ou d'une lecture de `SalesCopyLecon`.
   souvent ; une date reste quand elle aide le prospect à se situer (un rendez-vous à venir, une échéance, une démo
   récente, une date qu'il a donnée).
 - **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
-  Gang4 en une ligne (« Petit rappel rapide : chez Gang4, on fait des Partnership Ads sur Meta, des pubs diffusées
-  depuis le compte de vraies personnes, et des UGC statiques en illimité. »), puis le créneau.
+  Gang4 en une ou deux phrases, puis le créneau.
+- **Le rappel met les chiffres en avant** (06/11 : « met bien en avant les chiffres qu'on a… Recopie pas mot pour mot
+  mais c'est une idée ») : la tournure varie, les faits non, et rien ne s'y ajoute. Partnership Ads (par défaut) :
+  scaler les Partnership Ads en un clic, des centaines de créas diffusées depuis des centaines de profils, plus de 100
+  e-commerçants accompagnés (Caats, Wecasa, Tediber…), par exemple « Petit rappel : avec Gang4, vous scalez vos
+  Partnership Ads en un clic, avec des centaines de créas diffusées depuis des centaines de profils. On accompagne déjà
+  +100 e-com' (Caats, Wecasa, Tediber…). » Jamais la marque elle-même ni son concurrent direct en référence : le nombre
+  reste, sans les noms.
 - **Le rappel parle de l'offre du prospect** (06/11, Magimix et Biocyte : « parle pas de Partnership Ads mais de social
   proof ») : quand la conversation est partie du Social Proof (avis ou commentaires sous les ads, testeuses, démo
-  Social Proof, contact venu d'une marque cliente du Social Proof), le rappel est « Petit rappel rapide : chez Gang4,
-  des testeuses et testeurs de notre communauté reçoivent vos produits, les testent et publient des commentaires sur
-  vos pubs Meta afin d'améliorer leurs performances (baisse du CPA). » Un temps fort proche peut s'ajouter en une ligne
+  Social Proof, contact venu d'une marque cliente du Social Proof), le rappel dit que Gang4 optimise les commentaires
+  sous les ads, ce qui améliore le ROAS de 25 % en moyenne, et que Gang4 accompagne plus de 100 e-commerçants qui
+  dépensent de 30 k€ à 300 k€ par mois sur Meta, par exemple « Petit rappel : Gang4 optimise les commentaires sous vos
+  ads, ce qui améliore votre ROAS de 25 % en moyenne. On accompagne déjà plus de 100 marques e-commerce qui dépensent de
+  30 k€ à 300 k€ par mois sur Meta. » Un temps fort proche peut s'ajouter en une ligne
   (« Avec le Black Friday qui approche, ça peut être le moment idéal pour tester. », Biocyte, 06/11). Pas de livrables que
   Gang4 avait proposés il y a des mois (présentation, créas) quand le prospect a reporté ou décliné depuis : ils se
   reproposent au call. Des documents qu'il a lui-même demandés (études de cas) partent après la demande de créneau,
