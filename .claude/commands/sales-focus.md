@@ -195,7 +195,8 @@ order by l.envoye_le desc
 limit 30;
 ```
 Les **modèles** de l'équipe (`type = 'modele'`, depuis le 05/11 au soir : emails écrits à la main par Samuel, Lucie
-ou Yacin dans une vraie conversation, classés par situation) se lisent à l'étape 6, par situation.
+ou Yacin dans une vraie conversation, classés par situation ; 72 importés le 06/11 à la demande de Yacin, envoyés
+depuis avril 2026, choisis et relus un par un) se lisent à l'étape 6, par situation.
 Puis une ligne par carte modifiée sur la page : ta version (premier « avant »), celle de Yacin (dernier « après ») et
 ses consignes dans l'ordre :
 ```sql
@@ -691,7 +692,9 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      - puis le libellé Gmail « Modèle », puis une recherche ciblée dans les envoyés de la boîte (mots de la
        situation, 12 derniers mois), quelques emails écrits à la main dans une conversation (jamais une étape de
        séquence Lemlist).
-     Reprends leur structure et leurs tournures, jamais leurs faits. Ne parcours jamais une boîte en masse. Tu lis les
+     Reprends leur structure et leurs tournures, jamais leurs faits : ni les noms de clients cités en référence (un
+     modèle peut citer Caats, client perdu ; les références viennent du point 3 de la relecture), ni les chiffres, ni
+     les personnes qu'ils nomment, ni leurs dates ou offres. Ne parcours jamais une boîte en masse. Tu lis les
      modèles, tu n'en écris pas (la table ne reçoit de la routine que les leçons `envoi`).
   4. Applique les leçons de l'étape 1 et les « Corrections de Yacin » de `docs/STYLE-EMAILS.md` (le 05/11 : aucune
      personne ajoutée au créneau demandé, pas de date pour en mettre, relance courte et chaleureuse avec un rappel de ce
