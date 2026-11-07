@@ -76,7 +76,7 @@ mets cette règle dans leur brief, mot pour mot.
 - `manuel` → `source = 'manuel'` (lancé à la main : app Claude, « Run now » ou appel de la routine) ; sans lui,
   `source = 'routine'`.
 - Un nombre de 1 à 10 → `N`, le nombre de cartes au plus ; 10 par défaut depuis le 07/11 (Yacin : « que le Sales Focus soit par défaut sur un top 10 » ; 3 jusqu'au 27/10, 5 jusqu'au 07/11). Exemple :
-  `manuel 10` pour voir un top 10 sur la page (demande de Yacin du 22/10). Un nombre hors de 1 à 10 compte pour 5.
+  `manuel 10` pour voir un top 10 sur la page (demande de Yacin du 22/10). Un nombre hors de 1 à 10 compte pour 10 (le défaut).
 - Pas de mode d'essai : chaque lancement, `manuel` compris, écrit le calcul et poste dans `#sales-ops` (étape 8).
 
 ## Étape 1 — Mémoire des calculs précédents
@@ -266,8 +266,9 @@ sont pas des leçons.
   `Deal Lost` d'Attio fermés il y a 3 à 12 mois, avec leur raison de perte et la dernière note ; un client parti peut
   garder un deal `Deal Won` (crm-sync §4b, churn) : la carte se pose alors sur ce deal. Si l'outil Allo est connecté à la
   session (`allo_crm_search`, `allo_search_conversation_items`, à trouver par ToolSearch « Allo »), il sert, en lecture
-  seule, à vérifier le contact d'une carte appel (son numéro, `do_not_call`) et à lire les appels passés à un numéro ;
-  jamais un appel, un SMS, une file d'appel, ni un contact créé ou modifié.
+  seule, à vérifier le contact d'une carte appel (son numéro, `do_not_call`), à lire les appels passés à un numéro et à
+  trouver l'id web de sa fiche (`con-…`, dans les conversations du numéro) ; jamais un appel, un SMS, une file d'appel,
+  ni un contact créé ou modifié.
 - **Documents sales** : `public."SalesDocument"`, ce que Gang4 peut envoyer dans un email (demande de Yacin du
   03/11) : un document à `fichier` (études de cas Perifit, Little Cigogne / Plumaïa et Mium Lab au 03/11) se joint au
   brouillon (`pieces_jointes`) ; un document à `url` (la présentation Gang4, « Présentation Gang4 » en français et
@@ -973,11 +974,15 @@ l'historique, l'objectif, un script de 3-4 lignes, un message vocal court ; pour
 - **La fiche Allo** : si l'outil Allo est là (étape 2), cherche le contact par son numéro : `allo_crm_search`,
   `entity: people`, `filters: [{"field": "phone_number", "operator": "IS", "value": "<E.164>"}]` (la recherche
   plein texte et `phone_numbers CONTAINS` renvoient toute la base, premier résultat sans rapport) ; `do_not_call` vrai :
-  pas de carte appel. `allo_contact_id` reste `null` : l'API Allo ne donne que l'id `per-…`, que l'app web d'Allo
-  n'ouvre pas (Terravita, 07/11 : « ça m'a renvoyé sur …contactId=per-… alors que le bon lien c'est …contactId=con-… »),
-  et la page ouvre alors Allo sur le numéro (`/?number=<E.164>&view=discussions`, la conversation de ce numéro). Seul
-  un id web `con-…` va dans `allo_contact_id` : celui que porte déjà la carte reprise (étape 1) pour le même numéro ;
-  jamais un `per-…`, jamais un id deviné. Jamais un contact créé, jamais une url écrite.
+  pas de carte appel. Son id `per-…` ne va jamais dans la carte : l'app web d'Allo ne l'ouvre pas (Terravita, 07/11 :
+  « ça m'a renvoyé sur …contactId=per-… alors que le bon lien c'est …contactId=con-… »). L'id de la fiche dans l'app
+  web (`con-…`) se lit dans les conversations du numéro : `allo_search_conversation_items` avec
+  `contact_number: "<E.164>"` et `size: 5` ; chaque appel ou SMS porte `contacts: [{"id": "con-…", "name": …}]`.
+  `allo_contact_id` = cet id seulement si un seul contact nommé y revient, au nom de l'interlocuteur de la carte (un
+  contact sans `name` ne compte pas). Aucune conversation (numéro jamais appelé ni écrit depuis Allo), plusieurs
+  contacts nommés, un autre nom, ou pas d'outil : l'id que porte déjà la carte reprise (étape 1) pour le même numéro,
+  sinon `null`, et la page ouvre Allo sur la conversation du numéro (`/?number=<E.164>&view=discussions`), d'où l'on
+  appelle, sans la fiche. Jamais un `per-…`, jamais un id deviné, jamais un contact créé, jamais une url écrite.
 - **Qui appelle** : la personne de Gang4 qui a échangé avec le deal (`responsable`, comme pour un email) ; tout le monde
   appelle depuis le compte Allo de Samuel. `contenu.boite` = cette personne.
 - **Le script** (`corps`) : 3 à 4 lignes courtes, à dire à l'oral, au tutoiement ou au vouvoiement déjà employé : qui
