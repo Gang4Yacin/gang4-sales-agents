@@ -93,6 +93,13 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 | **Étude de cas à envoyer** | La demande du prospect avec ses mots (« comme promis, les cas chiffrés par verticale »), puis ce qui est joint, nommé, avec ce qui en fait un exemple proche s'il l'est vraiment (« l'étude de cas Little Cigogne / Plumaïa, une box de mode par abonnement, ci-jointe ») ; sinon le document pour ce qu'il est, sans parler de proximité. Au plus un chiffre de l'étude, mot pour mot avec sa période. Ce que l'étude ne couvre pas se dit simplement (« je reviens vers toi pour les autres verticales »). « Envoyer » joint le document à l'email ; une présentation promise part dans le même email, en lien. | Un retour, ou un créneau. |
 | **Facture ouverte** | Factuel et neutre : facture, montant et date tels qu'en base, lien de paiement s'il existe. | Le règlement, ou la question qui le bloque. |
 | **Conversation chaude qui retombe** (intérêt clair, puis rien depuis 10 jours ou plus) | L'intérêt exprimé, avec ses mots à lui, puis l'étape suivante concrète. | Un créneau. |
+| **Clôture** (07/11 : conditions de `/sales-check` C4 : plus de 60 jours sans signal, 3 relances sans réponse dont une hors email, la dernière il y a 7 jours ou plus) | 50 à 80 mots, sans reproche : le dernier échange en une phrase, « je ferme le dossier de mon côté ». | Aucune : la porte ouverte (« si le sujet revient, réponds simplement à cet email »). |
+| **Reconquête** (07/11 : ancien client ou deal perdu, 3 à 12 mois, raison réversible écrite) | La raison du départ avec ses mots, puis ce qui a changé depuis, vérifiable (offre lancée, temps fort qui arrive). Jamais de remise inventée. | Un court call, ou un test sur le temps fort. |
+
+**Carte appel** (07/11) : pas un email, mais le même ton. Le script tient en 3 à 4 lignes dites à l'oral (qui appelle,
+de la part de Gang4, la raison liée au dernier échange, une seule question) ; le message vocal en 2 à 3 phrases, 300
+caractères au plus (prénom, Gang4, la raison, une fin sans engagement), sans numéro dicté, ni promesse d'email ou de
+rappel daté.
 
 ## Corrections de Yacin
 
