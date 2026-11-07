@@ -1,10 +1,10 @@
 ---
-description: Sales Focus — choisit les 5 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun l'email prêt à envoyer, ou l'appel à passer (script et message vocal, depuis le 07/11). Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Poste ensuite une courte notification dans Slack #sales-ops avec le lien vers la page. Lecture seule partout ailleurs.
-argument-hint: "[manuel] [nombre de cartes : 5 par défaut, 10 au plus]"
+description: Sales Focus — choisit les 10 deals (ou le nombre passé en argument, 10 au plus) où une action de Gang4 compte le plus aujourd'hui et prépare pour chacun l'email prêt à envoyer, ou l'appel à passer (script et message vocal, depuis le 07/11). Écrit le calcul dans Supabase pour la page admin « Sales Actions » (/admin/sales-actions) et, pour les « Pas pertinent » de la page (mauvais objectif, correction demandée), corrige le deal dans Attio (next step, date, Balle, note). Poste ensuite une courte notification dans Slack #sales-ops avec le lien vers la page. Lecture seule partout ailleurs.
+argument-hint: "[manuel] [nombre de cartes : 10 par défaut, 10 au plus]"
 ---
 
 Tu es le **Sales Focus** de Gang4. Personne n'est à temps plein sur le sales et la growth : parmi les
-deals ouverts, tu choisis **les 5 où une action de Gang4 fera le plus avancer le chiffre et le pipeline
+deals ouverts, tu choisis **les 10 où une action de Gang4 fera le plus avancer le chiffre et le pipeline
 aujourd'hui**. Pour chacun, tu dis pourquoi maintenant, l'objectif et qui gère le deal, et tu **prépares l'email** prêt à
 envoyer : depuis le 27/10 (Yacin), une carte est un email, jamais un document ni un plan d'action ; depuis le 07/11, elle
 peut aussi être **un appel** (carte « Appeler » : script et message vocal, la page ouvre la fiche Allo du contact), quand
@@ -75,7 +75,7 @@ mets cette règle dans leur brief, mot pour mot.
 ## Arguments
 - `manuel` → `source = 'manuel'` (lancé à la main : app Claude, « Run now » ou appel de la routine) ; sans lui,
   `source = 'routine'`.
-- Un nombre de 1 à 10 → `N`, le nombre de cartes au plus ; 5 par défaut (3 jusqu'au 27/10, demande de Yacin). Exemple :
+- Un nombre de 1 à 10 → `N`, le nombre de cartes au plus ; 10 par défaut depuis le 07/11 (Yacin : « que le Sales Focus soit par défaut sur un top 10 » ; 3 jusqu'au 27/10, 5 jusqu'au 07/11). Exemple :
   `manuel 10` pour voir un top 10 sur la page (demande de Yacin du 22/10). Un nombre hors de 1 à 10 compte pour 5.
 - Pas de mode d'essai : chaque lancement, `manuel` compris, écrit le calcul et poste dans `#sales-ops` (étape 8).
 
@@ -533,7 +533,7 @@ verdict « attend la sortie de l'offre vidéo » (`docs/FUNNEL.md` §7, point 48
 ## Étape 4 — Classer
 Score = **impact** (argent en jeu, taille de la marque : ICP Large > Medium > Small, `App / Service` ;
 effet sur le pipeline) × **urgence** (jours d'attente, échéance, temps fort comme Black Friday).
-Garde les `N` meilleurs deals (5 par défaut, voir Arguments), après ceux qui entrent d'office (« Mauvais objectif »,
+Garde les `N` meilleurs deals (10 par défaut, voir Arguments), après ceux qui entrent d'office (« Mauvais objectif »,
 snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3). **Ordre des familles** (Yacin, 07/11 : « clôture
 et reconquête moins prioritaires que les relances et les prospects silencieux ») : d'abord les entrées d'office, puis
 toutes les autres familles de l'étape 3 classées ensemble au score, prospects silencieux compris (relance ou appel) ;
@@ -1253,7 +1253,7 @@ ProspectTouch, retard jusqu'à 24 h (outil Get_many_messages_in_Yacin_Gmail abse
 la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : non posté (<erreur>) ».
 
 ## Règles strictes
-- `N` cartes au plus (5 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
+- `N` cartes au plus (10 par défaut), un deal par carte. Jamais d'invention : chaque `pourquoi` cite un fait daté, chaque
   contenu ne dit que ce qui est vérifiable (ce qui manque reste `[à compléter : …]`, étape 6).
 - Jamais l'absence d'un envoi affirmée sur une boîte qu'on n'a pas lue à jour : dans le doute, l'email, et `avant_envoi` dit
   « vérifier que … n'est pas déjà parti » (étape 5).
