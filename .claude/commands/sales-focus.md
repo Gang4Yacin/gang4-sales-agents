@@ -707,11 +707,14 @@ que « Annuler la dernière » défasse d'abord la tienne et jamais à moitié :
 `pieces_jointes` et `avant_envoi` seulement s'ils changent. Si un fait nouveau rend l'email caduc (réponse du prospect, rendez-vous pris),
 écris un nouveau contenu, sans `contenu_initial` ni `modifications`, et dis-le dans `resume` : ses corrections restent
 des leçons (étape 1). Une carte d'avant le 27/10 dont le contenu est un `document` (plan d'étude, plan d'action) ne se
-reprend pas : écris l'email qui la remplace (« Toujours un email », ci-dessous).
+reprend pas : écris l'email qui la remplace (« Toujours un email », ci-dessous). Une carte appel reprise garde son
+script et son message vocal, mais son `allo_contact_id` est toujours recalculé (« Carte appel » › « La fiche Allo »,
+ci-dessous) : seul ce champ change dans `contenu`, sans entrée dans `modifications` (ni `objet` ni `corps` ne bougent) ;
+un `per-…` d'une carte d'avant le 07/11 ne repart jamais.
 
 **Carte snoozée revenue à son jour** (étape 1, même `cle`) : comme une carte modifiée, son `contenu`, son
 `contenu_initial` et ses `modifications` sont repris tels quels si l'étape 5 ne trouve rien de nouveau (une étude de
-cas sans `pieces_jointes` reçoit son document, comme ci-dessus).
+cas sans `pieces_jointes` reçoit son document, et une carte appel son `allo_contact_id` recalculé, comme ci-dessus).
 
 **Carte « Mauvais objectif »** (étape 2 bis) : un contenu neuf pour le nouvel objectif, sans `contenu_initial` ni
 `modifications`, avec la `cle` du nouvel objectif. Le texte de l'équipe vaut consigne, et `pourquoi` le cite avec son
@@ -980,9 +983,10 @@ l'historique, l'objectif, un script de 3-4 lignes, un message vocal court ; pour
   `contact_number: "<E.164>"` et `size: 5` ; chaque appel ou SMS porte `contacts: [{"id": "con-…", "name": …}]`.
   `allo_contact_id` = cet id seulement si un seul contact nommé y revient, au nom de l'interlocuteur de la carte (un
   contact sans `name` ne compte pas). Aucune conversation (numéro jamais appelé ni écrit depuis Allo), plusieurs
-  contacts nommés, un autre nom, ou pas d'outil : l'id que porte déjà la carte reprise (étape 1) pour le même numéro,
-  sinon `null`, et la page ouvre Allo sur la conversation du numéro (`/?number=<E.164>&view=discussions`), d'où l'on
-  appelle, sans la fiche. Jamais un `per-…`, jamais un id deviné, jamais un contact créé, jamais une url écrite.
+  contacts nommés, un autre nom, ou pas d'outil : le `con-…` de la dernière carte de la même `cle` lue à l'étape 1
+  (reprise ou réécrite) s'il porte le même numéro, sinon `null`, et la page ouvre Allo sur la conversation du numéro
+  (`/?number=<E.164>&view=discussions`), d'où l'on appelle, sans la fiche. Ce calcul vaut pour toute carte appel,
+  neuve ou reprise (étape 6). Jamais un `per-…`, jamais un id deviné, jamais un contact créé, jamais une url écrite.
 - **Qui appelle** : la personne de Gang4 qui a échangé avec le deal (`responsable`, comme pour un email) ; tout le monde
   appelle depuis le compte Allo de Samuel. `contenu.boite` = cette personne.
 - **Le script** (`corps`) : 3 à 4 lignes courtes, à dire à l'oral, au tutoiement ou au vouvoiement déjà employé : qui
