@@ -266,8 +266,8 @@ sont pas des leçons.
   `Deal Lost` d'Attio fermés il y a 3 à 12 mois, avec leur raison de perte et la dernière note ; un client parti peut
   garder un deal `Deal Won` (crm-sync §4b, churn) : la carte se pose alors sur ce deal. Si l'outil Allo est connecté à la
   session (`allo_crm_search`, `allo_search_conversation_items`, à trouver par ToolSearch « Allo »), il sert, en lecture
-  seule, à trouver la fiche du contact d'une carte appel (son id `per-…`) et les appels passés à un numéro ; jamais un
-  appel, un SMS, une file d'appel, ni un contact créé ou modifié.
+  seule, à vérifier le contact d'une carte appel (son numéro, `do_not_call`) et à lire les appels passés à un numéro ;
+  jamais un appel, un SMS, une file d'appel, ni un contact créé ou modifié.
 - **Documents sales** : `public."SalesDocument"`, ce que Gang4 peut envoyer dans un email (demande de Yacin du
   03/11) : un document à `fichier` (études de cas Perifit, Little Cigogne / Plumaïa et Mium Lab au 03/11) se joint au
   brouillon (`pieces_jointes`) ; un document à `url` (la présentation Gang4, « Présentation Gang4 » en français et
@@ -972,10 +972,12 @@ l'historique, l'objectif, un script de 3-4 lignes, un message vocal court ; pour
   récente ; écrit en E.164 (`+33612345678`). Sans numéro sûr, pas de carte appel : la relance reste un email.
 - **La fiche Allo** : si l'outil Allo est là (étape 2), cherche le contact par son numéro : `allo_crm_search`,
   `entity: people`, `filters: [{"field": "phone_number", "operator": "IS", "value": "<E.164>"}]` (la recherche
-  plein texte et `phone_numbers CONTAINS` renvoient toute la base, premier résultat sans rapport). Garde son `id`
-  (`per-…`) seulement si `total_count` vaut 1 et que ses `numbers` contiennent le numéro ; `do_not_call` vrai : pas de
-  carte appel. Sinon, ou sans l'outil, `allo_contact_id` est `null` et la page ouvre Allo sur le numéro. Jamais un
-  contact créé, jamais une url écrite.
+  plein texte et `phone_numbers CONTAINS` renvoient toute la base, premier résultat sans rapport) ; `do_not_call` vrai :
+  pas de carte appel. `allo_contact_id` reste `null` : l'API Allo ne donne que l'id `per-…`, que l'app web d'Allo
+  n'ouvre pas (Terravita, 07/11 : « ça m'a renvoyé sur …contactId=per-… alors que le bon lien c'est …contactId=con-… »),
+  et la page ouvre alors Allo sur le numéro (`/?number=<E.164>&view=discussions`, la conversation de ce numéro). Seul
+  un id web `con-…` va dans `allo_contact_id` : celui que porte déjà la carte reprise (étape 1) pour le même numéro ;
+  jamais un `per-…`, jamais un id deviné. Jamais un contact créé, jamais une url écrite.
 - **Qui appelle** : la personne de Gang4 qui a échangé avec le deal (`responsable`, comme pour un email) ; tout le monde
   appelle depuis le compte Allo de Samuel. `contenu.boite` = cette personne.
 - **Le script** (`corps`) : 3 à 4 lignes courtes, à dire à l'oral, au tutoiement ou au vouvoiement déjà employé : qui
@@ -1029,7 +1031,7 @@ returning run_id;
 ```
 - `rang` : de 1 à `N`, sans trou (la base refuse au-delà de 10).
 - `contenu` d'une carte appel (07/11) : `{"type": "appel", "boite": "<samuel|lucie|yacin>", "contact": "<prénom nom>",
-  "role": "<rôle>", "telephone": "<+33…>", "allo_contact_id": "<per-…|null>", "objet": "<message vocal>", "corps":
+  "role": "<rôle>", "telephone": "<+33…>", "allo_contact_id": "<con-…|null>", "objet": "<message vocal>", "corps":
   "<script>"}` ; `cle` en `deal:<deal_id>:appel` (`:cloture` et `:reconquete` pour ces emails).
 - `contenu_initial` et `modifications` : `null` pour une carte neuve ; pour une carte que Yacin a modifiée ou une
   carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6), sauf un contenu `document` (devenu un email).
@@ -1182,29 +1184,36 @@ Une fois tout écrit (étape 7 : le calcul et ses cartes, les « Pas pertinent �
 (`SLACK_BOT_TOKEN_SALES_OPS`, dans l'environnement des routines). Chaque lancement poste, `manuel` compris. Si
 l'écriture du calcul a échoué, ne poste rien : la page n'a rien de nouveau.
 
-Le message, en Slack mrkdwn, 8 lignes au plus :
+Le message, en Slack mrkdwn, 12 lignes au plus (le titre, une ligne par carte, le lien) :
 ```
 :dart: *Sales Focus — <jour> JJ/MM* · top <nombre de cartes> prêt
 1. *<deal_nom>* — <ce qu'il faut faire, en une demi-phrase>
 2. …
-5. …
+N. …
 <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>
 ```
 - Titre : le jour du calcul, heure de Paris (« lundi 26/10 »), et le nombre de cartes écrites.
 - Une ligne par carte, dans l'ordre des rangs : `deal_nom` en gras, puis ce qu'il faut faire, d'après le `titre` de
   la carte, sans le nom du deal, 60 caractères au plus. Rien d'autre : ni pourquoi, ni contenu, ni lien Attio.
-- Plus de 5 cartes (par exemple `manuel 10`) : les 5 premières, puis une ligne « + N autres » avant le lien.
+- Toutes les cartes du calcul, jusqu'à la 10e, jamais de « + N autres » (Yacin, 07/11 : « plutôt que de mettre
+  "+ 5 autres", tu peux mettre le top 10 complet »).
 - Aucune carte : une seule ligne, `:dart: *Sales Focus — <jour> JJ/MM* · aucune action à pousser aujourd'hui ·
   <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>`.
 - Dans les noms et les actions, `&`, `<` et `>` s'écrivent `&amp;`, `&lt;` et `&gt;` (Slack).
 
-Exemple, un top 10 lancé à la main :
+Exemple, le top 10 du samedi 07/11 :
 ```
-:dart: *Sales Focus — lundi 26/10* · top 10 prêt
-1. *Goodvest* — recaler la démo manquée d'Aurélie Briche-Heinry
-2. *Hindbag* — relancer : l'email est prêt
-3. *Circle Sportswear* — relancer : l'email est prêt
-+ 7 autres
+:dart: *Sales Focus — samedi 07/11* · top 10 prêt
+1. *EyeLights* — proposer un créneau à Romain Duflot pour les UGC
+2. *Ops Clean* — relancer Marc Biessy pour sa décision après la démo
+3. *Terravita.fr* — appeler Jean-Christophe Reinhardt pour caler 10 minutes
+4. *Elmut* — relancer Romane Guny sur l'essai
+5. *SoTasty (FitnessBoutique)* — relancer François Fourcade après le résumé
+6. *Araw* — demander à Emilie Le Gac ce qui bloque les créas
+7. *Social Desk* — relancer Benjamin Durand pour lancer le test Lui Bien
+8. *C-Monetiquette* — relancer Lilian Vimes pour lui montrer les UGC
+9. *Orus* — relancer Nicolas Cambuzat pour caler l'échange demandé
+10. *Mool* — demander à Medhi Zeroual son avis pour lancer un test
 <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>
 ```
 
