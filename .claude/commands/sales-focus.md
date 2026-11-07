@@ -89,6 +89,8 @@ from public."SalesFocusAction" a join public."SalesFocusRun" r on r.id = a.run_i
 where r.computed_at > now() - interval '30 days'
    or (a.pas_pertinent_motif = 'mauvais_objectif' and a.motif_traite_at > now() - interval '90 days')
    or (a.statut = 'plus_tard' and a.plus_tard_jusqu_au >= (now() at time zone 'Europe/Paris')::date - 7)
+   or (a.statut = 'faite' and (a.cle like '%:cloture' or a.cle like '%:reconquete')
+       and r.computed_at > now() - interval '12 months')
 order by r.computed_at desc;
 ```
 - `plus_tard` (Snooze jusqu'à un jour choisi : 3, 7 ou 14 jours, ou une autre date, 90 jours au plus ; la requête
@@ -113,9 +115,11 @@ order by r.computed_at desc;
 - `faite` (validée, brouillon ou document préparé) : le deal ne revient qu'avec un fait nouveau postérieur
   à la préparation (réponse du prospect, rendez-vous, paiement). Exception, les **prospects silencieux** (étape 3,
   07/11) : une relance ou un appel resté sans réponse fait revenir le deal à sa nouvelle date de relance d'Attio
-  (posée par `/sales-ops`), ou 7 jours après l'envoi sans date, pour l'étape suivante (relance, appel, puis clôture) ;
-  une carte appel `faite` sans accord noté dans « Allo Outbound Call » le fait revenir 5 jours ouvrés après l'appel.
-  Un email de clôture `faite` ne fait plus revenir le deal, sauf réponse du prospect. Sauf une carte `faite` dont le contenu est un
+  (posée par `/sales-ops`), ou 7 jours après l'envoi sans date, pour l'étape suivante (étape 3) ; une carte validée en
+  brouillon (« Créer un brouillon ») dont le brouillon n'est toujours pas parti 2 jours ouvrés après (vérifié dans la
+  boîte) revient avec la même `cle`, comme une carte `document`. Un email de clôture ou de reconquête `faite` ne fait
+  plus jamais revenir le deal par ces familles (la requête les garde 12 mois), sauf réponse du prospect : verdict
+  « clôture envoyée le JJ/MM, fermeture à décider par Lucie » ou « reconquête envoyée le JJ/MM ». Sauf une carte `faite` dont le contenu est un
   `document` (plan d'action, plan d'étude ; calculs jusqu'au 27/10 inclus, `preparation->>'type' = 'document'`) : le
   Google Doc n'a préparé aucun email. Si l'email au prospect n'est pas parti (étape 5, trois boîtes), le deal reste
   candidat sans attendre de fait nouveau, et la carte est cet email (même `cle`) ; elle reprend le message au prospect
@@ -254,7 +258,13 @@ sont pas des leçons.
   invitations depuis sa boîte : elle se lit comme les deux autres.
 - **Agenda** : rendez-vous externes des 48 prochaines heures.
 - **Appels** (07/11) : les appels Allo du compte de Samuel reviennent dans Attio en notes « Allo Outbound Call » (heure,
-  durée, transcription, tag « interested » ou non), lues avec les notes du deal. Si l'outil Allo est connecté à la
+  durée, transcription, tag « interested » ou non), rangées sur le contact ou la société plus souvent que sur le deal
+  (Hapik : 6 notes, aucune sur le deal), parfois sous une autre société (crm-sync R10) : lis les notes du deal, de sa
+  société et de ses contacts (`search-notes-by-metadata`, limit 100), comme `crm-sync` R10, pour chaque deal candidat.
+- **Candidats à la reconquête** (07/11) : les anciens clients (`select bc.id, bc.name, bc.status from
+  public."BusinessClient" bc where bc.status = 'LOST'`, avec leur dernière facture dans `stripe.invoices`) et les deals
+  `Deal Lost` d'Attio fermés il y a 3 à 12 mois, avec leur raison de perte et la dernière note ; un client parti peut
+  garder un deal `Deal Won` (crm-sync §4b, churn) : la carte se pose alors sur ce deal. Si l'outil Allo est connecté à la
   session (`allo_crm_search`, `allo_search_conversation_items`, à trouver par ToolSearch « Allo »), il sert, en lecture
   seule, à trouver la fiche du contact d'une carte appel (son id `per-…`) et les appels passés à un numéro ; jamais un
   appel, un SMS, une file d'appel, ni un contact créé ou modifié.
@@ -451,42 +461,52 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
 - **Rendez-vous** : démo refusée, annulée ou manquée à recaler ; rendez-vous à fort enjeu dans les 48 h
   à préparer.
 - **Conversation chaude qui retombe** : intérêt clair, puis plus rien depuis 10 jours ou plus.
-- **Prospect silencieux** (Yacin, 07/11 : « go pour les prospects silencieux, avec tes conditions ») : deal ouvert,
-  Balle `Prospect`, `prochaine_action_le` passée (la relance datée n'est pas partie), et aucun message du prospect
-  depuis le dernier envoi de Gang4. Le 06/11, 24 deals étaient dans ce cas, dont 15 jamais proposés (Elmut : démo du
-  17/09, aucun email depuis ; Terravita : le CEO demandait un créneau le 20/10 ; Orus : créneau demandé le 16/09). Écarté
-  (verdict avec la raison) : un refus net ou un contact `Replied - Not Interested` dans Attio (Baïja, Avril) ; un snooze ;
-  une relance de Gang4, par n'importe quel canal (email, LinkedIn, appel, séquence Lemlist), il y a moins de 7 jours ;
-  une date de reprise fixée par le prospect et encore à venir ; un échange récent hors email (Slack Connect, LinkedIn,
-  appel décroché : BPM et Reverso sont actifs sur Slack) ; un rendez-vous calé. L'action dépend des relances de Gang4
-  restées sans réponse depuis le dernier message du prospect (emails et appels, séquences Lemlist comprises) :
-  - 0 ou 1 : **l'email de relance** (situation `relance_silence`, ou ce que le dernier échange appelle : le créneau
-    demandé pour Terravita, la décision attendue pour Ops Clean) ;
-  - 2 ou plus, plus de 10 jours de silence, le numéro du bon interlocuteur (étape 6, « Carte appel ») et un intérêt
-    déjà montré (réponse positive, démo tenue ou manquée, appel noté « interested »), sans appel depuis 14 jours :
-    **la carte appel** ;
-  - 3 ou plus dont un appel quand on a le numéro, ou 90 jours sans aucun signal : plus de relance, **l'email de
-    clôture** (famille « Clôture » ci-dessous, priorité basse) ; SmartWorkout (11 envois sans réponse) en est un.
-  Jamais plus de 3 relances par deal avant la clôture.
+- **Prospect silencieux** (Yacin, 07/11 : « go pour les prospects silencieux, avec tes conditions ; clôturer ou appel si
+  pertinent ») : deal ouvert, Balle `Prospect`, `prochaine_action_le` aujourd'hui, passée ou vide (la relance datée est
+  due), et aucun message du prospect depuis le dernier envoi de Gang4. Aussi, quelle que soit la Balle, un deal dont le
+  next step est un « Clôturer ? — N j sans réponse » posé pour silence par `/sales-ops` (grille R10, dès 3 envois sans
+  réponse) ou un « Appeler <prénom> » posé par `/sales-check` C4 (la relance hors email qui manque) : la séquence
+  ci-dessous continue jusqu'à la clôture. Le 06/11, 24 deals Balle Prospect avaient une relance due, dont 15 jamais
+  proposés (Elmut : démo du 17/09, aucun email depuis ; Terravita : le CEO demandait un créneau le 20/10 ; Orus : créneau
+  demandé le 16/09). Écarté (verdict avec la raison) : un refus net ou un contact `Replied - Not Interested` dans Attio
+  (Baïja, Avril) ; un snooze ; une relance de Gang4, par n'importe quel canal, il y a moins de 7 jours ; une date de
+  reprise fixée par le prospect et encore à venir ; un échange récent hors email (Slack Connect, LinkedIn, appel décroché :
+  BPM et Reverso sont actifs sur Slack) ; un rendez-vous calé ; un « Clôturer ? » posé par refus au téléphone ou par
+  geste de Lucie (Bloon Paris, Alltricks : verdict « clôture à décider par Lucie »).
+  Les relances se comptent comme `crm-sync` (`outbound_count_since_last_inbound`) : chaque message de Gang4 au
+  prospect depuis son dernier message, réponse directe comprise (emails, appels, séquence Lemlist, LinkedIn). L'action :
+  - 0 ou 1 relance : **l'email de relance** (situation `relance_silence`, ou ce que le dernier échange appelle : la
+    décision attendue pour Ops Clean) ;
+  - 2 relances ou plus et aucun appel encore, plus de 10 jours de silence, le numéro sûr du bon interlocuteur (étape 6,
+    « Carte appel ») et un intérêt déjà montré (réponse positive, démo tenue ou manquée, appel noté « interested ») :
+    **la carte appel** (Terravita au 07/11 : la réponse de Samuel le 20/10 et sa relance du 22/10 font 2) ; sans numéro
+    sûr ou sans intérêt montré, l'email de relance, 3 au plus ;
+  - la clôture seulement quand les conditions de `/sales-check` C4 sont réunies (une seule définition) : dernier signal du
+    prospect à plus de 60 jours (appel décroché avec résumé compris), au moins 3 relances sans réponse depuis, dont une au
+    moins hors email (l'appel ; sans numéro, LinkedIn ou le remplaçant d'une réponse d'absence), la dernière il y a 7 jours
+    ou plus, et aucune promesse de Gang4 en attente : **l'email de clôture** (famille « Clôture », priorité basse) ;
+  - entre les deux (3 relances faites, appel compris, mais moins de 60 jours) : pas de carte, verdict « attend la clôture
+    (C4 le JJ/MM) » ; jamais une 4e relance ni un 2e appel.
 - **Clôture** (07/11, priorité basse, étape 4) : un dernier email court, « je ferme le dossier de mon côté, sauf si… »,
-  quand le deal est ouvert, sans signal du prospect depuis plus de 60 jours, avec au moins 3 relances dont un appel si
-  le numéro est connu, et la dernière relance d'il y a 7 jours ou plus. Les conditions sont celles de `/sales-check` C4 :
-  ProspectTouch ne voit pas les appels, lis les notes Attio « Allo Outbound Call » avant de conclure au silence (le 20/10,
-  trois « Clôturer ? » avaient été posés à tort sur des appels non lus : Flotte, Maju, Biocyte). Un « Clôturer ? » posé
-  pour silence (Hapik) en est un ; jamais après un refus net, une décision interne de l'équipe (Bloon Paris, Alltricks :
-  « Clôturer ? » par geste de Lucie, verdict « clôture à décider par Lucie ») ni une promesse de Gang4 non tenue (elle
-  passe avant : étape 4).
-- **Reconquête** (07/11, priorité basse, étape 4) : un ancien client (`"BusinessClient".status = 'LOST'`, société
-  `Lost` dans Attio) ou un deal `Deal Lost`, 3 à 12 mois après la fin ou la perte, dont la raison **écrite** est
-  réversible (une pause, le timing, le budget, « pas prioritaire pour le moment ») ; un temps fort proche aide (Black
-  Friday). Jamais après un litige de paiement, une décision de Yacin, un refus net ou un silence seul (« No more
-  contact »). Le 06/11 : Poppins (deal déjà ouvert), Réjeanne avec Gohyav (pause annoncée le 03/04), Epycure après
-  relecture du dernier monthly. La carte se pose sur le deal existant (ouvert ou perdu), l'email reprend la raison du
-  départ et ce qui a changé depuis, vérifiable.
+  pour un deal ouvert qui remplit C4 (ci-dessus). ProspectTouch ne voit pas les appels : lis les notes « Allo Outbound
+  Call » (étape 2) avant de conclure au silence (le 20/10, trois « Clôturer ? » avaient été posés à tort sur des appels
+  non lus : Flotte, Maju, Biocyte). Un « Clôturer ? » posé pour silence (Hapik) y entre s'il remplit C4 ; jamais après un
+  refus net, une décision de l'équipe (geste de Lucie) ni une promesse de Gang4 non tenue (elle passe avant : étape 4).
+  Un email de clôture déjà parti (carte `faite` en `:cloture`, ou vu dans le fil) n'est jamais refait ; le soir,
+  `/sales-ops` pose « Clôturer ? » et Lucie décide de fermer.
+- **Reconquête** (07/11, priorité basse, étape 4) : un ancien client ou un deal `Deal Lost` (candidats de l'étape 2), 3
+  à 12 mois après la fin ou la perte, dont la raison **écrite** est réversible (une pause, le timing, le budget, « pas
+  prioritaire pour le moment ») ; un temps fort proche aide (Black Friday). Jamais après un litige de paiement, une
+  décision de Yacin, un refus net ou un silence seul (« No more contact »). Le 06/11 : Poppins (deal déjà ouvert),
+  Réjeanne avec Gohyav (pause annoncée le 03/04), Epycure après relecture du dernier monthly. La carte se pose sur le
+  deal existant (ouvert, perdu, ou gagné d'un client parti) ; l'email reprend la raison du départ et ce qui a changé
+  depuis, vérifiable. Une reconquête envoyée ne se refait pas (étape 1, 12 mois). Un « Mauvais objectif » sur un deal
+  fermé n'écrit rien dans Attio (étape 2 bis) : sa date de retour, écrite dans `motif_traitement`, se respecte comme un
+  snooze.
 
 Ne sont **pas** candidats : les relances courantes déjà datées dans Attio (Balle `Prospect` et date à
-venir : pas d'anticipation, Yacin le 07/11, le deal revient à sa date), les deals fermés et le customer success (hors
-argent, et pas de montée en gamme des clients pour l'instant). **Un contenu à produire n'écarte jamais un deal**
+venir : pas d'anticipation, Yacin le 07/11, le deal revient à sa date), les deals fermés (sauf la reconquête) et le
+customer success (hors argent, et pas de montée en gamme des clients pour l'instant). **Un contenu à produire n'écarte jamais un deal**
 (Yacin, 22/10) : cas chiffré, offre, références, récap, créas, la carte prépare ce qu'il faut (étape 6). Un deal
 Balle Gang4 à échéance n'est écarté que si l'action est déjà faite, si la situation a changé (réponse, rendez-vous
 pris, refus net), s'il est snoozé (étape 1, `plus_tard_jusqu_au` à venir ; verdict « snoozé jusqu'au JJ/MM »), s'il
@@ -517,8 +537,8 @@ Garde les `N` meilleurs deals (5 par défaut, voir Arguments), après ceux qui e
 snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3). **Ordre des familles** (Yacin, 07/11 : « clôture
 et reconquête moins prioritaires que les relances et les prospects silencieux ») : d'abord les entrées d'office, puis
 toutes les autres familles de l'étape 3 classées ensemble au score, prospects silencieux compris (relance ou appel) ;
-la clôture et la reconquête seulement pour remplir les places qui restent, 2 cartes au plus par top, jamais devant une
-relance ou un appel candidat. Moins de `N` candidats sérieux → moins de cartes.
+la clôture et la reconquête seulement pour remplir les places qui restent, jamais devant une relance ou un appel
+candidat. Moins de `N` candidats sérieux → moins de cartes.
 Classe sur des dossiers relus, pas sur le seul next step d'Attio : pour les `N + 3` premiers candidats d'après Attio
 (8 pour un top 5, 13 pour un top 10, pas plus), lis une fois le dernier échange avec la marque dans chaque boîte
 (outils de Lucie et de Yacin : `q` = `{<domaine> "<nom de la marque>" <adresse de chaque contact du deal hors de ce
@@ -778,7 +798,7 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
 
 **Un email, ou un appel** (Yacin, 27/10 et 07/11) : « Envoyer » envoie l'email depuis la boîte, après confirmation
 (06/11) ; une carte appel (« Carte appel », plus bas) n'a pas d'email. Plus de `document` (plan d'étude,
-étude de cas, plan d'action, script d'appel). Ce que Gang4 doit faire avant l'envoi va dans
+étude de cas, plan d'action, ni l'ancien « script d'appel » en document : la carte appel le remplace). Ce que Gang4 doit faire avant l'envoi va dans
 `avant_envoi`, affiché en section « Avant l'envoi » sous « Objectif » (Yacin, 27/10) : « <l'action> (<page de l'admin
 quand le geste s'y fait, nommée comme Yacin la voit : liste « Pages citées dans une carte » de `docs/FUNNEL.md`
 §5.3>) », plusieurs gestes séparés par « ; ». Pas d'étape « mettre à jour Attio » : `/sales-ops` le fait le soir de
@@ -871,8 +891,10 @@ l'envoi.
   n'en montre aucun. Le 27/10 au soir, la carte Emily's Pillow disait
   « créer la marque » puis « lancer son batch » : une marque arrêtée au Business client n'a pas de profil test, et son
   batch ne part pas.
-- **Appel** → l'email qui propose un créneau d'appel, ou qui pose par écrit la question de l'appel ; le numéro reste
-  dans Attio.
+- **Appel** (next step « Appeler » ou « Rappeler », rappel convenu au téléphone, relance hors email demandée par
+  `/sales-check` C4) → **la carte appel** (« Carte appel », plus bas) quand on a le numéro sûr de l'interlocuteur ;
+  sinon l'email qui propose un créneau d'appel. Une carte encore ouverte en email sur la même action garde sa `cle`
+  d'origine (même action, autre canal).
 
 Chiffres d'une référence client, point de départ (pubs des créas Gang4 contre les autres pubs de la marque, sur la
 période des pubs Gang4, 90 jours au plus ; filtre sur `insight_date`, `date_start` est du texte ; `spend` est dans la
@@ -939,33 +961,38 @@ le texte que tu écris.
 
 **Carte appel** (07/11, Yacin : « quand un deal reste sans réponse, qu'on a un numéro… » ; « garder le principe de
 l'historique, l'objectif, un script de 3-4 lignes, un message vocal court ; pour l'instant pas d'email de suivi »).
-- **Quand** : un prospect silencieux à son troisième contact (étape 3 : 2 relances sans réponse ou plus, plus de 10
-  jours, intérêt déjà montré, pas d'appel depuis 14 jours), ou un engagement pris au téléphone et resté sans suite
-  (Vinci, Maju : intéressés au téléphone, jamais rappelés) ; un numéro donné pour être appelé l'est (Dream Machine
-  Technology, numéro donné le 02/10, jamais appelé). Jamais un appel à froid, jamais un prospect qui a refusé, et
-  jamais deux cartes appel de suite sur le même deal sans réponse entre les deux (la suivante est la clôture).
+- **Quand** : un prospect silencieux à 2 relances sans réponse ou plus et sans appel encore (étape 3 : plus de 10
+  jours, intérêt déjà montré, pas d'appel depuis 14 jours), un next step « Appeler » ou « Rappeler » (rappel convenu,
+  relance hors email de C4), un engagement pris au téléphone et resté sans suite (Vinci, Maju : intéressés au
+  téléphone, jamais rappelés), un numéro donné pour être appelé (Dream Machine Technology, numéro donné le 02/10,
+  jamais appelé). Jamais un appel à froid, jamais un prospect qui a refusé ou marqué `do_not_call` dans Allo, et un
+  seul appel par séquence de relances (ensuite : la clôture quand C4 est rempli).
 - **Le numéro** : celui de l'interlocuteur du deal, celui qui a échangé avec Gang4, jamais un standard ou un collègue
   par défaut. Lu dans Attio (personnes du deal, `phone_numbers`), à défaut dans Allo ou dans une signature d'email
   récente ; écrit en E.164 (`+33612345678`). Sans numéro sûr, pas de carte appel : la relance reste un email.
-- **La fiche Allo** : si l'outil Allo est là (étape 2), cherche le contact par son numéro (`allo_crm_search`, `people`,
-  filtre sur `phone_numbers` ou recherche du numéro) et garde son `id` (`per-…`) ; sinon, ou introuvable,
-  `allo_contact_id` est `null` et la page ouvre Allo sur le numéro. Jamais un contact créé, jamais une url écrite.
+- **La fiche Allo** : si l'outil Allo est là (étape 2), cherche le contact par son numéro : `allo_crm_search`,
+  `entity: people`, `filters: [{"field": "phone_number", "operator": "IS", "value": "<E.164>"}]` (la recherche
+  plein texte et `phone_numbers CONTAINS` renvoient toute la base, premier résultat sans rapport). Garde son `id`
+  (`per-…`) seulement si `total_count` vaut 1 et que ses `numbers` contiennent le numéro ; `do_not_call` vrai : pas de
+  carte appel. Sinon, ou sans l'outil, `allo_contact_id` est `null` et la page ouvre Allo sur le numéro. Jamais un
+  contact créé, jamais une url écrite.
 - **Qui appelle** : la personne de Gang4 qui a échangé avec le deal (`responsable`, comme pour un email) ; tout le monde
   appelle depuis le compte Allo de Samuel. `contenu.boite` = cette personne.
 - **Le script** (`corps`) : 3 à 4 lignes courtes, à dire à l'oral, au tutoiement ou au vouvoiement déjà employé : qui
   appelle et de la part de Gang4, la raison de l'appel liée au dernier échange (la démo, la question restée ouverte,
   les créas envoyées), une seule question ou demande à la fin, celle de l'objectif (un créneau, une décision, une
   réponse). Pas de rappel de Gang4 en plusieurs phrases : une demi-phrase suffit si le prospect a pu oublier.
-- **Le message vocal** (`objet`, 300 caractères au plus) : 2 à 3 phrases : prénom de qui appelle, Gang4, la raison en une
-  phrase, et quand on rappelle (« je te rappelle jeudi »). Pas de numéro dicté, pas de promesse d'email.
+- **Le message vocal** (`objet`, 300 caractères au plus, compte-les : au-delà, la page ne peut plus modifier la carte) :
+  2 à 3 phrases : prénom de qui appelle, Gang4, la raison en une phrase, et une fin sans engagement (« bonne journée »).
+  Pas de numéro dicté, pas de promesse d'email ni de rappel daté (rien ne le programmerait).
 - **Le reste de la carte** : comme un email : `titre` (« Appeler Jean-Christophe pour caler les 10 min »), `pourquoi`
   (les relances restées sans réponse, datées), `quoi_faire` (l'objectif), `source`, `historique` (appels compris,
   `canal` `appel`), `avant_envoi` `null` sauf un geste vraiment nécessaire avant d'appeler. Situation des leçons :
   `appel`.
 - **Après** : la page a « Appeler » (fiche Allo) et « Marquer comme appelé » (statut `faite`, `preparation.type =
-  'appel'`). Au calcul suivant, le résultat se lit dans la note Attio « Allo Outbound Call » : décroché avec un accord →
-  le deal suit ce qui a été dit ; messagerie ou pas de réponse → le deal revient 5 jours ouvrés après l'appel, et
-  l'étape suivante est l'email de clôture (étape 3).
+  'appel'`). Au calcul suivant, le résultat se lit dans la note Attio « Allo Outbound Call » (étape 2) : décroché avec un
+  accord → le deal suit ce qui a été dit ; messagerie ou pas de réponse → le deal revient 5 jours ouvrés après l'appel
+  pour l'étape suivante de l'étape 3 : la clôture si C4 est rempli, sinon « attend la clôture (C4 le JJ/MM) ».
 
 **Email de clôture** (famille « Clôture », 07/11) : 50 à 80 mots, chaleureux, sans reproche : le dernier échange en une
 phrase, « je ferme le dossier de mon côté », la porte ouverte (« si le sujet revient, réponds simplement à cet email »).
