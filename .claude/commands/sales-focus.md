@@ -27,9 +27,9 @@ Tu n'écris **nulle part** sauf dans Supabase, tables `public."SalesFocusRun"` e
 `20261022170000_sales_focus_v3.sql`, `20261022190000_sales_focus_top10.sql`, `20261023190000_sales_focus_v5.sql`,
 `20261027180000_sales_focus_responsable.sql`, `20261027200000_sales_focus_avant_envoi.sql` et
 `20261105120000_sales_focus_historique_lecons.sql` du repo de l'admin) et `public."SalesCopyLecon"` (les leçons
-`envoi` seulement, étape 1), et dans Attio pour un seul cas : un « Pas pertinent » de la page à traiter (étape 2 bis), sur
-son deal (`update-record` : next step, date, Balle ; `create-note`), tracé dans `sales.run_log` et
-`sales.applied_actions`. Un seul message part : une courte notification dans Slack `#sales-ops`, une fois le calcul
+`envoi`, étape 1, et `slack`, étape 1 bis), et dans Attio pour deux cas : un « Pas pertinent » de la page à traiter
+(étape 2 bis), ou une correction demandée en toutes lettres par l'équipe dans `#sales-ops` (étape 1 bis), sur son deal
+(`update-record` : next step, date, Balle ; `create-note`), tracé dans `sales.run_log` et `sales.applied_actions`. Un seul message part : une courte notification dans Slack `#sales-ops`, une fois le calcul
 écrit, avec le lien vers la page (étape 8). Ni n8n, ni Lemlist, ni email.
 
 Avant de commencer, lis `docs/FUNNEL.md` §7 : ce que Yacin a tranché (« pas d'action », « pas grave »,
@@ -235,6 +235,14 @@ select coalesce(l.action_id::text, l.cle) as carte, max(l.cle) as cle, max(l.dea
           filter (where l.apres_pieces_jointes is not null))[1] as apres_pj
 from l group by 1 order by max(l.created_at) desc limit 30;
 ```
+Puis les remarques de style de l'équipe dans `#sales-ops` (`type = 'slack'`, depuis le 09/11, étape 1 bis) : chacune
+vaut comme une consigne de Yacin pour tous les contenus, tant qu'une remarque plus récente ne la contredit pas :
+```sql
+select l.created_at at time zone 'Europe/Paris' as le, l.contexte, l.consigne
+from public."SalesCopyLecon" l
+where l.type = 'slack' and l.annulee_le is null and l.created_at > now() - interval '90 days'
+order by l.created_at desc limit 20;
+```
 La situation d'une leçon se lit dans sa `cle` (`deal:<id>:<verbe>`, le verbe de la carte) et sa boîte dans `boite`.
 Ce que Yacin a changé, tu ne le refais pas : même consigne, même tournure retirée, même objet raccourci (un écart entre
 `avant_objet` et `apres_objet` est une leçon sur l'objet : le 27/10, « Social Desk x Gang4 : on lance le test ? » est
@@ -246,6 +254,69 @@ elles, avec un rappel de ce qu'est Gang4). Une correction vue deux fois devient 
 cite-la dans `resume`, pour qu'elle entre dans la section « Corrections de Yacin » de `docs/STYLE-EMAILS.md`.
 Les retouches que tu as faites toi-même à une reprise (entrées `source: sales-focus` de `modifications`, étape 6) ne
 sont pas des leçons.
+
+## Étape 1 bis — Demandes de l'équipe dans #sales-ops
+(09/11, Yacin : « si message envoyé dans le canal Slack #sales-ops, prendre en compte pour le prochain run (par
+exemple : ajoute cygnes au prochain top 10 pour la relancer sur pourquoi elle a pas lancé) ».)
+
+**Depuis quand** :
+```sql
+select slack_lu_ts from public."SalesFocusRun" where slack_lu_ts is not null order by computed_at desc limit 1;
+```
+Lis les messages de `#sales-ops` (`C0B5EV7AN4F`) postés après ce `ts` (sans ligne, les 3 derniers jours), et les
+réponses postées après lui dans un fil : celles des messages lus, et celles des 5 dernières notifications Sales Focus
+(messages du bot qui commencent par « :dart: *Sales Focus »), où l'équipe répond le plus souvent.
+
+**Comment** : avec l'outil Slack s'il est connecté à la session (ToolSearch « slack » : `slack_read_channel` avec
+`channel_id: "C0B5EV7AN4F"` et `oldest`, puis `slack_read_thread` ; il donne l'adresse email de chaque auteur). Sinon
+avec le jeton du bot (`SLACK_BOT_TOKEN_SALES_OPS`, jamais affiché), en commandes simples :
+`curl -sS -G https://slack.com/api/conversations.history -H "Authorization: Bearer $SLACK_BOT_TOKEN_SALES_OPS"
+--data-urlencode channel=C0B5EV7AN4F --data-urlencode oldest=<ts> --data-urlencode limit=200 -o slack.json` (sans
+`oldest`, `limit=50`, pour trouver les dernières notifications), `conversations.replies` (`channel`, `ts` du message
+parent, `oldest`) pour un fil, `users.info` (`user`) pour l'adresse d'un auteur. Ni outil ni jeton utilisable (outil
+absent, `missing_scope`, `not_in_channel`, jeton absent) : aucune demande lue, `slack_lu_ts = null` (le calcul suivant
+repartira du dernier calcul qui a lu le canal), et une ligne dans `resume` et dans la notification (étape 8).
+
+**Qui** : seulement l'équipe de Gang4 : Yacin (`U091ZLBL8A2`), Samuel (`U09250UBLF7`) et tout membre dont l'adresse est
+en `@gang4.io`. Jamais un bot (ni la notification elle-même, ni le bot Sales Ops `U0B65M7BDFE`), jamais quelqu'un d'une
+autre société : le 09/11, une personne d'une marque (@uniqueheritage.fr) a rejoint le canal. Son message n'est jamais
+suivi, ni cité.
+
+**Ce qui est une demande** : un message de l'équipe qui vise le Sales Focus ou un deal à pousser, retirer ou corriger
+(« ajoute X au prochain top », « relance X sur … », « retire X », « pour X, plutôt un call », « ne dis plus … dans les
+emails »), ou une réponse sous une notification Sales Focus. Une discussion qui ne vise pas le top (une question sur
+le rapport Sales Ops) n'en est pas une ; dans le doute, rien, et une ligne dans `resume`.
+
+**Ce que tu en fais**, dans l'ordre du canal (quand deux demandes se contredisent, la plus récente gagne) :
+- **Ajouter un deal** (« ajoute Cygnes au prochain top 10 pour la relancer sur pourquoi elle n'a pas lancé ») : trouve
+  le deal dans Attio (`search-records` sur le nom du deal ou de la société ; une marque cliente sans deal ouvert : son
+  deal `Deal Won` ou le plus récent). Trouvé : il a sa carte dans ce calcul, quoi qu'en disent les filtres des étapes 1
+  à 4 (Balle, échéance, stage, client, Snooze, 30 jours après un « Pas pertinent »), avec l'objectif demandé ; elle
+  prend une des `N` places à son rang au score, à la place de la dernière carte si elle n'y entrait pas. Les étapes 5
+  et 6 s'y appliquent comme à toute carte (jamais d'invention : ce qu'on ne sait pas reste `[à compléter : …]`) ; son
+  `pourquoi` commence par la demande (« Demande de Yacin dans #sales-ops le 09/11 à 15:12 : … »), et sa `source` a
+  `type: "note"`, `titre: "#sales-ops"`, la citation en `extrait` et un élément `canal: "slack"`. Introuvable, ou
+  plusieurs deals possibles : pas de carte, et la notification le dit (« Cygnes : deal introuvable dans Attio »).
+- **Retirer un deal** (« retire X », « pas X cette semaine ») : pas de carte pour ce deal dans ce calcul ; pour plus
+  longtemps, la notification rappelle le Snooze de la page. Rien n'est écrit dans Attio, sauf si le message demande
+  une correction en toutes lettres (« passe X en Lost », « la prochaine étape de X, c'est … ») : la même correction
+  qu'un « Pas pertinent › Autre » (étape 2 bis), note « Correction depuis Slack #sales-ops - auto », qui cite le prénom
+  et l'heure du message.
+- **Changer l'objectif** d'une carte (« pour X, propose plutôt un call ») : comme un « Mauvais objectif » (étape 2 bis)
+  sur la carte de ce deal, sans rien écrire dans Attio sauf correction demandée.
+- **Une remarque de style** (« ne dis plus démo », « plus court ») : elle vaut pour tous les contenus de ce calcul et
+  devient une leçon, relue aux calculs suivants (étape 1) :
+  ```sql
+  insert into public."SalesCopyLecon" (type, cle, consigne, contexte, modification_le)
+  values ('slack', 'slack:<ts du message>', $t$<le message>$t$, $t$<Prénom> dans #sales-ops le JJ/MM à HH:MM$t$,
+          '<heure du message, ISO>')
+  on conflict (cle) where type = 'slack' do nothing;
+  ```
+- **Une question** (« pourquoi Hindbag n'est pas dans le top ? ») : la réponse en quelques mots dans la notification
+  (« Hindbag : relance partie le 06/11, moins de 7 jours »), sinon dans `resume`.
+
+**Trace** : `slack_lu_ts` (étape 7) = le `ts` du dernier message lu, canal et fils, tous auteurs ; `resume` dit chaque
+demande (qui, quand, ce qui a été fait ou pourquoi rien) ; la notification (étape 8) le dit en une ligne.
 
 ## Étape 2 — Lire l'état
 - **Attio** (lecture) : les deals ouverts (`Prospect identified`, `Demo scheduled`, `Qualified`,
@@ -712,6 +783,11 @@ script et son message vocal, mais son `allo_contact_id` est toujours recalculé 
 ci-dessous) : seul ce champ change dans `contenu`, sans entrée dans `modifications` (ni `objet` ni `corps` ne bougent) ;
 un `per-…` d'une carte d'avant le 07/11 ne repart jamais.
 
+**Destinataires** (09/11) : À et Cc se modifient sur la page (modification `destinataires` de la carte, `avant = { a,
+cc }`). Une carte reprise garde les siens. Une nouvelle carte du même deal reprend ceux que l'équipe a choisis sur sa
+dernière carte (étape 1 : `contenu.a` et `contenu.cc` d'une carte dont `modifications` a une entrée `destinataires`),
+sauf fait nouveau lu à l'étape 5 (la personne a quitté la marque ou demandé à ne plus être en copie).
+
 **Carte snoozée revenue à son jour** (étape 1, même `cle`) : comme une carte modifiée, son `contenu`, son
 `contenu_initial` et ses `modifications` sont repris tels quels si l'étape 5 ne trouve rien de nouveau (une étude de
 cas sans `pieces_jointes` reçoit son document, et une carte appel son `allo_contact_id` recalculé, comme ci-dessus).
@@ -743,8 +819,8 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      facture, conversation qui retombe, offre promise, références clients, étude de cas à envoyer) et suis ce que
      le guide dit d'y écrire. Un point décliné à recaler : l'email dit ce que le point devait apporter, d'après le
      compte rendu, sans date ni personne ajoutée : Tikamoon, 05/11, « On a finalement annulé le point qu'on devait faire
-     pour parler des Partnership Ads en masse et des UGC gratuits en illimité que je t'avais présentés. Quand est-ce
-     que tu aurais 10/15 minutes pour qu'on en reparle ? » (version de Yacin). Une démo manquée à
+     pour parler des Partnership Ads en masse et des UGC gratuits en illimité que je t'avais présentés. Est-ce que tu
+     aurais 10/15 minutes pour qu'on en reparle ? » (version de Yacin, « Est-ce que » depuis le 09/11). Une démo manquée à
      recaler : l'email dit ce qu'elle devait montrer, d'après l'envoi qui l'a fait réserver (séquence Lemlist, boîte de
      Lucie) et les créas de démo de la marque en base, avec leur nombre (« les 20 UGC qu'on a préparés pour
      Goodvest ») :
@@ -926,9 +1002,9 @@ marqué `[à compléter : …]` dans le contenu, et `avant_envoi` le dit (« com
 encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel de Gang4, alors que ces règles
 étaient écrites) :
 1. **Pas de date pour en mettre** (Yacin, 05/11 au soir : « tu peux mettre des dates si pertinent, mais ne cherche pas
-   à tout prix à les mettre ») : « lors de la démo », « lors de notre dernier call », « suite au message de Florence »
-   suffisent le plus souvent ; une date reste quand elle aide le prospect à se situer (un rendez-vous à venir, une
-   échéance, une démo récente, une date que le prospect a lui-même donnée). Le 05/11, « fin juillet », « du 22/09 » ou
+   à tout prix à les mettre ») : « lors de notre échange », « lors de notre dernier call », « suite au message de
+   Florence » suffisent le plus souvent ; une date reste quand elle aide le prospect à se situer (un rendez-vous à
+   venir, une échéance, un échange récent, une date que le prospect a lui-même donnée). Le 05/11, « fin juillet », « du 22/09 » ou
    « en avril » n'apportaient rien.
 2. **Une seule question, la demande, en fin d'email** : pas de « Est-ce que vous avez pu en discuter ? », « Tu as eu
    le temps d'y jeter un œil ? » ni « si c'est toujours d'actualité ? » avant le créneau ; le contexte se dit en
@@ -956,6 +1032,10 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
 4. **Les chiffres tels que le prospect les a entendus** : un nombre déjà annoncé (« les 20 UGC ») ne se contredit pas
    avec le compte en base (16 validées pour Flotte le 05/11) ; s'ils diffèrent, l'email n'en cite aucun.
 5. **Les mots du prospect** : « déployer Gang4 » reste « déployer », pas « tester » (Biocyte).
+5 bis. **Les mots de Gang4** (Yacin, 09/11) : le rendez-vous passé est « notre échange » ou « notre call », jamais
+   « notre démo » ni « la démo » (« plutôt que de mettre "Lors de notre démo" par "d'échange" ou de "call" ») ; un
+   créneau se demande par « Est-ce que tu aurais 15 minutes … ? » (« Est-ce que vous auriez … ? » au vouvoiement),
+   jamais « Quand est-ce que tu aurais … ? » (« ça fait moins brutal »).
 6. **La demande que le prospect a acceptée** : un prospect qui a dit vouloir juger les créas avant tout call (Vinci,
    08/09 : « que tu me l'écrives par mail ») reçoit une demande d'avis, pas un créneau.
 7. Puis le tutoiement ou le vouvoiement, la boîte, le fil, la signature, le lien d'agenda (étape 6) et le nombre de
@@ -1018,8 +1098,9 @@ arrive), et une seule demande (un court call, ou un test sur le temps fort). Jam
 Une seule requête :
 ```sql
 with run as (
-  insert into public."SalesFocusRun" (source, resume, candidats, modele)
-  values ('<routine|manuel>', '<ce qui a été regardé et écarté, une ou deux phrases>', <nb de candidats>, '<modèle>')
+  insert into public."SalesFocusRun" (source, resume, candidats, modele, slack_lu_ts)
+  values ('<routine|manuel>', '<ce qui a été regardé et écarté, une ou deux phrases>', <nb de candidats>, '<modèle>',
+          '<ts du dernier message lu dans #sales-ops (étape 1 bis), ou null>')
   returning id
 )
 insert into public."SalesFocusAction"
@@ -1159,7 +1240,7 @@ returning run_id;
 - Mets des apostrophes droites et entoure les textes de `$t$…$t$`, le JSON de `$j$…$j$`.
 
 Sans aucune carte, insère le calcul seul (`insert into public."SalesFocusRun" … returning id`) : il porte le
-`resume`.
+`resume` et `slack_lu_ts`.
 
 Puis marque traitée chaque action de l'étape 2 bis qui n'a pas eu d'échec Attio (Attio corrigé, ou rien à y écrire),
 avec l'`id` du calcul rendu par la requête (le même pour chaque action). **Une requête par action**, conditionnée au
@@ -1193,9 +1274,10 @@ Une fois tout écrit (étape 7 : le calcul et ses cartes, les « Pas pertinent �
 (`SLACK_BOT_TOKEN_SALES_OPS`, dans l'environnement des routines). Chaque lancement poste, `manuel` compris. Si
 l'écriture du calcul a échoué, ne poste rien : la page n'a rien de nouveau.
 
-Le message, en Slack mrkdwn, 12 lignes au plus (le titre, une ligne par carte, le lien) :
+Le message, en Slack mrkdwn, 13 lignes au plus (le titre, les demandes de l'équipe, une ligne par carte, le lien) :
 ```
 :dart: *Sales Focus — <jour> JJ/MM* · top <nombre de cartes> prêt
+:speech_balloon: <les demandes de #sales-ops prises en compte, en une ligne>
 1. *<deal_nom>* — <ce qu'il faut faire, en une demi-phrase>
 2. …
 N. …
@@ -1206,6 +1288,10 @@ N. …
   la carte, sans le nom du deal, 60 caractères au plus. Rien d'autre : ni pourquoi, ni contenu, ni lien Attio.
 - Toutes les cartes du calcul, jusqu'à la 10e, jamais de « + N autres » (Yacin, 07/11 : « plutôt que de mettre
   "+ 5 autres", tu peux mettre le top 10 complet »).
+- Demandes de l'équipe (étape 1 bis, depuis le 09/11) : une ligne `:speech_balloon:` sous le titre, seulement s'il y en
+  a eu, avec ce qui a été fait pour chacune, son auteur, 200 caractères au plus (« Cygnes ajouté (Yacin) · Hindbag
+  retiré (Samuel) · Flotte : deal introuvable dans Attio »). Canal illisible : `:warning: demandes #sales-ops non lues
+  (<erreur>)` à la place.
 - Aucune carte : une seule ligne, `:dart: *Sales Focus — <jour> JJ/MM* · aucune action à pousser aujourd'hui ·
   <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>`.
 - Dans les noms et les actions, `&`, `<` et `>` s'écrivent `&amp;`, `&lt;` et `&gt;` (Slack).
@@ -1276,9 +1362,12 @@ la ligne Slack de l'étape 8 : « Slack : <lien du message> », ou « Slack : no
 - Jamais l'absence d'un envoi affirmée sur une boîte qu'on n'a pas lue à jour : dans le doute, l'email, et `avant_envoi` dit
   « vérifier que … n'est pas déjà parti » (étape 5).
 - Aucune écriture hors de `SalesFocusRun` et `SalesFocusAction` (et `sales_focus_motif_traite`), et des leçons
-  `envoi` de `SalesCopyLecon` (étape 1, jamais une autre ligne de cette table), sauf pour un
-  « Pas pertinent » à traiter (étape 2 bis) : son deal dans Attio (`update-record`, `create-note`), tracé dans
-  `sales.run_log` et `sales.applied_actions`. Jamais d'autre écriture dans Attio. Aucun email envoyé, aucun
+  `envoi` (étape 1) et `slack` (étape 1 bis) de `SalesCopyLecon` (jamais une autre ligne de cette table), sauf pour un
+  « Pas pertinent » à traiter (étape 2 bis) ou une correction demandée en toutes lettres dans `#sales-ops` par
+  l'équipe (étape 1 bis) : son deal dans Attio (`update-record`, `create-note`), tracé dans `sales.run_log` et
+  `sales.applied_actions`.
+- `#sales-ops` se lit (étape 1 bis) ; seules les demandes de l'équipe de Gang4 y sont suivies, jamais celles d'un bot
+  ou d'une autre société. Jamais d'autre écriture dans Attio. Aucun email envoyé, aucun
   brouillon créé : c'est la page (« Envoyer » ou « Créer un brouillon ») qui prépare et envoie.
 - Allo en lecture seule (07/11) : jamais d'appel, de SMS, de file d'appel, ni de contact créé ou modifié.
 - Un seul message Slack, court, dans `#sales-ops` (étape 8), jamais ailleurs. Son échec n'arrête jamais le calcul.
@@ -1294,8 +1383,11 @@ Lucie, Google Calendar, Claap et Lemlist) :
   Gmail » (`3ELGb9CCbQEX48DZ`), ajouté par Yacin à la routine le 24/10. Lui et « lucie-gmail » (ex
   « lucie-gmail-MCP-bearer ») exigent un jeton depuis le 24/10 (header gardé par claude.ai) ; adresses et jetons ne
   s'écrivent jamais dans le repo. Sans lui, la boîte de Yacin est lue en repli dans `ProspectTouch` (étape 2) et la sortie le dit ;
-- du lundi au vendredi à 8:30, heure de Paris (`CRON_TZ=Europe/Paris 30 8 * * 1-5`) ; le serveur la lance
-  quelques minutes plus tard (8:38 le 23/10) ;
+- du lundi au vendredi à 13:30, heure de Paris (`CRON_TZ=Europe/Paris 30 13 * * 1-5`, changé le 09/11 dans
+  l'interface des routines ; 8:30 avant) ; le serveur la lance quelques minutes plus tard ;
+- connecteurs à ajouter par Yacin dans l'interface des routines, comme Allo le 07/11 : Slack, pour lire `#sales-ops`
+  (étape 1 bis) ; sans lui, la routine lit le canal avec le jeton du bot Sales Ops, si le bot en a le droit
+  (`channels:history`) ;
 - son prompt lance `/sales-focus` et passe tel quel, comme argument, le texte d'un lancement par l'API ou par
   `fire_trigger` (par exemple `manuel 10`) ; il s'arrête si la commande, Supabase ou Attio manquent ;
 - premier passage programmé le 23/10 : 3 cartes (Araw, Gourmandiz, Social Desk, reprise avec les corrections de
