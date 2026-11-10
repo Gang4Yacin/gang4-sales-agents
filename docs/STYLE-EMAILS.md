@@ -99,7 +99,8 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 **Carte appel** (07/11) : pas un email, mais le même ton. Le script tient en 3 à 4 lignes dites à l'oral (qui appelle,
 de la part de Gang4, la raison liée au dernier échange, une seule question) ; le message vocal en 2 à 3 phrases, 300
 caractères au plus (prénom, Gang4, la raison, une fin sans engagement), sans numéro dicté, ni promesse d'email ou de
-rappel daté.
+rappel daté. Mêmes mots que dans les emails (09/11) : « suite à notre échange » ou « notre call », jamais « notre
+démo » ; « Est-ce que tu aurais 10 minutes … ? », jamais « Quand est-ce que … ».
 
 ## Corrections de Yacin
 
