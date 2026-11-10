@@ -29,11 +29,6 @@
       "mcp__Lovable__deploy_project",
       "mcp__Supabase",
       "mcp__Supabase__*"
-    ],
-    "ask": [
-      "mcp__Attio__delete-task",
-      "mcp__Attio__delete-comment",
-      "mcp__Attio__merge-records"
     ]
   }
 }
