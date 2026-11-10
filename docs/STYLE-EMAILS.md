@@ -56,11 +56,12 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 - **Lien d'agenda** : celui du type de rendez-vous demandé (démo ou onboarding), pris dans la liste des pages de
   réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Un call de reprise (relance après une
   démo, un point décliné ou reporté) prend la page Partnership Ad, avec « Je te laisse mon calendrier ici pour trouver
-  un créneau commun plus facilement : <lien> » (Yacin, 05/11). Ces pages réservent dans l'agenda de Samuel : depuis la
-  boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien. Exception (10/11) : la
-  réponse à un prospect qui demande lui-même un rendez-vous propose 2 ou 3 créneaux libres, lus dans l'agenda de qui
-  tiendra le rendez-vous (Yacin pour une démo) et de l'expéditeur, sur la période qu'il demande ; jamais un créneau
-  inventé.
+  un créneau commun plus facilement : <lien> » (Yacin, 05/11). **Depuis le 10/11** (Yacin) : pour proposer une démo
+  ou un call, on partage le calendrier, depuis n'importe quelle boîte (Lucie et Yacin comprises), jamais une liste de
+  créneaux : « Je te laisse mon calendrier ici pour que tu puisses choisir le créneau qui t'arrange : https://calendar.app.google/E7YWEsEBaDkiGoWQ6 » ; au
+  vouvoiement, « Je vous laisse mon calendrier ici pour que vous puissiez choisir le créneau qui vous arrange : … ».
+  Pour une période demandée par le prospect, la phrase la reprend (« … qui vous arrange début décembre »). L'onboarding
+  garde sa page ; sans page du bon type, demander ses disponibilités, sans lien.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
 - **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, une durée de rendez-vous (reprise des
   envois de la même boîte : Samuel propose « 15 minutes », Yacin « 10/15 minutes »), un client, une fonctionnalité ou une promesse vient d'un
