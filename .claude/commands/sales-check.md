@@ -372,6 +372,9 @@ réconciliation produit qui le fait).
   cette date ; intérêt sans démo → `Prospect identified`), Balle Gang4 si Gang4 doit quelque chose, date
   aujourd'hui, next step concret (la promesse à tenir, la relance à faire), `lost_reason` vidé, note d'audit.
   `Archived` et `Hors ICP` (stage) se rouvrent aussi.
+- **Champs de reconquête** (10/11) : tout passage en `Deal Lost`, ou tout `Deal Lost` relu, porte `date_de_perte` et,
+  s'il y a lieu, `condition_de_retour`. Les règles sont celles de `crm-sync` (section Stages, « Deal Lost »). Un
+  `Deal Lost` sans `date_de_perte` se corrige comme une raison de perte vide.
 - **Garde fermé, mais corrige** : refus explicite → `Deal Lost` avec la raison de ses mots ; client qui a payé
   puis résilié → `Deal Won` (historique), société en `Lost` ; deal qui a eu une démo, une offre ou un refus →
   jamais `Archived` (réservé aux deals endormis sans échange réel) mais `Deal Lost` avec sa raison.

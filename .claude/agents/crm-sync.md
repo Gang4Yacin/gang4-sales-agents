@@ -634,7 +634,7 @@ Pour un meeting remonté avec `transcript.source='claap'`, `external_id` = le `r
 #### 6b. Appel Attio correspondant
 | action_type | Tool Attio |
 |---|---|
-| `update_stage` | `update-record` (object=`deals`, `stage` ; + `lost_reason` quand le stage cible est `Deal Lost`) |
+| `update_stage` | `update-record` (object=`deals`, `stage` ; + `lost_reason`, `date_de_perte` et, s'il y a lieu, `condition_de_retour` quand le stage cible est `Deal Lost`) |
 | `update_next_step` | `update-record` (object=`deals`, `next_step_description` + `balle_dans_le_camp` + `prochaine_action_le` dans le même appel) |
 | `update_company_status` | `update-record` (object=`companies`, `company_status`) |
 | `update_owner` | `update-record` (object=`deals`, `owner` = Lucie) |
@@ -792,6 +792,21 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
   (T12). Sur silence (3e relance sans réponse ou 60 j sans signal), tu n'écris que le next step
   « Clôturer ? — N j sans réponse » (R10) : la fermeture reste un geste de Lucie. Tout `update_stage →
   Deal Lost` porte un `lost_reason` ; inclure les dates dans `reasoning`.
+  - **Champs de reconquête** (10/11) : tout `update_stage → Deal Lost` écrit aussi `date_de_perte`, la date du dernier
+    signal écrit du prospect avant la perte (son message de refus, un appel décroché, la démo tenue ; jamais un envoi
+    de Gang4 ni une réponse automatique).
+  - `condition_de_retour` s'écrit quand la perte l'appelle :
+    - « Jamais : <raison> » pour un refus net de toute l'offre, un litige de paiement, une décision de Yacin, une
+      exclusivité ou un hors cible ;
+    - « Quand : <condition> » quand la perte tient à une offre que Gang4 n'a pas encore (whitelisting média, TikTok,
+      offre vidéo, `docs/FUNNEL.md` §7 points 48 et 49).
+  - Une raison réversible (budget, timing, pause) laisse `condition_de_retour` vide : le Sales Focus applique sa fenêtre
+    de 3 à 12 mois (`.claude/commands/sales-focus.md`, étape 3 « Reconquête »).
+  - Un `Deal Lost` posé à la main sans `date_de_perte` se complète au run suivant, sur la même définition, par une
+    action `update_stage` de `Deal Lost` à `Deal Lost` (comme une correction de raison).
+  - Le `lost_reason` suit les mots du prospect : « No more contact » est réservé au silence. « Pas pour le moment » ou
+    « pas prioritaire » donnent Not the right time, un budget donne No budget at the moment, un refus de l'offre donne
+    Not the right offer. Le 10/11, Oh My Cream portait « No more contact » pour une raison de budget écrite.
 
 **Règles** :
 - Avant un `update_stage`, lis le stage actuel : transition cohérente (vers l'avant, sauf `Deal Lost`
