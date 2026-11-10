@@ -81,7 +81,7 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 
 | Situation | Ce que dit l'email | La demande |
 |---|---|---|
-| **Relance après un silence** | Le dernier échange en une phrase (quoi ; une date seulement si elle aide, « lors de la démo » suffit souvent). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
+| **Relance après un silence** | Le dernier échange en une phrase (quoi ; une date seulement si elle aide, « lors de notre échange » suffit souvent). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
 | **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase, d'après l'envoi qui l'a fait réserver (Lemlist ou email) et les créas de démo de la marque en base (Pimpant avait réservé pour voir les UGC préparés pour elle) ; pour un point de suivi décliné, ce qu'il devait apporter, d'après le compte rendu (Claap, à défaut les notes Gemini). | Recaler, avec le lien d'agenda. |
 | **Récap après une démo ou un appel** | Merci en une phrase. Ce qui a été dit, tel que dans le compte rendu : besoins, prochaines étapes, qui fait quoi. | La prochaine étape, datée si elle l'a été. |
 | **Gang4 a besoin d'informations** (accès, marques visées, éléments pour lancer) | Pourquoi on en a besoin, en une phrase. | La liste courte de ce qu'il faut, ou un court appel pour le faire ensemble. |
@@ -99,19 +99,25 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 **Carte appel** (07/11) : pas un email, mais le même ton. Le script tient en 3 à 4 lignes dites à l'oral (qui appelle,
 de la part de Gang4, la raison liée au dernier échange, une seule question) ; le message vocal en 2 à 3 phrases, 300
 caractères au plus (prénom, Gang4, la raison, une fin sans engagement), sans numéro dicté, ni promesse d'email ou de
-rappel daté.
+rappel daté. Mêmes mots que dans les emails (09/11) : « suite à notre échange » ou « notre call », jamais « notre
+démo » ; « Est-ce que tu aurais 10 minutes … ? », jamais « Quand est-ce que … ».
 
 ## Corrections de Yacin
 
 Une ligne datée par correction qui revient deux fois ou que Yacin donne comme règle, ajoutée à partir du `resume` des
 calculs ou d'une lecture de `SalesCopyLecon`.
 
-- **Proposer un call sans ajouter de personnes** (05/11) : « Quand est-ce que tu aurais 10/15 minutes pour qu'on en
+- **Proposer un call sans ajouter de personnes** (05/11) : « Est-ce que tu aurais 10/15 minutes pour qu'on en
   reparle ? », jamais « avec Tim si possible ». Qui vient au call se décide au call.
 - **Pas de date pour en mettre** (05/11, précisé le soir : « tu peux mettre des dates si pertinent, mais ne cherche pas
-  à tout prix à les mettre ») : « lors de la démo », « lors de notre dernier call », « comme promis » suffisent le plus
-  souvent ; une date reste quand elle aide le prospect à se situer (un rendez-vous à venir, une échéance, une démo
-  récente, une date qu'il a donnée).
+  à tout prix à les mettre ») : « lors de notre échange », « lors de notre dernier call », « comme promis » suffisent
+  le plus souvent ; une date reste quand elle aide le prospect à se situer (un rendez-vous à venir, une échéance, un
+  échange récent, une date qu'il a donnée).
+- **« Notre échange » ou « notre call », jamais « notre démo »** (09/11 : « plutôt que de mettre "Lors de notre démo"
+  par "d'échange" ou de "call" ») : le rendez-vous passé se nomme comme le prospect l'a vécu, une conversation, pas une
+  présentation commerciale (« lors de notre échange », « suite à notre call »).
+- **« Est-ce que tu aurais 15 minutes … ? », jamais « Quand est-ce que tu aurais … ? »** (09/11 : « ça fait moins
+  brutal ») ; au vouvoiement, « Est-ce que vous auriez … ? ».
 - **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
   Gang4 en une ou deux phrases, puis le créneau.
 - **Le rappel met les chiffres en avant** (06/11 : « met bien en avant les chiffres qu'on a… Recopie pas mot pour mot
