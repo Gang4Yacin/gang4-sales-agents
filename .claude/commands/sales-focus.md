@@ -350,8 +350,9 @@ les nouvelles en une ligne.
   et Yacin (la table n'est chargée qu'une fois par jour, vers 10:46). Yacin anime les démos et envoie récaps et
   invitations depuis sa boîte : elle se lit comme les deux autres.
 - **Réponses depuis le dernier `/sales-ops`** (10/11, Lapsa et Les 2 Marmottes) : l'inbox Lemlist
-  (`get_inbox_conversations`, `listId` `teamConversations`, conversations « interested » des 48 dernières heures) et
-  les messages entrants non négatifs des 48 dernières heures dans les trois boîtes. Ce passage sert à **découvrir** des
+  (`get_inbox_conversations`, `listId` `teamConversations`, conversations « interested » des 72 dernières heures) et
+  les messages entrants non négatifs des 72 dernières heures dans les trois boîtes (72 h couvrent une réponse du
+  vendredi après le calcul de 13:30 au calcul du lundi). Ce passage sert à **découvrir** des
   candidats, pas seulement à vérifier ceux d'Attio. Chaque contact dont c'est le dernier message (`isYourTurn` = true
   dans Lemlist, ou aucun envoi de Gang4 après lui dans les trois boîtes) est un **intérêt entrant frais** (étape 3).
   - **Deal ouvert de sa société** : il est candidat d'office, avec un verdict.
