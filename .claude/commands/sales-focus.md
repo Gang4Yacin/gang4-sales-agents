@@ -622,14 +622,11 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   - **Une demande pour une période à venir** (« début décembre ») se traite aujourd'hui : l'email propose des
     créneaux sur cette période. Ce n'est pas une date de reprise fixée par le prospect, et ce n'est pas de
     l'anticipation.
-  - **La carte** est l'email de réponse dans son fil, depuis la boîte qui a reçu le message. Il propose 2 ou 3
-    créneaux libres sur la période demandée (sans période, les jours ouvrés qui suivent), en heures ouvrées. Les
-    créneaux sont lus au calcul dans l'agenda de qui tiendra le rendez-vous (Yacin pour une démo) et dans celui de
-    l'expéditeur (Google Calendar `list_events` ou `suggest_time`).
-    - Depuis la boîte de Samuel, le lien de démo Partnership Ad (`docs/FUNNEL.md`, étape 3 du funnel) peut remplacer
-      les créneaux.
-    - Agenda illisible : l'email demande ses disponibilités sur cette période (étape 6).
-    - Jamais un créneau inventé.
+  - **La carte** est l'email de réponse dans son fil, depuis la boîte qui a reçu le message. Il partage le
+    calendrier, jamais une liste de créneaux (Yacin, 10/11, sur Lapsa) : « Je te laisse mon calendrier ici pour que tu
+    puisses choisir le créneau qui t'arrange : https://calendar.app.google/E7YWEsEBaDkiGoWQ6 ». Au vouvoiement : « Je vous laisse mon calendrier ici pour que
+    vous puissiez choisir le créneau qui vous arrange : … ». Pour une période demandée, la phrase la reprend (« … qui
+    vous arrange début décembre : … »). C'est vrai depuis toutes les boîtes, celle de Lucie comprise (étape 6).
   - `cle` : `deal:<id>:reponse-<AAAAMMJJ du message du prospect>` (étape 7). Elle reste stable d'un calcul à l'autre
     pour la même réponse.
   - Plusieurs intérêts frais se classent entre eux au score.
@@ -1002,10 +999,12 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   onboarding pour un onboarding. Un call de reprise (relance après une démo, un point décliné ou reporté) prend la
   page Partnership Ad, `https://calendar.app.google/rDKuiVpzooGZxc2H8`, avec « Je te laisse mon calendrier ici pour
   trouver un créneau commun plus facilement : <lien> » (Yacin, 05/11 : The Bradery, Wopilo, Circle Sportswear,
-  depuis la boîte de Samuel). Ces pages réservent dans l'agenda de Samuel : depuis la boîte de Lucie ou de Yacin,
-  ou sans page du bon type dans la liste, demande ses disponibilités, sans lien. Exception (10/11) : la réponse à un
-  intérêt entrant frais propose 2 ou 3 créneaux libres lus au calcul dans l'agenda de qui tiendra le rendez-vous
-  (Yacin pour une démo) et de l'expéditeur, sur la période demandée (étape 3). Le 27/10, l'email d'onboarding de
+  depuis la boîte de Samuel). **Depuis le 10/11** (Yacin, sur la carte Lapsa), tout email qui propose une démo ou un
+  call partage le calendrier, depuis n'importe quelle boîte, Lucie et Yacin comprises, et jamais une liste de
+  créneaux : « Je te laisse mon calendrier ici pour que tu puisses choisir le créneau qui t'arrange : https://calendar.app.google/E7YWEsEBaDkiGoWQ6 »
+  (au vouvoiement : « Je vous laisse mon calendrier ici pour que vous puissiez choisir le créneau qui vous arrange :
+  … »). Ce lien court mène à la même page Partnership Ad. L'onboarding garde sa page. Sans page du bon type dans la
+  liste, l'email demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de
   Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel
   (un onboarding n'est pas une démo ; un call de reprise, lui, en est une suite).
 - **Jamais d'invention** : aucun chiffre, prix, remise, délai, durée de rendez-vous ou promesse qui ne soit déjà
