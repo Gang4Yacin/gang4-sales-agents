@@ -1415,10 +1415,11 @@ Lucie, Google Calendar, Claap et Lemlist) :
   « lucie-gmail-MCP-bearer ») exigent un jeton depuis le 24/10 (header gardé par claude.ai) ; adresses et jetons ne
   s'écrivent jamais dans le repo. Sans lui, la boîte de Yacin est lue en repli dans `ProspectTouch` (étape 2) et la sortie le dit ;
 - du lundi au vendredi à 13:30, heure de Paris (`CRON_TZ=Europe/Paris 30 13 * * 1-5`, changé le 09/11 dans
-  l'interface des routines ; 8:30 avant) ; le serveur la lance quelques minutes plus tard ;
-- connecteurs à ajouter par Yacin dans l'interface des routines, comme Allo le 07/11 : Slack, pour lire `#sales-ops`
-  (étape 1 bis), en lecture seulement ; sans lui, la routine lit le canal avec le jeton du bot Sales Ops, si le bot en
-  a les droits (`channels:history`, `users:read`, `users:read.email`) ;
+  l'interface des routines et confirmé par Yacin le 10/11 ; 8:30 avant) ; le serveur la lance quelques minutes plus
+  tard ;
+- connecteur Slack ajouté par Yacin le 10/11 (comme Allo le 07/11), pour lire `#sales-ops` (étape 1 bis), en lecture
+  seulement ; sans lui, la routine lit le canal avec le jeton du bot Sales Ops, si le bot en a les droits
+  (`channels:history`, `users:read`, `users:read.email`) ;
 - son prompt lance `/sales-focus` et passe tel quel, comme argument, le texte d'un lancement par l'API ou par
   `fire_trigger` (par exemple `manuel 10`) ; il s'arrête si la commande, Supabase ou Attio manquent ;
 - premier passage programmé le 23/10 : 3 cartes (Araw, Gourmandiz, Social Desk, reprise avec les corrections de
