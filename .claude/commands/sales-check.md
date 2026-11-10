@@ -315,7 +315,10 @@ deal.
 La société a un deal `Deal Lost`, `Archived` ou `Hors ICP`, quelle que soit la date de fermeture → jamais de
 doublon. Si le signal de création de deal est postérieur à la fermeture, rouvre ce deal avec les règles
 « Rouvre » de C3, même s'il a été fermé à la main ou sur décision de Yacin. Sinon, rien. Un `Deal Won` ne se
-rouvre jamais.
+rouvre jamais. Exception (10/11) : un `Deal Lost` dont `condition_de_retour` commence par « Jamais : » pour une
+raison qui tient à Gang4 (exclusivité, décision de Yacin ou de Samuel, litige de paiement) ne se rouvre pas, même
+sur un signal postérieur ; une note d'audit « réponse du JJ/MM sur un deal Jamais : <raison> » et une ligne dans le
+message à la place (`crm-sync` T11).
 
 ### C2. Stage faux (deals ouverts)
 - **Démo tenue** mais stage `Prospect identified` ou `Demo scheduled` → `Qualified`, Balle Gang4, J+1,
@@ -350,11 +353,20 @@ rouvre jamais.
 Un deal fermé sur un refus qui remplit les conditions de C2 reste fermé (« Garde tel quel »), même si une
 promesse de Gang4 était due avant ce refus.
 
+**Champs de reconquête** (10/11), pour toute fermeture, par un humain ou par un agent : un `Deal Lost` porte
+`date_de_perte` (dernier signal du prospect avant la perte : message écrit, appel décroché avec échange, démo tenue ;
+jamais un envoi de Gang4 ni une réponse automatique) et `condition_de_retour` (« Jamais : … », « Quand : … »,
+« Décision de Yacin (JJ/MM) : … », ou vide pour une raison réversible), avec les règles de `crm-sync` (section
+Stages, « Deal Lost »). Chaque semaine, relis aussi **tous** les `Deal Lost` (`list-records`, stage `Deal Lost`) et
+complète ceux dont `date_de_perte` est vide : c'est ici que se rattrapent les fermetures à la main. Une valeur déjà
+en place ne se change que sur un fait qui la contredit ; « Décision de Yacin » ne se réécrit jamais.
+
 **Deal fermé par un humain** (règle sur les décisions humaines) : il ne se rouvre que sur un signal de création
 de deal postérieur à la fermeture (`crm-sync` T11) : un message entrant non négatif du prospect, une démo
 réservée ou tenue, un appel décroché où le prospect demande une suite. Ne suffisent pas : un appel décroché sans
 demande, un refus au téléphone, une relance de Gang4, une auto-réponse, un motif qui paraît faux. Sur ce deal,
-la seule correction possible est une `lost_reason` vide posée d'après les mots du prospect : tu ne passes ni
+les seules corrections possibles sont une `lost_reason`, une `date_de_perte` ou une `condition_de_retour` vides,
+posées d'après les faits : tu ne passes ni
 `Archived` en `Deal Lost`, ni `Deal Lost` en `Deal Won`, et tu n'écris pas le statut de la société (c'est la
 réconciliation produit qui le fait).
 
@@ -370,7 +382,8 @@ réconciliation produit qui le fait).
   Une société dont le champ `icp` vaut `Hors ICP` ne se rouvre pas, ni une agence. Stage = celui que les faits
   justifient (démo tenue → `Qualified` ; « pas maintenant » après une démo, avec un horizon → `Nurturing` à
   cette date ; intérêt sans démo → `Prospect identified`), Balle Gang4 si Gang4 doit quelque chose, date
-  aujourd'hui, next step concret (la promesse à tenir, la relance à faire), `lost_reason` vidé, note d'audit.
+  aujourd'hui, next step concret (la promesse à tenir, la relance à faire), `lost_reason`, `date_de_perte` et
+  `condition_de_retour` vidés, note d'audit.
   `Archived` et `Hors ICP` (stage) se rouvrent aussi.
 - **Garde fermé, mais corrige** : refus explicite → `Deal Lost` avec la raison de ses mots ; client qui a payé
   puis résilié → `Deal Won` (historique), société en `Lost` ; deal qui a eu une démo, une offre ou un refus →
@@ -477,9 +490,12 @@ where id = '<id>';
 Actions de `crm-sync` : `create_deal`, `create_company`, `create_person`, `update_stage`, `update_next_step`,
 `link_person_to_deal`, `update_owner`, `update_company_status`, `complete_task`, `create_audit_note`. Payloads :
 - `update_stage` → `{"from": "<stage avant>", "to": "<stage après>", "lost_reason": "<raison ou null>",
-  "before": {"lost_reason": "<raison avant ou null>"}, "reouverture": true|false}`. Corriger la seule raison de
-  perte est un `update_stage` avec `from` = `to` = `Deal Lost`, à appliquer : ce n'est pas un « déjà au stage
-  cible » ;
+  "date_de_perte": "<AAAA-MM-JJ ou null>", "condition_de_retour": "<texte ou null>",
+  "before": {"lost_reason": "<…>", "date_de_perte": "<…>", "condition_de_retour": "<…>"}, "reouverture": true|false}`.
+  Corriger la seule raison de perte, ou compléter `date_de_perte` et `condition_de_retour`, est un `update_stage` avec
+  `from` = `to` = `Deal Lost`, à appliquer : ce n'est pas un « déjà au stage cible ». Ces lignes ne comptent jamais
+  comme la pose du stage (date ou auteur de la fermeture) dans la requête d'audit de l'étape 2 ni pour `crm-sync`
+  T11 ;
 - `update_next_step` → format de `crm-sync` R5 (`balle`, `date`, `next_step`, `before`), avec `rule` =
   `sales-check-C2` à `sales-check-C5` ;
 - une note Allo se cite `{"source": "attio", "external_id": "<note_id>", "url": null}`.

@@ -57,7 +57,10 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Un call de reprise (relance après une
   démo, un point décliné ou reporté) prend la page Partnership Ad, avec « Je te laisse mon calendrier ici pour trouver
   un créneau commun plus facilement : <lien> » (Yacin, 05/11). Ces pages réservent dans l'agenda de Samuel : depuis la
-  boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien.
+  boîte de Lucie ou de Yacin, ou sans page du bon type, demander ses disponibilités, sans lien. Exception (10/11) : la
+  réponse à un prospect qui demande lui-même un rendez-vous propose 2 ou 3 créneaux libres, lus dans l'agenda de qui
+  tiendra le rendez-vous (Yacin pour une démo) et de l'expéditeur, sur la période qu'il demande ; jamais un créneau
+  inventé.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
 - **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, une durée de rendez-vous (reprise des
   envois de la même boîte : Samuel propose « 15 minutes », Yacin « 10/15 minutes »), un client, une fonctionnalité ou une promesse vient d'un

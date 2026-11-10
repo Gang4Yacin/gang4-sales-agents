@@ -95,7 +95,8 @@ order by r.computed_at desc;
 ```
 - `plus_tard` (Snooze jusqu'à un jour choisi : 3, 7 ou 14 jours, ou une autre date, 90 jours au plus ; la requête
   garde ces cartes au-delà des 30 jours, jusqu'à une semaine après leur jour) : le deal ne revient pas avant
-  `plus_tard_jusqu_au`, par aucune famille de l'étape 3 ; la raison dit ce qui doit avoir changé. La page a déjà passé
+  `plus_tard_jusqu_au`, par aucune famille de l'étape 3, sauf un intérêt entrant frais postérieur au snooze (étape 3) :
+  la carte sort alors à son rang, et `pourquoi` dit que le snooze est levé ; la raison dit ce qui doit avoir changé. La page a déjà passé
   `prochaine_action_le` d'Attio à ce jour (note « Snooze - auto ») : rien à écrire, sauf si `attio_sync` vaut
   `erreur` : Attio n'a pas été décalé, dis-le dans le verdict et dans `resume` (tu n'y écris pas pour autant).
   Le jour venu (`plus_tard_jusqu_au` ≤ aujourd'hui, aucune carte du deal calculée depuis le snooze), la carte revient
@@ -349,15 +350,72 @@ les nouvelles en une ligne.
   rendez-vous), complété par les emails des **dernières 48 h** des trois boîtes, lues en direct : Samuel, Lucie
   et Yacin (la table n'est chargée qu'une fois par jour, vers 10:46). Yacin anime les démos et envoie récaps et
   invitations depuis sa boîte : elle se lit comme les deux autres.
+- **Réponses récentes** (10/11, Lapsa et Les 2 Marmottes) : ce passage sert à **découvrir** des candidats, pas
+  seulement à vérifier ceux d'Attio. Fenêtre : 72 heures, de quoi couvrir une réponse du vendredi après le calcul de
+  13:30 jusqu'au calcul du lundi.
+  - **Sources** :
+    - l'inbox Lemlist, appelée comme `email-expert` : `userIds` de Samuel et de Lucie, `listId` `teamConversations`,
+      `dateFilter` sur les 72 heures, toutes les pages, sans filtre d'intérêt. Garde les conversations à
+      `isYourTurn` = true dont la dernière réponse n'est pas `aiLeadInterest` = `negative` (`get_inbox_conversation`).
+      Si `linkedinSync` ne vaut ni `synced` ni `recent`, dis-le dans `resume`, avec `lastSyncedAt` ;
+    - les messages entrants des 72 heures dans les trois boîtes.
+  - **Ce qui compte** : un message qui remplit la définition de l'intérêt entrant frais (étape 3), venu d'un
+    **prospect**. Ne comptent pas :
+    - une société `Customer` (ou BusinessClient `CUSTOMER`) ;
+    - un deal en phase d'onboarding (`crm-sync` §4b) : il suit les règles habituelles ;
+    - une agence (liste Attio « Agencies »), une adresse @gang4.io, un domaine perso (sauf une réservation par le
+      site) ;
+    - une réponse automatique (absence), une réponse d'agenda (« Accepté : »), un email lemwarmup ;
+    - du démarchage (règle COLD INBOUND de `crm-sync`) ;
+    - un « plus tard », un « je reviens vers toi » ou un refus « pour le moment » (Social Desk et Lunettes Pour Tous
+      le 10/11) : règles habituelles.
+  - **Personne n'a encore répondu** : `isYourTurn` = true dans Lemlist si le contact y figure, **et** aucun message de
+    Gang4 après le sien dans les trois boîtes (une étape de séquence Lemlist partie après coup ne compte pas comme une
+    réponse), **et** aucun appel Allo noté ni rendez-vous calé depuis.
+  - **Selon les deals de la société** :
+    - **Un deal ouvert** : il est candidat d'office, avec un verdict.
+    - **Un `Deal Lost` dont `condition_de_retour` est « Jamais : … » pour une raison qui tient à Gang4** (exclusivité,
+      litige de paiement, décision de Yacin ou de Samuel : Les Petits Culottés, Alltricks, Sync, Horace) : ni carte ni
+      ligne Slack. Verdict « jamais : <raison>, réponse du JJ/MM à trancher » dans `resume`. Un « Jamais » posé pour un
+      refus du prospect ne bloque pas sa nouvelle demande, qui suit le cas suivant.
+    - **Un autre `Deal Lost`** : ligne Slack (étape 8), « deal perdu, à rouvrir par /sales-ops ».
+    - **Aucun deal**, domaine pro, ni Customer, ni agence, ni `Hors ICP` : ligne Slack, « deal au prochain
+      /sales-ops ».
+    - **Sinon** : ligne Slack, « pas de deal automatique (<raison>) : à traiter à la main dans la boîte de <prénom> ».
+    - Une carte demande un deal, et le Sales Focus n'en crée pas.
+  - **Une réponse LinkedIn** (pas de fil email) : l'email part en nouveau fil (`nouveau_fil`) depuis la boîte de
+    l'expéditeur Lemlist si l'adresse est connue. Sinon, pas de carte, un verdict, et la ligne Slack « réponse LinkedIn
+    à traiter dans Lemlist (<prénom>) ».
+  - **Le 10/11** : Margot Roynette (Lapsa, 17:18 : « Proposez-moi un créneau juste pour voir ! ») et Marie Bouvet (Les 2
+    Marmottes, 17:51 : rendez-vous début décembre) avaient chacune un deal, créé par l'automatisation Attio avec une
+    Balle vide. Le calcul de 17:57 les a laissés dehors avec 6 cartes sur 10, sans verdict : leurs messages étaient
+    encore non lus dans la boîte de Lucie.
 - **Agenda** : rendez-vous externes des 48 prochaines heures.
 - **Appels** (07/11) : les appels Allo du compte de Samuel reviennent dans Attio en notes « Allo Outbound Call » (heure,
   durée, transcription, tag « interested » ou non), rangées sur le contact ou la société plus souvent que sur le deal
   (Hapik : 6 notes, aucune sur le deal), parfois sous une autre société (crm-sync R10) : lis les notes du deal, de sa
   société et de ses contacts (`search-notes-by-metadata`, limit 100), comme `crm-sync` R10, pour chaque deal candidat.
-- **Candidats à la reconquête** (07/11) : les anciens clients (`select bc.id, bc.name, bc.status from
-  public."BusinessClient" bc where bc.status = 'LOST'`, avec leur dernière facture dans `stripe.invoices`) et les deals
-  `Deal Lost` d'Attio fermés il y a 3 à 12 mois, avec leur raison de perte et la dernière note ; un client parti peut
-  garder un deal `Deal Won` (crm-sync §4b, churn) : la carte se pose alors sur ce deal. Si l'outil Allo est connecté à la
+- **Candidats à la reconquête** (07/11, revu le 10/11) :
+  - **Les anciens clients** : `select bc.id, bc.name, bc.status from public."BusinessClient" bc where bc.status = 'LOST'`,
+    avec leur dernière facture dans `stripe.invoices`. Un client parti peut garder un deal `Deal Won` (crm-sync §4b,
+    churn) : la carte se pose alors sur ce deal.
+  - **Tous les deals `Deal Lost` d'Attio**, pas seulement ceux fermés récemment. Pour chacun, lis :
+    - `date_de_perte` : le dernier signal du prospect avant la perte (message écrit, appel décroché avec échange,
+      démo tenue ; jamais un envoi de Gang4 ni une réponse automatique), la même définition que `crm-sync` ;
+    - `condition_de_retour` ;
+    - `lost_reason` ;
+    - la dernière note.
+  - **Pourquoi `date_de_perte`** : le 10/11, 29 des 40 deals `Deal Lost` n'avaient aucune date connue. Beaucoup
+    avaient été fermés en lot (06/03 et 13/04/2026) sur des échanges de 2025, et Attio n'avait pas de date de
+    fermeture. Le calcul de 17:57 n'a alors sorti aucune reconquête éligible (Gohyav, Epycure, Quitoque) alors qu'il
+    restait 4 places.
+  - **Un deal `Deal Lost` sans `date_de_perte`** : prends le dernier signal du prospect avant la perte (même
+    définition), d'après ses notes et ses emails Attio, et signale-le dans `resume`. Ne prends jamais la date de passage
+    en `Deal Lost` quand un échange plus ancien existe. Aucun signal du prospect : pas de reconquête, verdict « date de
+    perte inconnue ». `/sales-check` complète le champ chaque semaine.
+  - **La raison écrite** se cherche aussi dans le canal Slack partagé de la marque (`#gang4-<marque>`), quand une note en
+    parle (Epycure, Circular).
+- **Allo** (lecture seule) : si l'outil Allo est connecté à la
   session (`allo_crm_search`, `allo_search_conversation_items`, à trouver par ToolSearch « Allo »), il sert, en lecture
   seule, à vérifier le contact d'une carte appel (son numéro, `do_not_call`), à lire les appels passés à un numéro et à
   trouver l'id web de sa fiche (`con-…`, dans les conversations du numéro) ; jamais un appel, un SMS, une file d'appel,
@@ -527,8 +585,11 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   limit 1;
   ```
   Araw, dans l'exemple de l'étape 2 bis, revient le 06/11.
-- **Balle Gang4 à échéance**, le point de départ : chaque deal ouvert dont `balle_dans_le_camp` vaut `Gang4` et dont
-  `prochaine_action_le` est aujourd'hui, passée ou vide. Attio dit déjà que Gang4 doit agir, et
+- **Balle Gang4 à échéance**, le point de départ : chaque deal ouvert dont `balle_dans_le_camp` vaut `Gang4` **ou est
+  vide**, et dont `prochaine_action_le` est aujourd'hui, passée ou vide. Une Balle vide (10/11) est un deal créé par
+  l'automatisation Attio sur une réponse intéressée, ou à la main, qui n'est pas encore passé par `/sales-ops`. Elle se
+  lit comme Gang4 tant que `/sales-ops` ne l'a pas remplie (`crm-sync` §4d.2 la remplit d'après la grille, Gang4 sans
+  autre signal). L'étape 5 vérifie qu'aucun envoi de Gang4 ni aucun rendez-vous calé n'a déjà pris la main. Attio dit déjà que Gang4 doit agir, et
   `next_step_description` dit quoi : chacun est candidat d'office, et chacun reçoit un verdict, retenu ou écarté avec
   sa raison (étape 9 et `resume`). Un next step « Vérifier que … est parti » ou « Vérifier l'envoi … » se classe comme
   la promesse qu'il nomme, jamais comme une relance (étape 5, « Next step d'Attio »). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
@@ -552,6 +613,26 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   Samuel avait proposé un mois gratuit du Social Proof si Séverin Dor le voulait, et Séverin allait en discuter.
 - **Prospect qui attend Gang4** : son dernier message appelle une réponse, ou un livrable promis après un
   échange (récap, offre, créas) n'est pas parti, vérifié dans les trois boîtes (étape 5).
+  - **Intérêt entrant frais** (10/11) : un prospect a écrit depuis moins de 72 heures une demande de rendez-vous, de
+    créneau, de tarifs, d'exemples ou d'informations, ou une réponse classée « interested », et personne chez Gang4
+    ne lui a encore répondu (étape 2, « Réponses récentes », avec ses exclusions). Un « plus tard », un « je reviens
+    vers toi » ou un refus « pour le moment » n'en est pas un.
+  - Il passe **en tête du classement** (étape 4), juste après les entrées d'office : la vitesse de réponse décide du
+    rendez-vous.
+  - **Une demande pour une période à venir** (« début décembre ») se traite aujourd'hui : l'email propose des
+    créneaux sur cette période. Ce n'est pas une date de reprise fixée par le prospect, et ce n'est pas de
+    l'anticipation.
+  - **La carte** est l'email de réponse dans son fil, depuis la boîte qui a reçu le message. Il propose 2 ou 3
+    créneaux libres sur la période demandée (sans période, les jours ouvrés qui suivent), en heures ouvrées. Les
+    créneaux sont lus au calcul dans l'agenda de qui tiendra le rendez-vous (Yacin pour une démo) et dans celui de
+    l'expéditeur (Google Calendar `list_events` ou `suggest_time`).
+    - Depuis la boîte de Samuel, le lien de démo Partnership Ad (`docs/FUNNEL.md`, étape 3 du funnel) peut remplacer
+      les créneaux.
+    - Agenda illisible : l'email demande ses disponibilités sur cette période (étape 6).
+    - Jamais un créneau inventé.
+  - `cle` : `deal:<id>:reponse-<AAAAMMJJ du message du prospect>` (étape 7). Elle reste stable d'un calcul à l'autre
+    pour la même réponse.
+  - Plusieurs intérêts frais se classent entre eux au score.
 - **Rendez-vous** : démo refusée, annulée ou manquée à recaler ; rendez-vous à fort enjeu dans les 48 h
   à préparer.
 - **Conversation chaude qui retombe** : intérêt clair, puis plus rien depuis 10 jours ou plus.
@@ -588,18 +669,46 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   refus net, une décision de l'équipe (geste de Lucie) ni une promesse de Gang4 non tenue (elle passe avant : étape 4).
   Un email de clôture déjà parti (carte `faite` en `:cloture`, ou vu dans le fil) n'est jamais refait ; le soir,
   `/sales-ops` pose « Clôturer ? » et Lucie décide de fermer.
-- **Reconquête** (07/11, priorité basse, étape 4) : un ancien client ou un deal `Deal Lost` (candidats de l'étape 2), 3
-  à 12 mois après la fin ou la perte, dont la raison **écrite** est réversible (une pause, le timing, le budget, « pas
-  prioritaire pour le moment ») ; un temps fort proche aide (Black Friday). Jamais après un litige de paiement, une
-  décision de Yacin, un refus net ou un silence seul (« No more contact »). Le 06/11 : Poppins (deal déjà ouvert),
-  Réjeanne avec Gohyav (pause annoncée le 03/04), Epycure après relecture du dernier monthly. La carte se pose sur le
-  deal existant (ouvert, perdu, ou gagné d'un client parti) ; l'email reprend la raison du départ et ce qui a changé
-  depuis, vérifiable. Une reconquête envoyée ne se refait pas (étape 1, 12 mois). Un « Mauvais objectif » sur un deal
+- **Reconquête** (07/11, revue le 10/11, priorité basse, étape 4) : un ancien client ou un deal `Deal Lost` (candidats
+  de l'étape 2). `condition_de_retour` (Attio) se lit en premier, par son début : majuscules, accents et espaces
+  avant les deux-points ne comptent pas, et une valeur sans préfixe connu se lit comme « Quand : ».
+  - **« Jamais : … »** : le deal ne remonte jamais. Verdict « jamais : <raison> ». Les Petits Culottés : exclusivité
+    avec La Marque en Moins (Yacin, 10/11). Alltricks : décision de Samuel. Les litiges et les refus nets sont aussi
+    dans ce cas.
+  - **« Décision de Yacin : <angle> »** : candidat quelle que soit la date, avec l'angle écrit. Melba App : le
+    Partnership Ads aux États-Unis, leur marché phare (Yacin, 10/11), alors que la fenêtre de 12 mois se fermait le
+    11/11. Elle se classe au score avec les familles de l'étape 3, comme un deal ajouté dans #sales-ops, et non pour
+    remplir les places restantes, jusqu'à ce que sa carte soit traitée sur la page.
+  - **« Quand : <condition> »** : candidat seulement le jour où la condition est vraie, quelle que soit la date.
+    - Une offre de Gang4 est lancée quand `docs/FUNNEL.md` §7 la dit sortie : point 48 pour l'offre vidéo, point 49
+      pour le whitelisting média, l'offre TikTok, et les autres offres attendues.
+    - L'email annonce ce qui a changé.
+    - Tant que la condition n'est pas vraie : verdict « attend : <condition> », sans carte. Une condition absente de
+      §7 (points 48 et 49) reste « attend », même si un email, une note ou Slack en parle : une ligne dans `resume`.
+  - **Vide** : la règle de base s'applique.
+    - Fenêtre : 3 à 12 mois après `date_de_perte` (étape 2), ou après la fin de l'abonnement pour un ancien client.
+    - Raison **écrite** réversible : une pause, le timing, le budget, « pas prioritaire pour le moment ». Un temps fort
+      proche aide (Black Friday).
+    - Jamais après un litige de paiement, une décision de Yacin ou un refus net.
+  - **Silence après une démo tenue** (10/11, silence sans raison écrite) : une seule reconquête, 6 à 12 mois après
+    `date_de_perte`, à condition que la démo ait été tenue au sens de l'étape 5 (« Tenu » : Claap avec un
+    intervenant externe, notes Gemini), ou d'après une note Attio de démo ou un récap de Gang4 qui en reprend le
+    contenu. Un email « suite à notre échange » seul ne prouve rien (la règle de style l'impose dans tous les emails
+    depuis le 09/11). Elle passe après toutes les autres reconquêtes.
+    - L'email repart d'un fait nouveau et vérifiable de Gang4 (offre, résultat chiffré d'une marque comparable). Il ne
+      dit jamais « je reviens vers toi » sans raison.
+    - Au 10/11, avec les `date_de_perte` complétées : Morphee et Fizimed sont dans la fenêtre ; Blissim, Hydratis,
+      Cheerz, Manucurist et Ziggy sont hors fenêtre (plus de 12 mois).
+    - Un silence sans démo tenue ne remonte jamais.
+  - Exemples au 06-10/11 : Poppins (deal déjà ouvert) ; Réjeanne avec Gohyav (pause annoncée par écrit, fin le
+    17/05) ; Epycure (arbitrage du budget du S2, écrit dans #gang4-epycure le 21/07) ; Quitoque (coût).
+  - La carte se pose sur le deal existant (ouvert, perdu, ou gagné d'un client parti). L'email reprend la raison du
+    départ et ce qui a changé depuis, vérifiable. Une reconquête envoyée ne se refait pas (étape 1, 12 mois). Un « Mauvais objectif » sur un deal
   fermé n'écrit rien dans Attio (étape 2 bis) : sa date de retour, écrite dans `motif_traitement`, se respecte comme un
   snooze.
 
 Ne sont **pas** candidats : les relances courantes déjà datées dans Attio (Balle `Prospect` et date à
-venir : pas d'anticipation, Yacin le 07/11, le deal revient à sa date), les deals fermés (sauf la reconquête) et le
+venir : pas d'anticipation, Yacin le 07/11, le deal revient à sa date ; sauf un intérêt entrant frais, étape 3), les deals fermés (sauf la reconquête) et le
 customer success (hors argent, et pas de montée en gamme des clients pour l'instant). **Un contenu à produire n'écarte jamais un deal**
 (Yacin, 22/10) : cas chiffré, offre, références, récap, créas, la carte prépare ce qu'il faut (étape 6). Un deal
 Balle Gang4 à échéance n'est écarté que si l'action est déjà faite, si la situation a changé (réponse, rendez-vous
@@ -609,7 +718,9 @@ peut pas se faire avant une date connue et à venir : elle livre un produit de G
 vidéo avant la sortie de l'offre vidéo : pas de date annoncée, « dans les prochaines semaines », Yacin le 27/10 ; le
 deal reste écarté tant que `docs/FUNNEL.md` §7, point 48, ne dit pas l'offre sortie ; verdict « attend la sortie de
 l'offre vidéo »), ou le prospect a fixé lui-même une date de reprise encore à venir (« je
-reviens vers toi après le 15/11 ») ; verdict « attend le JJ/MM : <raison> ». Ne s'écartent jamais ainsi : un contenu
+reviens vers toi après le 15/11 ») ; verdict « attend le JJ/MM : <raison> ». Une demande de rendez-vous pour une
+période à venir (« un rendez-vous début décembre ») n'est pas une date de reprise : c'est un intérêt entrant frais
+(étape 3), traité aujourd'hui. Ne s'écartent jamais ainsi : un contenu
 que Gang4 peut préparer aujourd'hui (offre commerciale, cas chiffré, créas statiques, récap), un prospect qui « devait
 revenir vers nous » sans date ou dont la date est passée (c'est une relance : Social Desk le 27/10, Circle
 Sportswear), un rendez-vous décliné à recaler (Tikamoon, Wopilo), une étude de cas absente des documents sales
@@ -629,7 +740,10 @@ Score = **impact** (argent en jeu, taille de la marque : ICP Large > Medium > Sm
 effet sur le pipeline) × **urgence** (jours d'attente, échéance, temps fort comme Black Friday).
 Garde les `N` meilleurs deals (10 par défaut, voir Arguments), après ceux qui entrent d'office (« Mauvais objectif »,
 snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3). **Ordre des familles** (Yacin, 07/11 : « clôture
-et reconquête moins prioritaires que les relances et les prospects silencieux ») : d'abord les entrées d'office, puis
+et reconquête moins prioritaires que les relances et les prospects silencieux ») : d'abord les entrées d'office,
+puis les **intérêts entrants frais** (étape 3, « Prospect qui attend Gang4 » : demande d'un prospect de moins de
+72 h restée sans réponse de Gang4, avec les exclusions de l'étape 2 ; Yacin, 10/11 : Lapsa et Les 2 Marmottes
+devaient sortir n°1 et n°2), puis, au score et ensemble, les reconquêtes « Décision de Yacin » et
 toutes les autres familles de l'étape 3 classées ensemble au score, prospects silencieux compris (relance ou appel) ;
 la clôture et la reconquête seulement pour remplir les places qui restent, jamais devant une relance ou un appel
 candidat. Moins de `N` candidats sérieux → moins de cartes.
@@ -889,7 +1003,9 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   page Partnership Ad, `https://calendar.app.google/rDKuiVpzooGZxc2H8`, avec « Je te laisse mon calendrier ici pour
   trouver un créneau commun plus facilement : <lien> » (Yacin, 05/11 : The Bradery, Wopilo, Circle Sportswear,
   depuis la boîte de Samuel). Ces pages réservent dans l'agenda de Samuel : depuis la boîte de Lucie ou de Yacin,
-  ou sans page du bon type dans la liste, demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de
+  ou sans page du bon type dans la liste, demande ses disponibilités, sans lien. Exception (10/11) : la réponse à un
+  intérêt entrant frais propose 2 ou 3 créneaux libres lus au calcul dans l'agenda de qui tiendra le rendez-vous
+  (Yacin pour une démo) et de l'expéditeur, sur la période demandée (étape 3). Le 27/10, l'email d'onboarding de
   Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel
   (un onboarding n'est pas une démo ; un call de reprise, lui, en est une suite).
 - **Jamais d'invention** : aucun chiffre, prix, remise, délai, durée de rendez-vous ou promesse qui ne soit déjà
@@ -1266,7 +1382,9 @@ returning run_id;
     16/09 (Célims), pas « plus rien depuis 7 mois » quand Samuel a appelé en juin (Magimix) ; un chiffre avec sa
     nature et sa période (« budget publicitaire de 30 à 35 k€ par mois, environ 75 % sur Meta », pas « 30 à 35 k€ sur
     Meta » ; « 130 k€ dépensés sur Meta en août »).
-- `cle` : stable d'un calcul à l'autre, `deal:<deal_id>:<verbe>`.
+- `cle` : stable d'un calcul à l'autre, `deal:<deal_id>:<verbe>`. Pour un intérêt entrant frais (étape 3) :
+  `deal:<deal_id>:reponse-<AAAAMMJJ du message du prospect>`, qui ne rencontre ni les relances ni une réponse plus
+  ancienne.
 - Mets des apostrophes droites et entoure les textes de `$t$…$t$`, le JSON de `$j$…$j$`.
 
 Sans aucune carte, insère le calcul seul (`insert into public."SalesFocusRun" … returning id`) : il porte le
@@ -1323,6 +1441,11 @@ N. …
   au plus (« Cygnes ajouté (Yacin) · Hindbag retiré jusqu'à dimanche (Samuel) · Flotte : deal introuvable dans
   Attio »). Canal illisible ou auteur non vérifié : une ligne `:warning:` (« demandes #sales-ops non lues
   (<erreur>) »).
+- Réponses sans carte (étape 2, depuis le 10/11) : **une seule** ligne `:inbox_tray:` sous le titre, qui les regroupe
+  toutes, 200 caractères au plus (« + N autres » permis sur cette ligne seulement). Chaque réponse y figure avec le
+  texte de son cas à l'étape 2, par exemple « réponses sans deal : Prénom Nom (Société, boîte de Lucie) JJ/MM HH:MM —
+  deal au prochain /sales-ops · Prénom Nom (Société) — deal perdu, à rouvrir par /sales-ops ». Elle s'ajoute aux 13
+  lignes (14 au plus), jamais à la place d'une carte. Sans carte, elle suit la ligne unique du titre.
 - Aucune carte : une seule ligne, `:dart: *Sales Focus — <jour> JJ/MM* · aucune action à pousser aujourd'hui ·
   <https://admin-user-hop.lovable.app/admin/sales-actions|Ouvrir Sales Actions>`.
 - Dans les noms et les actions, `&`, `<` et `>` s'écrivent `&amp;`, `&lt;` et `&gt;` (Slack).
@@ -1378,7 +1501,10 @@ fi
 ## Étape 9 — Restituer
 Affiche les cartes en markdown court (rang, deal, qui le gère, pourquoi, objectif, avant l'envoi, objet de l'email), puis une ligne
 « + N autres candidats » avec les 2 ou 3 suivants en un mot chacun, puis chaque deal Balle Gang4 à échéance non
-retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Un deal dont le next step d'Attio nomme une
+retenu, avec sa raison en quelques mots (la même liste va dans `resume`). Ajoute de même chaque intérêt entrant frais
+non retenu et chaque réponse sans carte (étape 2), avec la raison. Pour la reconquête, un compte par verdict
+(« 42 Deal Lost : n jamais, n attendent une offre, n hors fenêtre, n sans date, n retenus ») plutôt qu'une ligne par
+deal ; `resume` peut dépasser deux phrases pour ces listes. Un deal dont le next step d'Attio nomme une
 promesse de Gang4 a un verdict qui cite cette promesse, jamais « relance » tant que l'envoi n'est pas trouvé dans les
 trois boîtes (« étude de cas promise le 11/09, pas partie : 7e ») ; partie, le verdict le dit (« présentation envoyée
 le JJ/MM : relance »). Ajoute une ligne par « Pas pertinent »

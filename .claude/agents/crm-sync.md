@@ -326,7 +326,7 @@ une date qui tombe un samedi ou un dimanche passe au lundi.
 |---|---|---|---|
 | Message entrant du prospect, sans réponse de Gang4 après (R3, T6) | Gang4 | aujourd'hui (toujours, même si une date plus lointaine est en place) | « Répondre à <prénom nom> (message du JJ/MM) » ; réponse positive → « Proposer un créneau démo à <prénom nom> (réponse du JJ/MM) » |
 | Notre message est le dernier, sans réponse (R3) | Prospect | envoi + 7 j | « Relancer <prénom nom> — relance n/3 » (n = `outbound_count_since_last_inbound`) |
-| Date donnée dans un message (`date_mentioned`, R3) | qui doit revenir | cette date | ce qui a été promis, ou « Relancer <prénom nom> (retour annoncé le JJ/MM) » |
+| Date donnée dans un message (`date_mentioned`, R3) | qui doit revenir | cette date | ce qui a été promis, ou « Relancer <prénom nom> (retour annoncé le JJ/MM) » ; jamais pour une demande de rendez-vous du prospect sur une période à venir (« un rendez-vous début décembre ») : c'est R3, Gang4, aujourd'hui, « Proposer un créneau <période> à <prénom nom> » (10/11, Les 2 Marmottes) |
 | Événement futur avec un externe du deal (R4, prime sur les lignes email et appel) | RDV calé | date de l'événement | « Démo du JJ/MM avec <prénom nom> » ou « RDV du JJ/MM : <objet> » |
 | Rendez-vous d'onboarding (titre qui contient « Onboarding ») d'un deal ouvert dont la marque a donné son go (`Meta Connected`, ou verdict `meta_no_sub` / `customer_no_meta` de la requête §4b) (R6 ; prime sur R4, T9 et R3-sortant : un email de Gang4 après l'onboarding ne pose ni « relance n/3 » ni R10 pendant la phase d'onboarding de §4b) | à venir : RDV calé ; passé, tenu ou sans preuve : Prospect, ou Gang4 si une promesse de Gang4 faite au prospect n'est pas faite ; annulé ou manqué : Gang4 | à venir : sa date ; passé : onboarding + 14 j, J+1 pour une promesse ; annulé ou manqué : J+2 | « RDV du JJ/MM : onboarding avec <prénom nom> » ; passé : « Relancer <prénom nom> : upload des créas et abonnement (onboarding du JJ/MM) » ou « Envoyer à <prénom nom> <promesse> (promis le JJ/MM) » ; annulé ou manqué : « Re-caler l'onboarding avec <prénom nom> » ; jamais « Envoyer le récap / la proposition », « Confirmer la tenue » ni le lien d'abonnement pendant la phase d'onboarding |
 | Démo tenue avec compte rendu → `Qualified` (R2, T9) | Gang4 | J+1 | « Envoyer le récap / la proposition à <prénom nom> » |
@@ -634,7 +634,7 @@ Pour un meeting remonté avec `transcript.source='claap'`, `external_id` = le `r
 #### 6b. Appel Attio correspondant
 | action_type | Tool Attio |
 |---|---|
-| `update_stage` | `update-record` (object=`deals`, `stage` ; + `lost_reason` quand le stage cible est `Deal Lost`) |
+| `update_stage` | `update-record` (object=`deals`, `stage` ; + `lost_reason`, `date_de_perte` et, s'il y a lieu, `condition_de_retour` quand le stage cible est `Deal Lost`) |
 | `update_next_step` | `update-record` (object=`deals`, `next_step_description` + `balle_dans_le_camp` + `prochaine_action_le` dans le même appel) |
 | `update_company_status` | `update-record` (object=`companies`, `company_status`) |
 | `update_owner` | `update-record` (object=`deals`, `owner` = Lucie) |
@@ -792,6 +792,24 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
   (T12). Sur silence (3e relance sans réponse ou 60 j sans signal), tu n'écris que le next step
   « Clôturer ? — N j sans réponse » (R10) : la fermeture reste un geste de Lucie. Tout `update_stage →
   Deal Lost` porte un `lost_reason` ; inclure les dates dans `reasoning`.
+  - **Champs de reconquête** (10/11) : tout `update_stage → Deal Lost` écrit aussi `date_de_perte`, la date du dernier
+    signal écrit du prospect avant la perte (son message de refus, un appel décroché, la démo tenue ; jamais un envoi
+    de Gang4 ni une réponse automatique).
+  - `condition_de_retour` s'écrit à chaque passage en `Deal Lost`, explicitement (null pour une raison réversible) :
+    - « Jamais : <raison> » pour un refus net de toute l'offre, un litige de paiement, une décision de Yacin, une
+      exclusivité ou un hors cible ;
+    - « Quand : <condition> » quand la perte tient à une offre que Gang4 n'a pas encore (whitelisting média, TikTok,
+      offre vidéo, `docs/FUNNEL.md` §7 points 48 et 49).
+  - Une raison réversible (budget, timing, pause) laisse `condition_de_retour` vide : le Sales Focus applique sa fenêtre
+    de 3 à 12 mois (`.claude/commands/sales-focus.md`, étape 3 « Reconquête »).
+  - « Décision de Yacin (JJ/MM) : <angle> » note une relance voulue par Yacin, avec son angle : ne la réécris jamais.
+    Une décision de ne plus relancer s'écrit « Jamais : décision de Yacin du JJ/MM ». Un `condition_de_retour` déjà
+    rempli ne se corrige que sur un fait qui le contredit.
+  - Un `Deal Lost` sans `date_de_perte` (fermé à la main) se complète au `/sales-check` hebdomadaire, pas ici : le run
+    ne revoit pas les deals fermés sans signal frais.
+  - Le `lost_reason` suit les mots du prospect : « No more contact » est réservé au silence. « Pas pour le moment » ou
+    « pas prioritaire » donnent Not the right time, un budget donne No budget at the moment, un refus de l'offre donne
+    Not the right offer. Le 10/11, Oh My Cream portait « No more contact » pour une raison de budget écrite.
 
 **Règles** :
 - Avant un `update_stage`, lis le stage actuel : transition cohérente (vers l'avant, sauf `Deal Lost`
@@ -801,7 +819,12 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
   deal (réponse entrante non négative, appel décroché où le prospect demande une suite, démo bookée ou
   tenue) **postérieur à la fermeture** est **rouvert** au stage donné par la
   grille ci-dessous, jamais dupliqué, avec Balle / date / next step de la grille et une note d'audit
-  « Rouvert le JJ/MM : <signal> » (`create_audit_note`). Les réouvertures figurent dans le rapport
+  « Rouvert le JJ/MM : <signal> » (`create_audit_note`). La réouverture vide `lost_reason`, `date_de_perte` et
+  `condition_de_retour`, avec leurs valeurs d'avant dans `before`. **Exception (10/11)** : un `Deal Lost` dont
+  `condition_de_retour` commence par « Jamais : » pour une raison qui tient à Gang4 (exclusivité, décision de Yacin
+  ou de Samuel, litige de paiement : Les Petits Culottés, Alltricks, Sync, Horace) ne se rouvre pas. À la place : une
+  note d'audit « réponse du JJ/MM sur un deal Jamais : <raison> » et une ligne dans « Notes ». Un « Jamais » posé pour
+  un refus du prospect se rouvre normalement. Les réouvertures figurent dans le rapport
   (section Pipeline). La date de fermeture est celle de la dernière ligne `update_stage` → `Deal Lost`
   `applied` de `sales.applied_actions`, sinon de la note « Clôture du deal - auto » du deal, sinon de la
   première photo `sales.deal_snapshot` qui le montre en `Deal Lost` ; sans aucune des trois → pas de
