@@ -697,7 +697,8 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
     - Au 10/11, avec les `date_de_perte` complétées : Morphee et Fizimed sont dans la fenêtre ; Blissim, Hydratis,
       Cheerz, Manucurist et Ziggy sont hors fenêtre (plus de 12 mois).
     - Un silence sans démo tenue ne remonte jamais.
-  - Exemples au 06-10/11 : Poppins (deal déjà ouvert) ; Réjeanne avec Gohyav (pause annoncée par écrit, fin le
+  - Exemples au 06-10/11 : Poppins (un seul deal depuis la fusion du 11/11, `Deal Lost` avec « Décision de Yacin :
+    relancer sur le Partnership Ads ») ; Réjeanne avec Gohyav (pause annoncée par écrit, fin le
     17/05) ; Epycure (arbitrage du budget du S2, écrit dans #gang4-epycure le 21/07) ; Quitoque (coût).
   - La carte se pose sur le deal existant (ouvert, perdu, ou gagné d'un client parti). L'email reprend la raison du
     départ et ce qui a changé depuis, vérifiable. Une reconquête envoyée ne se refait pas (étape 1, 12 mois). Un « Mauvais objectif » sur un deal

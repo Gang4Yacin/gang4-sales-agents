@@ -90,7 +90,7 @@ champ vide, poser une `lost_reason` vide, rattacher un contact, mettre l'owner L
 tenue l'emporte toujours sur la Balle et le next step** (règle de Yacin du 23/10 : une promesse non tenue met la
 Balle chez Gang4), jamais sur le stage : applique la puce « promesse » de C4, même sur une décision humaine. Exemples : Aroma-Zone en
 `Nurturing` jusqu'au 11/01/2027 sans démo, Novoma laissé en `Deal Lost`, « Poppins - Partnership Ads » créé sans
-réponse entrante, Goodvest et Pimpant remis en `Demo scheduled` le 21/10.
+réponse entrante (en double du deal Poppins, fusionné le 11/11), Goodvest et Pimpant remis en `Demo scheduled` le 21/10.
 
 ## Argument
 `essai` → aucune écriture (ni Attio, ni `sales.applied_actions`, ni photo, ni Slack). Tu fais **tout** le
