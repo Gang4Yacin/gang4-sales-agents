@@ -298,6 +298,11 @@ company existe déjà avec `description`+`icp` → ne re-cherche pas.
   `link_person_to_deal` si la personne appelée n'est pas rattachée au deal.
 - `create_deal` si la règle 2 bis est satisfaite et qu'aucun deal ouvert n'existe (deal `Deal Lost` →
   réouverture T11, section Stages), avec la personne appelée en contact.
+- **Un deal par société, toujours** (11/11, Yacin sur Poppins) : avant tout `create_deal`, cherche **tous** les deals
+  de la société, quel que soit leur stage (`Deal Won` d'un client parti et `Deal Lost` compris), et les deals sans
+  société au nom de la marque. S'il en existe un, rouvre-le (T11) ou mets-le à jour, mais n'en crée jamais un second
+  pour une autre offre. Le 23/10, « Poppins - Partnership Ads » avait été créé à côté du deal Social Proof de Poppins.
+  Les deux ont été fusionnés le 11/11.
 - **Un appel ne ferme jamais un deal** : un refus au téléphone (`prospect_reply_kind = negative`) sur un deal
   ouvert donne seulement Balle `Gang4`, aujourd'hui, « Clôturer ? — refus au téléphone le JJ/MM (<ses
   mots>) », `rule = "R3-appel-refus"`, à la place des autres lignes « appel » de la grille. Une action que le
@@ -448,7 +453,7 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
 
 | Verdict | Deal | Company |
 |---|---|---|
-| `won` : abonnement actif (tout produit) ou facture Stripe payée ≤ 45 j | deal ouvert → `update_stage → Deal Won` ; aucun deal → `create_deal` en `Deal Won` (owner Lucie) + note « Arrivé hors funnel : paiement constaté le JJ/MM » ; `Deal Lost` / `Archived` **et** abonnement actif → `Deal Won` + note d'audit | → `Customer` |
+| `won` : abonnement actif (tout produit) ou facture Stripe payée ≤ 45 j | deal ouvert → `update_stage → Deal Won` ; aucun deal → `create_deal` en `Deal Won` (owner Lucie) + note « Arrivé hors funnel : paiement constaté le JJ/MM », après avoir cherché un deal sans société au nom de la marque ou avec un contact de la marque (11/11 : le « Tediber - Deal » de 2025 n'avait pas de société, la migration du 20/10 en a créé un second) : s'il existe, rattache-lui la société au lieu de créer ; `Deal Lost` / `Archived` **et** abonnement actif → `Deal Won` + note d'audit | → `Customer` |
 | `won` par facture seule (aucun abonnement actif) et company `Lost` dans Attio | rien | rien : facture de rattrapage, le client reste perdu (décision de Yacin, 21/10 : Aloe Paris, Horace, Pomponne) ; ne le signale pas |
 | `past_due` (paiement en échec, plus de facture payée ≤ 45 j) | rien | rien : un paiement en échec ne change jamais le statut client (Yacin, 20/10) ; signale-le avec la date |
 | `invoice_pending` (facture ouverte ≤ 45 j, rien de payé) | rien | rien |
@@ -590,7 +595,7 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
    - le deal a été rouvert, corrigé ou créé sur décision de Yacin il y a moins de 60 jours : une note du deal
      (`search-notes-by-metadata` sur le deal) contient « décision de Yacin », « à la demande de Yacin » ou
      « go de Yacin » (par exemple « Revue de la fermeture du deal - auto » ou « Création du deal - auto » du
-     23/10 : Maju, Flotte, Alltricks, Magimix, Célims, Biocyte, Poppins - Partnership Ads) ;
+     23/10 : Maju, Flotte, Alltricks, Magimix, Célims, Biocyte ; Poppins, fusionné le 11/11 en un deal `Deal Lost`) ;
    - une note « Objectif corrigé - auto » ou « Correction depuis Sales Actions - auto » de moins de 60 jours, ou
      une note « Snooze - auto » dont le jour de snooze n'est pas passé (elles contiennent « (page Sales Actions) »,
      quel que soit le prénom qu'elles citent) : c'est une décision humaine prise sur la page `/admin/sales-actions`
