@@ -85,7 +85,8 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 
 | Situation | Ce que dit l'email | La demande |
 |---|---|---|
-| **Relance après un silence** | Le dernier échange en une phrase (quoi ; une date seulement si elle aide, « lors de notre échange » suffit souvent). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
+| **Relance d'un email de Gang4 resté sans réponse** (moins de 30 jours, 12/11) | 15 à 50 mots, dans le même fil. L'email remonte le précédent en disant ce qu'il contenait (« Je me permets de remonter mon message de la semaine dernière avec l'étude de cas … »). Ni rappel de Gang4, ni argumentaire, ni phrase répétée de l'email précédent, ni nouveau document. | Le créneau, avec le lien d'agenda. |
+| **Relance après un silence** (plus de deux semaines depuis le dernier message du fil, qui que soit son auteur) | Le dernier échange en une phrase (quoi ; une date seulement si elle aide, « lors de notre échange » suffit souvent). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
 | **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase, d'après l'envoi qui l'a fait réserver (Lemlist ou email) et les créas de démo de la marque en base (Pimpant avait réservé pour voir les UGC préparés pour elle) ; pour un point de suivi décliné, ce qu'il devait apporter, d'après le compte rendu (Claap, à défaut les notes Gemini). | Recaler, avec le lien d'agenda. |
 | **Récap après une démo ou un appel** | Merci en une phrase. Ce qui a été dit, tel que dans le compte rendu : besoins, prochaines étapes, qui fait quoi. | La prochaine étape, datée si elle l'a été. |
 | **Gang4 a besoin d'informations** (accès, marques visées, éléments pour lancer) | Pourquoi on en a besoin, en une phrase. | La liste courte de ce qu'il faut, ou un court appel pour le faire ensemble. |
@@ -124,6 +125,13 @@ calculs ou d'une lecture de `SalesCopyLecon`.
   brutal ») ; au vouvoiement, « Est-ce que vous auriez … ? ».
 - **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
   Gang4 en une ou deux phrases, puis le créneau.
+- **La relance d'une relance est légère** (12/11, Yacin : « on refait un "Petit rappel de Gang4" alors qu'on l'a fait
+  dans l'email d'il y a 7 jours » ; « trop générique et ne prend pas en compte le mail précédent + le fait que c'est une
+  relance qui ne doit pas être lourde »). Quand Gang4 a écrit en dernier, il y a moins de 30 jours, on remonte cet email
+  en deux phrases : ce qu'il contenait, puis la demande. Pas de rappel de Gang4 : il est déjà dans le fil. Par exemple :
+  « Je me permets de remonter mon message de la semaine dernière avec l'étude de cas Little Cigogne / Plumaïa, au cas où
+  il serait passé sous la pile. Est-ce que tu aurais 15 minutes pour qu'on en parle ? Je te laisse mon calendrier ici
+  pour que tu puisses choisir le créneau qui t'arrange : <lien> ».
 - **Le rappel met les chiffres en avant** (06/11 : « met bien en avant les chiffres qu'on a… Recopie pas mot pour mot
   mais c'est une idée ») : la tournure varie, les faits non, et rien ne s'y ajoute. Partnership Ads (par défaut) :
   scaler les Partnership Ads en un clic, des centaines de créas diffusées depuis des centaines de profils, plus de 100

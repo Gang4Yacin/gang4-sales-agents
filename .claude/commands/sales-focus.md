@@ -936,7 +936,18 @@ cas sans `pieces_jointes` reçoit son document, et une carte appel son `allo_con
 jour (« Objectif corrigé par Yacin le 23/10 : … »).
 
 **Email** (le cas courant), `contenu` =
-`{"type": "email", "boite": "samuel|lucie|yacin", "a": [...], "cc": [...], "objet": "...", "corps": "...", "gmail_thread_id": "...", "pieces_jointes": [{"id": "...", "nom": "...", "fichier": "..."}]}`
+`{"type": "email", "boite": "samuel|lucie|yacin", "a": [...], "cc": [...], "objet": "...", "corps": "...", "gmail_thread_id": "...", "pieces_jointes": [{"id": "...", "nom": "...", "fichier": "..."}], "fil": [{"le": "...", "de": "...", "sens": "recu|envoye", "texte": "..."}]}`
+- `fil` (12/11, Yacin : « quand on répond à un email déjà existant, possibilité de déployer les précédents emails, sans
+  surcharger l'interface ») : pour une réponse dans un fil existant (`gmail_thread_id`, sans `nouveau_fil`), les
+  5 derniers messages du fil, du plus ancien au plus récent. Chaque message porte :
+  - `le` : l'instant ISO ;
+  - `de` : « Prénom Nom » de l'expéditeur ;
+  - `sens` : `recu` (le prospect) ou `envoye` (Gang4) ;
+  - `texte` : le corps en texte brut, **sans** la citation des messages précédents (tout ce qui suit « Le … a écrit : »
+    ou les lignes en « > »), sans signature ni liens de suivi, 1 500 caractères au plus ;
+  - pas les réactions Gmail (« ✅ … a réagi »), ni les invitations d'agenda.
+  La page le montre replié, sous l'email. Absent pour un nouveau fil. C'est aussi ce que tu relis pour écrire la relance
+  (règle 3 bis de « Relis chaque email »).
 - `pieces_jointes` : les documents à `fichier` de `SalesDocument` que « Envoyer » joint à l'email (`id`, `nom` et
   `fichier` recopiés de la table), deux au plus d'habitude (règle ci-dessous), jamais plus de 5 ni plus de 15 Mo en
   tout. Vérifie-le toi-même avec la requête de l'étape 2 : chaque document a un `fichier` et une `taille_octets` (un
@@ -1152,7 +1163,10 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
 2. **Une seule question, la demande, en fin d'email** : pas de « Est-ce que vous avez pu en discuter ? », « Tu as eu
    le temps d'y jeter un œil ? » ni « si c'est toujours d'actualité ? » avant le créneau ; le contexte se dit en
    affirmant (« Tu m'avais dit vouloir lancer un test avec votre nouvelle agence. »).
-3. **Relance après un silence de plus de deux semaines** : un rappel de Gang4 en une ou deux phrases, **sur l'offre
+3. **Relance après un silence de plus de deux semaines** : le silence se compte depuis le **dernier message du fil**,
+   qui que soit son auteur. Une relance de Gang4 d'il y a 7 jours fait un silence de 7 jours, et c'est la règle 3 bis.
+   Jamais de rappel si un email de Gang4 du fil en contenait déjà un dans les 30 derniers jours. Sinon, un rappel de
+   Gang4 en une ou deux phrases, **sur l'offre
    dont il est question avec ce prospect** (Yacin, 06/11, Magimix et Biocyte : « parle pas de Partnership Ads mais de
    Social Proof ») et **qui met les chiffres en avant** (Yacin, 06/11 : « met bien en avant les chiffres qu'on a… Recopie
    pas mot pour mot mais c'est une idée »), puis la demande. La tournure change d'un email à l'autre ; les faits, eux,
@@ -1172,6 +1186,25 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
    les ads, les testeuses, une réservation « Démo Gang4 - Social Proof », un contact venu d'une marque cliente du Social
    Proof (Florence Sequero, des Petits Prodiges, pour Biocyte), ou le prospect qui en parle ; dans le doute, lis le
    premier email de Gang4 du fil et le premier échange (étape 7, `historique`).
+3 bis. **Relance d'un email de Gang4 resté sans réponse** (12/11, Yacin sur The Bradery, Tikamoon, Wopilo, Circle
+   Sportswear : « on refait un "Petit rappel de Gang4" alors qu'on l'a fait dans l'email d'il y a 7 jours » ; « trop
+   générique et ne prend pas en compte le mail précédent + le fait que c'est une relance qui ne doit pas être lourde »).
+   Le cas : le dernier message du fil est un email de Gang4, envoyé il y a moins de 30 jours.
+   - **Relis d'abord cet email**, tel qu'il est parti (fil Gmail de la boîte), pas tel que la carte l'avait préparé.
+     Il va dans `fil`.
+   - **L'email est une relance légère**, 15 à 50 mots, en réponse dans le même fil (le prospect voit l'email
+     précédent juste en dessous). Il remonte cet email en disant ce qu'il contenait, en quelques mots : « Je me permets
+     de remonter mon message de la semaine dernière avec l'étude de cas Little Cigogne / Plumaïa ». Puis la demande en
+     une phrase, et le lien d'agenda (étape 6).
+   - **Jamais** :
+     - le rappel de Gang4 ;
+     - l'argumentaire ou l'offre réexpliqués ;
+     - une phrase de l'email précédent répétée ;
+     - un nouveau document, sauf un élément nouveau et vérifiable qui change la donne (rare : une étude de cas de son
+       secteur sortie depuis).
+   - **Tikamoon, 12/11** : l'email du 05/11 (« On a finalement annulé le point… ») a été suivi d'une carte qui
+     redisait le point à reprendre, ajoutait le rappel de Gang4 et les références. La bonne relance : « Je me permets
+     de remonter mon message de la semaine dernière pour qu'on reprenne notre point. » puis le calendrier.
 4. **Les chiffres tels que le prospect les a entendus** : un nombre déjà annoncé (« les 20 UGC ») ne se contredit pas
    avec le compte en base (16 validées pour Flotte le 05/11) ; s'ils diffèrent, l'email n'en cite aucun.
 5. **Les mots du prospect** : « déployer Gang4 » reste « déployer », pas « tester » (Biocyte).
