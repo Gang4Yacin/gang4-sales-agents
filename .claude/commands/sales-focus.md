@@ -773,8 +773,9 @@ Le 05/11, le top 10 gardait Hindbag et Circle Sportswear comme relances et laiss
 promise au rendez-vous du 21/01 avec l'équipe acquisition, brouillons des 31/03 et 28/05 jamais partis) et Ultra Premium
 Direct (test promis dès l'ouverture des Pays-Bas le 23/03, marché ouvert depuis juin, la marque jamais prévenue).
 Un livrable que Gang4 a proposé avant que le prospect reporte ou décline (« on se recontacte à la rentrée » :
-présentation, créas) ne part pas dans la relance : elle reste courte, avec un rappel chiffré de Gang4, et le
-livrable se repropose au call. Des documents que le prospect a lui-même demandés (études de cas) partent, eux, après la
+présentation, créas) ne part pas dans la relance : elle reste courte, avec un rappel chiffré de Gang4 (première
+relance seulement : la relance d'un email de Gang4 resté sans réponse n'en a pas, règle 3 bis de « Relis chaque
+email »), et le livrable se repropose au call. Des documents que le prospect a lui-même demandés (études de cas) partent, eux, après la
 demande de créneau, en une ligne « D'ailleurs… » (Wopilo, étape 6). Le 05/11, la
 relance de Circle Sportswear (présentation et 2 à 3 visuels promis à la démo du 08/07, Martin a reporté puis décliné le
 01/09) était préparée avec la présentation et des créas ; Yacin l'a envoyée courte, sans elles (« j'aurais plus fait
@@ -915,7 +916,8 @@ des leçons (étape 1). Une carte d'avant le 27/10 dont le contenu est un `docum
 reprend pas : écris l'email qui la remplace (« Toujours un email », ci-dessous). Une carte appel reprise garde son
 script et son message vocal, mais son `allo_contact_id` est toujours recalculé (« Carte appel » › « La fiche Allo »,
 ci-dessous) : seul ce champ change dans `contenu`, sans entrée dans `modifications` (ni `objet` ni `corps` ne bougent) ;
-un `per-…` d'une carte d'avant le 07/11 ne repart jamais.
+un `per-…` d'une carte d'avant le 07/11 ne repart jamais. De même, une carte email reprise reçoit son `fil` relu au
+calcul (12/11), sans entrée dans `modifications`.
 
 **Une carte reprise passe quand même le point 5 bis** (relecture, ci-dessous) : « notre démo », « la démo » ou
 « Quand est-ce que tu aurais … » s'y corrigent (« notre échange », « Est-ce que tu aurais … »), seul changement du corps
@@ -929,7 +931,8 @@ sauf fait nouveau lu à l'étape 5 (la personne a quitté la marque ou demandé 
 
 **Carte snoozée revenue à son jour** (étape 1, même `cle`) : comme une carte modifiée, son `contenu`, son
 `contenu_initial` et ses `modifications` sont repris tels quels si l'étape 5 ne trouve rien de nouveau (une étude de
-cas sans `pieces_jointes` reçoit son document, et une carte appel son `allo_contact_id` recalculé, comme ci-dessus).
+cas sans `pieces_jointes` reçoit son document, une carte appel son `allo_contact_id` recalculé et une carte email
+son `fil` relu, comme ci-dessus).
 
 **Carte « Mauvais objectif »** (étape 2 bis) : un contenu neuf pour le nouvel objectif, sans `contenu_initial` ni
 `modifications`, avec la `cle` du nouvel objectif. Le texte de l'équipe vaut consigne, et `pourquoi` le cite avec son
@@ -939,13 +942,15 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
 `{"type": "email", "boite": "samuel|lucie|yacin", "a": [...], "cc": [...], "objet": "...", "corps": "...", "gmail_thread_id": "...", "pieces_jointes": [{"id": "...", "nom": "...", "fichier": "..."}], "fil": [{"le": "...", "de": "...", "sens": "recu|envoye", "texte": "..."}]}`
 - `fil` (12/11, Yacin : « quand on répond à un email déjà existant, possibilité de déployer les précédents emails, sans
   surcharger l'interface ») : pour une réponse dans un fil existant (`gmail_thread_id`, sans `nouveau_fil`), les
-  5 derniers messages du fil, du plus ancien au plus récent. Chaque message porte :
+  5 derniers messages du fil, du plus ancien au plus récent ; si le dernier message du prospect n'y est pas, il
+  remplace le plus ancien. Chaque message porte :
   - `le` : l'instant ISO ;
   - `de` : « Prénom Nom » de l'expéditeur ;
   - `sens` : `recu` (le prospect) ou `envoye` (Gang4) ;
   - `texte` : le corps en texte brut, **sans** la citation des messages précédents (tout ce qui suit « Le … a écrit : »
     ou les lignes en « > »), sans signature ni liens de suivi, 1 500 caractères au plus ;
-  - pas les réactions Gmail (« ✅ … a réagi »), ni les invitations d'agenda.
+  - pas les réactions Gmail (« ✅ … a réagi »), les invitations ou réponses d'agenda, les réponses automatiques
+    (absence) ni les emails qui rebondissent.
   La page le montre replié, sous l'email. Absent pour un nouveau fil. C'est aussi ce que tu relis pour écrire la relance
   (règle 3 bis de « Relis chaque email »).
 - `pieces_jointes` : les documents à `fichier` de `SalesDocument` que « Envoyer » joint à l'email (`id`, `nom` et
@@ -970,7 +975,9 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      le guide dit d'y écrire. Un point décliné à recaler : l'email dit ce que le point devait apporter, d'après le
      compte rendu, sans date ni personne ajoutée : Tikamoon, 05/11, « On a finalement annulé le point qu'on devait faire
      pour parler des Partnership Ads en masse et des UGC gratuits en illimité que je t'avais présentés. Est-ce que tu
-     aurais 10/15 minutes pour qu'on en reparle ? » (version de Yacin, « Est-ce que » depuis le 09/11). Une démo manquée à
+     aurais 10/15 minutes pour qu'on en reparle ? » (version de Yacin, « Est-ce que » depuis le 09/11). Quand Gang4 a
+     déjà envoyé ce recalage et que le prospect n'a pas répondu, la carte est la relance de cet email (règle 3 bis) :
+     elle ne redit pas ce que le point devait apporter (Tikamoon, 12/11). Une démo manquée à
      recaler : l'email dit ce qu'elle devait montrer, d'après l'envoi qui l'a fait réserver (séquence Lemlist, boîte de
      Lucie) et les créas de démo de la marque en base, avec leur nombre (« les 20 UGC qu'on a préparés pour
      Goodvest ») :
@@ -1003,7 +1010,7 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      modèles, tu n'en écris pas (la table ne reçoit de la routine que les leçons `envoi`).
   4. Applique les leçons de l'étape 1 et les « Corrections de Yacin » de `docs/STYLE-EMAILS.md` (le 05/11 : aucune
      personne ajoutée au créneau demandé, pas de date pour en mettre, relance courte et chaleureuse avec un rappel de ce
-     qu'est Gang4).
+     qu'est Gang4, sauf la relance d'un email de Gang4 resté sans réponse : règle 3 bis).
 - Le style de l'expéditeur dans le fil : « Hello <Prénom>, », tutoiement si le fil tutoie, phrases
   courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots (moins pour une simple relance ou pour l'email
   qui accompagne une pièce jointe promise), une seule demande claire (un créneau, un accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
@@ -1164,8 +1171,12 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
    le temps d'y jeter un œil ? » ni « si c'est toujours d'actualité ? » avant le créneau ; le contexte se dit en
    affirmant (« Tu m'avais dit vouloir lancer un test avec votre nouvelle agence. »).
 3. **Relance après un silence de plus de deux semaines** : le silence se compte depuis le **dernier message du fil**,
-   qui que soit son auteur. Une relance de Gang4 d'il y a 7 jours fait un silence de 7 jours, et c'est la règle 3 bis.
-   Jamais de rappel si un email de Gang4 du fil en contenait déjà un dans les 30 derniers jours. Sinon, un rappel de
+   qui que soit son auteur ; un appel, un rendez-vous ou un message par un autre canal depuis comptent aussi
+   (`historique`). Ne comptent pas comme messages, ici, en 3 bis et dans `fil` : une réponse automatique (absence),
+   une invitation ou une réponse d'agenda, une réaction Gmail, un email qui rebondit. Tant que le dernier message est un
+   email de Gang4 de moins de 30 jours, c'est la règle 3 bis, quel que soit le silence ; la règle 3 vaut au-delà, ou
+   quand le prospect a écrit en dernier. Jamais de rappel si un email de Gang4 à ce contact en contenait déjà un dans
+   les 30 derniers jours, toutes boîtes et séquences Lemlist confondues. Sinon, un rappel de
    Gang4 en une ou deux phrases, **sur l'offre
    dont il est question avec ce prospect** (Yacin, 06/11, Magimix et Biocyte : « parle pas de Partnership Ads mais de
    Social Proof ») et **qui met les chiffres en avant** (Yacin, 06/11 : « met bien en avant les chiffres qu'on a… Recopie
@@ -1189,22 +1200,43 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
 3 bis. **Relance d'un email de Gang4 resté sans réponse** (12/11, Yacin sur The Bradery, Tikamoon, Wopilo, Circle
    Sportswear : « on refait un "Petit rappel de Gang4" alors qu'on l'a fait dans l'email d'il y a 7 jours » ; « trop
    générique et ne prend pas en compte le mail précédent + le fait que c'est une relance qui ne doit pas être lourde »).
-   Le cas : le dernier message du fil est un email de Gang4, envoyé il y a moins de 30 jours.
-   - **Relis d'abord cet email**, tel qu'il est parti (fil Gmail de la boîte), pas tel que la carte l'avait préparé.
-     Il va dans `fil`.
-   - **L'email est une relance légère**, 15 à 50 mots, en réponse dans le même fil (le prospect voit l'email
-     précédent juste en dessous). Il remonte cet email en disant ce qu'il contenait, en quelques mots : « Je me permets
-     de remonter mon message de la semaine dernière avec l'étude de cas Little Cigogne / Plumaïa ». Puis la demande en
-     une phrase, et le lien d'agenda (étape 6).
+   Le cas : la carte est une relance (prospect silencieux, conversation qui retombe, recalage déjà envoyé resté sans
+   réponse), le dernier message du fil est un email de Gang4 de moins de 30 jours, et rien ne s'est passé depuis : ni
+   rendez-vous (tenu, manqué ou décliné), ni appel, ni message par un autre canal. Une carte qui tient une promesse de
+   Gang4 (livrable, récap, offre : étape 4), l'email de clôture (étape 3) ou une carte qui suit un fait arrivé depuis
+   cet email suit sa situation, même si Gang4 a écrit en dernier.
+   - **Relis d'abord l'email à remonter**, tel qu'il est parti (fil Gmail de la boîte), pas tel que la carte l'avait
+     préparé : le dernier email de Gang4 qui porte un contenu (document, offre, question, point à reprendre). Si le
+     dernier email du fil est lui-même une relance légère, c'est celui d'avant. Ils vont dans `fil`.
+   - **L'email est une relance légère**, 15 à 50 mots hors salutation, signature et phrase du calendrier, en réponse
+     dans le même fil. La réponse ne cite pas l'email précédent (le prospect ne le voit pas toujours) : la remontée dit
+     seule de quoi il s'agit. Elle dit ce que contenait l'email, et quand, avec des mots justes : « Je me permets de
+     remonter mon message de la semaine dernière avec l'étude de cas Little Cigogne / Plumaïa » (« il y a quinze
+     jours », « mon dernier message » selon sa date). S'il n'est pas parti de la boîte de la carte : « le message de
+     <Prénom> », pas « mon message ».
+   - **La demande est celle de l'email remonté** (l'objectif de la carte), en une phrase : le plus souvent un créneau,
+     avec la phrase du calendrier (étape 6) ; sinon l'avis, l'accès, la décision ou le règlement attendu, sans lien
+     d'agenda. Elle peut tenir dans la phrase qui remonte l'email (« … pour qu'on reprenne notre point. ») ; sinon, une
+     seule question (règle 5 bis).
+   - **La relance d'une relance légère** ne redit jamais « je me permets de remonter » : jamais deux de suite dans un
+     fil. Une autre tournure ou une question fermée (oui ou non), ou bien la carte appel ou la clôture si l'étape 3 les
+     permet.
    - **Jamais** :
      - le rappel de Gang4 ;
      - l'argumentaire ou l'offre réexpliqués ;
-     - une phrase de l'email précédent répétée ;
-     - un nouveau document, sauf un élément nouveau et vérifiable qui change la donne (rare : une étude de cas de son
-       secteur sortie depuis).
+     - une phrase de l'email précédent répétée, sauf la phrase du calendrier et « Est-ce que tu aurais 15 minutes … ? »,
+       qui se reprennent telles quelles ;
+     - une pièce jointe (`pieces_jointes` vide) : ni le document de l'email remonté, que le prospect a déjà, ni un
+       nouveau document, sauf un élément nouveau et vérifiable qui change la donne (rare : une étude de cas de son
+       secteur sortie depuis). Un document que le prospect a demandé et qui n'est jamais parti relève du livrable promis
+       (étape 4), pas de cette règle.
    - **Tikamoon, 12/11** : l'email du 05/11 (« On a finalement annulé le point… ») a été suivi d'une carte qui
      redisait le point à reprendre, ajoutait le rappel de Gang4 et les références. La bonne relance : « Je me permets
      de remonter mon message de la semaine dernière pour qu'on reprenne notre point. » puis le calendrier.
+   - **Circle Sportswear, 12/11** : « Je me permets de remonter mon message de la semaine dernière, au cas où il serait
+     passé sous la pile » ne dit pas ce que contenait l'email et pourrait suivre n'importe lequel. La bonne relance :
+     « Je me permets de remonter mon message de la semaine dernière sur les Partnership Ads en masse. Est-ce que tu
+     aurais 15 minutes pour qu'on en parle ? » puis le calendrier.
 4. **Les chiffres tels que le prospect les a entendus** : un nombre déjà annoncé (« les 20 UGC ») ne se contredit pas
    avec le compte en base (16 validées pour Flotte le 05/11) ; s'ils diffèrent, l'email n'en cite aucun.
 5. **Les mots du prospect** : « déployer Gang4 » reste « déployer », pas « tester » (Biocyte).
