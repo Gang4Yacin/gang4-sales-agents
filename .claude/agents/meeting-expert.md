@@ -224,7 +224,12 @@ Pour chaque meeting retenu :
    - **Pour une `conversation`**, lis le compte rendu et remplis :
      - `summary` : 3 à 6 lignes factuelles ;
      - `prospect_reply_kind` : même vocabulaire que `email-expert` (`positive` · `question` · `objection` ·
-       `later` · `negative` · `unknown`). En cas de doute entre `later` et `negative`, `later`. Un report
+       `later` · `redirect` · `negative` · `unknown`), avec les mêmes définitions depuis le 13/11 (l'appel de la
+       touche 2 pose la question de l'email « statuer » de `/sales-focus`) : « pas prioritaire », « pas de budget »,
+       « on doit valider en interne » sont des `later` ; « c'est X qui gère » est un `redirect`. `prospect_motif` :
+       le `motif` d'`email-expert` (`timing` · `pas_prio` · `budget` · `interne` · `refus` · `arret`, sinon `null`) ;
+       `redirect_to` : le nom, l'email et le rôle de X s'ils sont dits (`null` sinon) ; un mois de retour donné
+       (« rappelle-moi en mars ») va dans `callback_date`, au premier jour de ce mois. En cas de doute entre `later` et `negative`, `later`. Un report
        (« en consultation, rappelez-moi demain » : Alexis Vanbesselaere, Meltonic, 08/09) ou un barrage (« je
        ne prends pas d'appels commerciaux, écrivez-moi » : Prune Aubry, We Are Jolies, 08/09) sans intérêt
        exprimé pour l'offre → `later`, jamais `positive` ni `question` ;
@@ -310,7 +315,9 @@ Pour chaque meeting retenu :
       "contact_number": "+33… | null (appel Allo sans note Attio seulement)",
       "allo_company": "<société lue par Allo | null>",
       "summary": "Résumé factuel en 3-6 lignes | null si no_answer",
-      "prospect_reply_kind": "positive | question | objection | later | negative | unknown | null",
+      "prospect_reply_kind": "positive | question | objection | later | redirect | negative | unknown | null",
+      "prospect_motif": "timing | pas_prio | budget | interne | refus | arret | null",
+      "redirect_to": { "name": "...", "email": "... | null", "role": "... | null" },
       "prospect_requests": ["Voir des exemples de créas avant un call"],
       "gang4_promises": ["Envoyer des exemples de créas par email"],
       "callback_date": "AAAA-MM-JJ | null",

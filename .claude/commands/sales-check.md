@@ -88,7 +88,10 @@ order by a.target_record_id, a.created_at desc;
 Sur une décision humaine, sans fait du prospect ni promesse de Gang4 postérieurs, tu peux seulement : remplir un
 champ vide, poser une `lost_reason` vide, rattacher un contact, mettre l'owner Lucie. **Une promesse de Gang4 non
 tenue l'emporte toujours sur la Balle et le next step** (règle de Yacin du 23/10 : une promesse non tenue met la
-Balle chez Gang4), jamais sur le stage : applique la puce « promesse » de C4, même sur une décision humaine. Exemples : Aroma-Zone en
+Balle chez Gang4), jamais sur le stage : applique la puce « promesse » de C4, même sur une décision humaine. Une
+promesse reproposée dans un email « statuer » en échange d'un oui (13/11 : « Si c'est un sujet, je t'envoie… », « Si
+c'en est un, je te prépare… ») n'est plus due : elle le redevient seulement sur un oui du prospect (`/sales-focus`
+étape 4). Exemples : Aroma-Zone en
 `Nurturing` jusqu'au 11/01/2027 sans démo, Novoma laissé en `Deal Lost`, « Poppins - Partnership Ads » créé sans
 réponse entrante (en double du deal Poppins, fusionné le 11/11), Goodvest et Pimpant remis en `Demo scheduled` le 21/10.
 
@@ -241,8 +244,9 @@ returning id;
      pour un appel court) rapporte un échange : réponse, demande, rendez-vous, refus. Un « Answered », quelle
      que soit sa durée (47 s chez Meltonic le 09/09), dont la note ne contient que le lien d'enregistrement ou
      dit messagerie, « sans information claire sur la suite », « aucune discussion de fond », se traite comme
-     un « Voicemail » : c'est une relance de Gang4 non jointe, qui compte dans les 3 relances de C4 (hors
-     email ; plusieurs appels à la même personne le même jour = une relance) ;
+     un « Voicemail » : c'est une relance de Gang4 non jointe, l'appel de la touche 2 d'un deal à l'arrêt (C4 ;
+     plusieurs appels à la même personne le même jour = une touche ; un autre appel ne remplace ni l'email « statuer »
+     ni la pause datée) ;
    - **les emails** synchronisés dans Attio : `search-emails-by-metadata` une fois par domaine de la société,
      puis une fois avec `participant_email_addresses` = les contacts d'un autre domaine, `limit: 100`. Suis
      `next_cursor` **tant que `has_more` est vrai** : une page vide n'est pas la dernière. Lis le `summary` de
@@ -283,16 +287,19 @@ returning id;
 ## Étape 3 — Les cinq contrôles, et ce que tu corriges
 Pour chaque correction, garde le fait daté et sa source : ils vont dans la note d'audit et dans le message.
 
-**Lire une réponse** (C1 à C4). Classe le dernier message entrant comme `email-expert` (`reply_kind`). Seul un
-refus explicite (`negative` : « pas intéressé », « nous avons déjà un prestataire », « ne plus me contacter »)
-ferme un deal ou empêche sa création. Ne sont jamais des refus, même s'ils commencent par une réserve : un « pas
-maintenant » ou « pas pour le moment », avec ou sans date (`later`) ; une réserve sans refus ferme
-(`objection`) ; une demande d'étude de cas, d'exemples, de tarifs ou de rappel (`question`). Le deal est alors
-créé (C1) ou reste ouvert, avec la Balle, la date et le next step de la grille : la date annoncée s'il y en a
-une, la demande en next step (Axonaut, 19/10 → « Envoyer l'étude de cas vidéo demandée le 19/10 (attend la sortie de
-l'offre vidéo) », aujourd'hui + 14 j : C4 et `docs/FUNNEL.md` §7, point 48). Entre `later` et
-`negative`, choisis `later` (Coucoo Cabanes, 22/10 : « pas intéressés pour le moment mais gardons votre
-contact »).
+**Lire une réponse** (C1 à C4). Classe le dernier message entrant comme `email-expert` (`reply_kind` et `motif`).
+Seul un refus explicite (`negative` : « pas intéressé », « on ne donne pas suite », « on internalise », « on a choisi
+une autre solution », « nous avons déjà un prestataire », « arrêtez », « ne plus me contacter ») ferme un deal ou
+empêche sa création. Ne sont jamais des refus, même s'ils commencent par une réserve : un « pas maintenant », « pas
+pour le moment », « pas prioritaire », « pas de budget » ou « on doit valider en interne », avec ou sans date (`later`,
+13/11) ; un renvoi vers un collègue (`redirect`) ; une réserve sans refus ferme (`objection`) ; une demande d'étude de
+cas, d'exemples, de tarifs ou de rappel (`question`). Le deal est alors créé (C1 ; jamais sur un `redirect` seul) ou
+reste ouvert, avec la Balle, la date et le next step de la grille de `crm-sync` et de ses « Réponses qui statuent » :
+la date annoncée s'il y en a une (12 mois au plus), l'accusé de réception d'abord pour un `later` (sauf motif
+`interne` : Balle Prospect à sa date, sans accusé), la demande en next
+step (Axonaut, 19/10 → « Envoyer l'étude de cas vidéo demandée le 19/10 (attend la sortie de l'offre vidéo) »,
+aujourd'hui + 14 j : C4 et `docs/FUNNEL.md` §7, point 48). Entre `later` et `negative`, choisis `later` (Coucoo
+Cabanes, 22/10 : « pas intéressés pour le moment mais gardons votre contact »).
 
 ### C1. Deals manquants
 Un candidat de l'étape 2.3 dont le dernier message ou rendez-vous est un signal de création de deal (règle de
@@ -356,8 +363,10 @@ promesse de Gang4 était due avant ce refus.
 **Champs de reconquête** (10/11), pour toute fermeture, par un humain ou par un agent : un `Deal Lost` porte
 `date_de_perte` (dernier signal du prospect avant la perte : message écrit, appel décroché avec échange, démo tenue ;
 jamais un envoi de Gang4 ni une réponse automatique) et `condition_de_retour` (« Jamais : … », « Quand : … »,
-« Décision de Yacin (JJ/MM) : … », ou vide pour une raison réversible), avec les règles de `crm-sync` (section
-Stages, « Deal Lost »). Chaque semaine, relis aussi **tous** les `Deal Lost` (`list-records`, stage `Deal Lost`) et
+« Décision de Yacin (JJ/MM) : … », ou vide pour une raison réversible sans mois donné), avec les règles de `crm-sync`
+(section Stages, « Deal Lost »). Un deal fermé après une pause datée (13/11 : next step « Clôturer ? — pause du JJ/MM
+sans réponse, retour en <mois AAAA> » avant la fermeture) reçoit « Quand : <mois AAAA> (pause annoncée par Gang4 le
+JJ/MM) » s'il n'a pas de `condition_de_retour`. Chaque semaine, relis aussi **tous** les `Deal Lost` (`list-records`, stage `Deal Lost`) et
 complète ceux dont `date_de_perte` est vide : c'est ici que se rattrapent les fermetures à la main. Une valeur déjà
 en place ne se change que sur un fait qui la contredit ; « Décision de Yacin » ne se réécrit jamais.
 
@@ -373,7 +382,8 @@ réconciliation produit qui le fait).
 **Deal fermé par un agent** : relis son dossier entier.
 - **Rouvre** quand l'une de ces conditions est vraie :
   - le prospect avait montré de l'intérêt et c'est Gang4 qui devait agir (promesse non tenue, question sans
-    réponse, rappel promis, démo à recaler). Une promesse « à vérifier » (étape 2.4, boîte de Yacin en repli)
+    réponse, rappel promis, démo à recaler). Une promesse reproposée dans un email « statuer » en échange d'un oui,
+    restée sans réponse, n'est plus due et ne rouvre pas (13/11). Une promesse « à vérifier » (étape 2.4, boîte de Yacin en repli)
     rouvre avec le next step « Vérifier que <ce qui a été promis le JJ/MM> est parti », jamais « Envoyer » ;
   - un signal de création de deal est postérieur à la fermeture ;
   - le motif de fermeture est contredit par les faits (« 60 jours sans signal » alors qu'un appel décroché avec
@@ -393,17 +403,24 @@ réconciliation produit qui le fait).
 
 ### C4. Balle mal placée (deals ouverts)
 - Le dernier échange vient du prospect (message, ou appel où il demande quelque chose) et Gang4 n'a rien envoyé
-  depuis → Balle Gang4, aujourd'hui, « Répondre à <prénom nom> (message du JJ/MM) ».
+  depuis → Balle Gang4, aujourd'hui, « Répondre à <prénom nom> (message du JJ/MM) ». Sauf un `later` déjà rangé par
+  les « Réponses qui statuent » de `crm-sync` (13/11) : un « on doit valider en interne » garde sa Balle Prospect et
+  sa date (« Relancer <prénom nom> : attend <décision> »), un `later` dont l'accusé de réception est parti garde sa
+  date de retour.
 - Gang4 a promis quelque chose et rien n'est parti → Balle Gang4, aujourd'hui, le livrable promis en next step
   (« Envoyer à <prénom> <ce qui a été promis le JJ/MM> »). Si le livrable attend un produit de Gang4 pas encore sorti
   (les exemples vidéo de Payfit attendent l'offre vidéo, `docs/FUNNEL.md` §7, point 48), date = la sortie annoncée ou,
   sans date annoncée, aujourd'hui + 14 j ; le next step dit qu'il attend cette sortie. On n'affirme jamais l'absence d'un envoi sur une boîte
   qu'on n'a pas lue à jour : boîte de Yacin en repli et promesse « à vérifier » (étape 2.4) → même Balle et même
   date, next step « Vérifier que <ce qui a été promis le JJ/MM> est parti », et la note d'audit dit que sa boîte
-  n'a pas été lue à jour.
+  n'a pas été lue à jour. Une promesse reproposée depuis dans un email « statuer » en échange d'un oui (The Bradery :
+  les suggestions de profils promises le 03/09 ; Circle Sportswear : les visuels promis le 08/07) n'est plus due et
+  ne déclenche pas cette puce tant que le prospect n'a pas dit oui.
 - Balle Gang4 posée par un agent alors que le dernier message est de Gang4, qu'il attend une réponse et qu'aucune
-  promesse n'est due → Balle Prospect, envoi + 7 j (aujourd'hui si c'est passé), « Relancer <prénom nom> —
-  relance n/3 ».
+  promesse n'est due → Balle Prospect, la date de la touche suivante selon la cadence de `crm-sync` (« Cadence des
+  relances », R3-sortant : deal chaud ou à l'arrêt ; aujourd'hui si c'est passé), « Relancer <prénom nom> —
+  relance n/3 » ; après l'email de pause datée, la ligne R10 ; après un accusé de réception, la date de retour des
+  « Réponses qui statuent » (l'accusé n'est pas une touche).
 - Balle `RDV calé` dont le rendez-vous est passé, quel que soit le stage → ligne T9 de la grille de `crm-sync`, sauf
   un rendez-vous d'onboarding d'une marque qui a donné son go (deal `Meta Connected`, ou verdict `meta_no_sub` /
   `customer_no_meta`) : ligne « Rendez-vous d'onboarding » (R6) de la grille (passé sans preuve : comme tenu ; annulé
@@ -414,26 +431,34 @@ réconciliation produit qui le fait).
   Ni compte rendu ni échange depuis : Balle Gang4, aujourd'hui, « Confirmer la tenue du RDV du JJ/MM et faire le
   récap ». Rendez-vous annulé, décliné ou manqué : Balle Gang4, J+2, « Re-caler le RDV avec <prénom nom> ».
   Exemple : Les Commis, `Meta Connected`, Balle `RDV calé` au 23/10 ; son onboarding du 30/10 relève de R6.
-- **« Clôturer ? »** seulement si toutes ces conditions sont réunies : dernier signal du prospect à plus de 60
-  jours (appels décrochés avec résumé compris), au moins 3 relances de Gang4 sans réponse depuis, dont une au
-  moins par un autre canal que l'email (appel, même non joint, LinkedIn, ou le remplaçant indiqué dans une
-  réponse d'absence), et aucune promesse de Gang4 en attente. Sinon, mets en next step la relance qui manque
-  (« Appeler <prénom> », « Écrire à <remplaçant> »), Balle Gang4, aujourd'hui. Comme `/sales-ops`, tu ne fermes
-  jamais un deal sur un simple silence.
+- **« Clôturer ? »** seulement si toutes ces conditions sont réunies (13/11, cadence de `/sales-focus` étape 3) :
+  l'email de pause datée de Gang4 (touche 3) est parti depuis 7 jours ou plus, sans réponse ni signal du prospect
+  depuis (appels décrochés avec résumé compris), et aucune promesse de Gang4 n'est en attente (une offre conditionnelle
+  de l'email « statuer », « Si c'en est un, je te prépare… », n'en est pas une tant qu'il n'a pas dit oui). Le next step
+  porte alors le mois prévu : « Clôturer ? — pause du JJ/MM sans réponse, retour en <mois AAAA> ». Un long silence
+  seul, ou l'email « statuer » resté sans réponse, ne pose jamais « Clôturer ? ». Sinon, mets en next step la touche
+  qui manque (« Relancer <prénom> : statuer », « Appeler <prénom> », « Relancer <prénom> : pause datée », « Écrire à
+  <remplaçant> » quand une réponse d'absence longue ou sans date en nomme un), Balle Gang4,
+  aujourd'hui : au plus 3 touches après l'email resté sans réponse, et un deal qui comptait déjà, avant le 13/11, 3
+  emails de Gang4 ou plus depuis le dernier signal du prospect (email resté sans réponse compris), sans pause datée,
+  n'attend plus que la pause. Un « Appeler <prénom> » posé ici jusqu'au 13/11 (ancienne règle) suit la cadence : dans un deal à
+  l'arrêt, l'email « statuer » vient d'abord, réécris-le en « Relancer <prénom> : statuer » (Hindbag : call du
+  10/09, relance du 06/11 ; l'email « statuer » à partir du 16/11, l'appel ensuite). Comme `/sales-ops`, tu ne fermes jamais un deal sur un simple silence.
 - « Clôturer ? — refus au téléphone » posé par `/sales-ops` (`rule = R3-appel-refus`) : ne le remplace pas par
-  la relance qui manque et ne passe pas le deal en `Deal Lost`. Il ne change que sur un fait du prospect
+  la touche qui manque et ne passe pas le deal en `Deal Lost`. Il ne change que sur un fait du prospect
   postérieur au refus ou sur une promesse de Gang4 faite après cet appel (puce « promesse » ci-dessus).
 - Next step « Clôturer ? » posé par `/sales-ops` (dernière ligne `update_next_step` `applied` avec `rule =
-  R10`) sur un deal qui ne remplit pas ces conditions : s'il remplaçait une décision humaine, remets la Balle et
-  le next step d'avant (champ `before` de cette ligne), date aujourd'hui ; sinon, mets la relance qui manque.
+  R10`) sur un deal qui ne remplit pas ces conditions (dont tous les « Clôturer ? — N j sans réponse » posés pour
+  silence avant le 13/11, sans pause datée) : s'il remplaçait une décision humaine, remets la Balle et le next step
+  d'avant (champ `before` de cette ligne), date aujourd'hui ; sinon, mets la touche qui manque.
   Écris dans la note « Clôturer ? retiré : <dernier signal ou promesse, daté> ». Tout `update_next_step` de C4
-  porte `"rule": "sales-check-C4"` : `/sales-ops` ne repose pas « Clôturer ? » sur ce deal pendant 30 jours
-  (`crm-sync` §4d.3).
+  porte `"rule": "sales-check-C4"` : `/sales-ops` ne repose pas « Clôturer ? » sur ce deal tant qu'aucune nouvelle
+  pause datée n'est partie (`crm-sync` §4d.3).
 
 ### C5. Fiches incomplètes (deals ouverts)
 - Balle, date ou next step vide → remplis-les (grille de `crm-sync`, sinon « Définir la prochaine action »).
 - Date dépassée de plus de 7 jours → recalcule Balle, date et next step à partir du dossier (grille de
-  `crm-sync`, date jamais à plus de 90 jours), **seulement si** le dossier montre un fait plus récent que le next
+  `crm-sync`, date jamais à plus de 90 jours, 12 mois pour une date donnée par le prospect), **seulement si** le dossier montre un fait plus récent que le next
   step en place (réponse, envoi fait, rendez-vous pris, refus). Sinon, ne change rien : la vue « Aujourd'hui »
   d'Attio (date ≤ aujourd'hui) montre déjà le retard, ce n'est pas une correction.
 - Next step contredit par un échange plus récent → réécris-le d'après cet échange.
