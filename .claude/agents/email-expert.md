@@ -151,10 +151,13 @@ Retourne **un objet JSON par source** (Samuel, Lucie, Yacin, Lemlist), chacun da
       "last_inbound_at": "ISO | null",
       "last_outbound_at": "ISO | null",
       "outbound_count_since_last_inbound": N,
-      "reply_kind": "positive | question | objection | later | negative | unknown | none",
+      "reply_kind": "positive | question | objection | later | redirect | negative | unknown | none",
+      "motif": "timing | pas_prio | budget | interne | refus | arret | null",
       "date_mentioned": "AAAA-MM-JJ | null",
+      "redirect_to": { "name": "...", "email": "... | null", "role": "... | null" },
+      "pause_month": "AAAA-MM | null",
       "summary": "Résumé sales factuel en 1-3 phrases : qui, quoi, où on en est.",
-      "signals": ["positive_reply" | "proposal_sent" | "demo_requested" | "meeting_proposed" | "objection" | "next_step_committed" | "pricing_discussed" | "intro_email" | "follow_up" | "silence_break" | "deal_signed"],
+      "signals": ["positive_reply" | "proposal_sent" | "demo_requested" | "meeting_proposed" | "objection" | "next_step_committed" | "pricing_discussed" | "intro_email" | "follow_up" | "silence_break" | "deal_signed" | "pause_announced"],
       "url": "https://mail.google.com/mail/u/0/#inbox/<thread_id> | lien inbox Lemlist | null"
     }
   ],
@@ -180,25 +183,45 @@ Retourne **un objet JSON par source** (Samuel, Lucie, Yacin, Lemlist), chacun da
 - **`last_message_direction`** : direction du **dernier** message du thread (`inbound` si le prospect a répondu en dernier, `outbound` si c'est nous). Champ critique : `crm-sync` s'en sert pour distinguer une vraie réponse du prospect d'un simple envoi de notre part.
 - **Réponse du prospect (`reply_kind`, T5)** : qualifie le **dernier message entrant du prospect dans la
   fenêtre**, même si Gang4 a répondu après (le signal ne disparaît plus quand on répond) :
-  - `positive` : accord (« oui envoie », « vas-y »), demande de créas/UGC, demande de RDV, question
-    pricing avec intention d'avancer ;
+  - `positive` : accord (« oui envoie », « vas-y », « oui, on en parle »), demande de créas/UGC, demande de RDV,
+    question pricing avec intention d'avancer ;
   - `question` : demande d'infos, question sur l'offre, sans accord ni refus ;
-  - `objection` : réserve (prix, timing, pertinence) sans refus ferme ;
-  - `later` : « pas maintenant », « revenez vers moi en janvier » (date dans `date_mentioned` si donnée) ;
-  - `negative` : refus explicite (« pas intéressé », « nous avons déjà un prestataire », « ne plus me
-    contacter » sans désinscription formelle) ;
+  - `objection` : réserve sur l'offre (prix, pertinence, format) sans refus ferme ni report ;
+  - `later` (13/11) : un report ou une autre priorité, sans refus explicite : « pas maintenant », « revenez vers moi
+    en janvier », « pas prioritaire », « pas de budget pour ça en ce moment », « on doit valider en interne » (date
+    dans `date_mentioned` si donnée). `motif` : `timing` (pas le bon moment, une date), `pas_prio` (une autre
+    priorité), `budget`, `interne` (une validation ou une décision interne attendue) ;
+  - `redirect` (13/11) : « c'est X qui gère », « voyez avec X » : le contact renvoie vers une autre personne.
+    `redirect_to` : le nom de X, son email et son rôle s'ils sont donnés (chacun `null` sinon), jamais devinés ;
+    `redirect_to` vaut `null` pour les autres `reply_kind` ;
+  - `negative` : refus explicite seulement : « pas intéressé », « on ne donne pas suite », « on internalise », « on a
+    choisi une autre solution », « nous avons déjà un prestataire », « arrêtez », « ne plus me contacter » sans
+    désinscription formelle. `motif` : `arret` pour une demande d'arrêt ou une réponse hostile, `refus` sinon. Jamais
+    « pas le moment », « pas prioritaire » ou « pas de budget » sans refus explicite : c'est `later` ;
   - `unknown` : message entrant illisible ou extrait trop court (touches de Yacin en repli) ;
   - `none` : aucun message entrant dans la fenêtre.
-  En cas de doute entre `later` et `negative` (« pas intéressé pour l'instant »), choisis `later` :
-  `negative` ferme le deal.
-  `crm-sync` crée un deal sur `positive`, `question`, `objection` et `later` (réponse non négative).
+  **Réponse à un email « statuer »** (13/11 : il propose 2 ou 3 issues, dont une sortie) : la sortie choisie (« plus du
+  tout », « ce n'est plus d'actualité », « ce n'est plus un sujet ») est un refus explicite, `negative` de motif
+  `refus` ; avec « pour l'instant », « pour le moment » ou une date, c'est un `later` (« plus du tout pour l'instant »,
+  « on ne donne pas suite pour le moment », Lunettes Pour Tous le 10/11).
+  `motif` vaut `null` pour les autres `reply_kind`. En cas de doute entre `later` et `negative` (« pas intéressé pour
+  l'instant »), choisis `later` : `negative` ferme le deal.
+  `crm-sync` crée un deal sur `positive`, `question`, `objection` et `later` (réponse non négative) ; un `redirect`
+  seul n'en crée pas, il se range sur le deal existant (« Réponses qui statuent » de `crm-sync`) ; sans deal, le Sales
+  Focus le signale dans Slack, à traiter à la main.
+- **`pause_announced`** (13/11) : le dernier message de Gang4 du fil annonce une pause datée (« Je mets le sujet en
+  pause de mon côté et je reviens vers toi en <mois> », touche 3 de la cadence de `/sales-focus`). `pause_month` :
+  le mois annoncé (`AAAA-MM`), sinon `null`. `crm-sync` en tire « Clôturer ? » 7 jours après (R10).
 - **`positive_reply`** : à mettre **uniquement** si `reply_kind = positive`. Un thread purement `outbound`
   sans réponse n'a JAMAIS ce signal.
 - **`date_mentioned`** : date explicite donnée dans un message du thread (« retour avant le 09/10 », « on se
-  reparle le 12/11 »), au format AAAA-MM-JJ, sinon null.
+  reparle le 12/11 »), au format AAAA-MM-JJ, sinon null. Un mois seul se note au 1er de ce mois, à sa prochaine
+  occurrence (« en mars », écrit le 18/11/2026 → 2027-03-01) ; une année seule au 1er janvier (« en 2027 » →
+  2027-01-01) ; « après le Black Friday » au lundi qui suit (2026-11-30) (13/11).
 - **`outbound_count_since_last_inbound`** : nombre de nos messages envoyés depuis le dernier message entrant
-  du prospect (ou depuis le début du thread s'il n'a jamais répondu). Sert à compter les relances (« relance
-  n/3 »).
+  du prospect (ou depuis le début du thread s'il n'a jamais répondu), dans ce fil. Ce n'est qu'un point de départ
+  pour la cadence : `crm-sync` calcule le « relance n/3 » depuis l'email resté sans réponse, tous fils confondus et
+  rendez-vous tenus compris (« Cadence des relances », R3-sortant).
 
 ## Ce que tu ne fais PAS
 

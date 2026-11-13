@@ -64,13 +64,21 @@ mets cette règle dans leur brief, mot pour mot.
 - (23/10) Après le calcul, une courte notification dans Slack `#sales-ops` annonce le top et renvoie vers la page
   (étape 8).
 - (07/11, le top 10 du 06/11 n'avait que 6 cartes) **Vivier élargi** : les **prospects silencieux** (Balle `Prospect`,
-  relance datée passée : relance, puis appel, puis clôture, étape 3) au même rang que les actions de Balle Gang4 ; la
-  **clôture et la reconquête** en dernier, pour finir de remplir le top (étape 4). Pas d'anticipation : un deal dont la
+  relance datée passée : les touches de la cadence du 13/11, étape 3) au même rang que les actions de Balle Gang4 ; la
+  **pause datée et la reconquête** en dernier, pour finir de remplir le top (étape 4). Pas d'anticipation : un deal dont la
   date est à venir revient à sa date. Pas de montée en gamme des clients pour l'instant.
 - (07/11) **Cartes « Appeler »** : quand le deal reste sans réponse, qu'on a le numéro du bon interlocuteur et qu'il avait
   montré de l'intérêt, la carte est un appel : historique, objectif, un script de 3 à 4 lignes et un message vocal court
   (un appel sur deux tombe sur la messagerie), sans email de suivi. Tout le monde appelle depuis le compte Allo de
-  Samuel ; la carte reste liée à la personne qui a échangé avec le deal (`responsable`, `contenu.boite`).
+  Samuel ; la carte reste liée à la personne qui a échangé avec le deal (`responsable`, `contenu.boite`). Depuis le 13/11,
+  dans un deal à l'arrêt, l'appel vient après l'email « statuer » (étape 3).
+- (13/11) **Cadence et seconde relance « statuer »** (Yacin : « oui ok pour la différence deal chaud et Deal à l'arrêt
+  (non pour rien pendant la semaine du Black Friday) » ; « oui totalement aligné sur la manière de faire / la
+  doctrine »). Après un email de Gang4 resté sans réponse : 3 touches au plus, selon que le deal est chaud ou à
+  l'arrêt (étape 3). La seconde relance demande au prospect sa position, pas un créneau (règle 3 ter de « Relis chaque
+  email »). La dernière touche annonce une pause datée, pas une clôture (étape 6). Les réponses qui statuent sont rangées
+  dans Attio par `/sales-ops` (`crm-sync`, « Réponses qui statuent ») : une date de retour s'y écrit, jamais par un
+  Snooze, qui reste un geste de l'équipe sur la page.
 
 ## Arguments
 - `manuel` → `source = 'manuel'` (lancé à la main : app Claude, « Run now » ou appel de la routine) ; sans lui,
@@ -89,7 +97,7 @@ from public."SalesFocusAction" a join public."SalesFocusRun" r on r.id = a.run_i
 where r.computed_at > now() - interval '30 days'
    or (a.pas_pertinent_motif = 'mauvais_objectif' and a.motif_traite_at > now() - interval '90 days')
    or (a.statut = 'plus_tard' and a.plus_tard_jusqu_au >= (now() at time zone 'Europe/Paris')::date - 7)
-   or (a.statut = 'faite' and (a.cle like '%:cloture' or a.cle like '%:reconquete')
+   or (a.statut = 'faite' and (a.cle like '%:cloture' or a.cle like '%:pause' or a.cle like '%:reconquete')
        and r.computed_at > now() - interval '12 months')
 order by r.computed_at desc;
 ```
@@ -116,11 +124,14 @@ order by r.computed_at desc;
 - `faite` (validée, brouillon ou document préparé) : le deal ne revient qu'avec un fait nouveau postérieur
   à la préparation (réponse du prospect, rendez-vous, paiement). Exception, les **prospects silencieux** (étape 3,
   07/11) : une relance ou un appel resté sans réponse fait revenir le deal à sa nouvelle date de relance d'Attio
-  (posée par `/sales-ops`), ou 7 jours après l'envoi sans date, pour l'étape suivante (étape 3) ; une carte validée en
+  (posée par `/sales-ops`), ou, sans date, au délai de la touche suivante (étape 3, cadence du 13/11) ; une carte validée en
   brouillon (« Créer un brouillon ») dont le brouillon n'est toujours pas parti 2 jours ouvrés après (vérifié dans la
-  boîte) revient avec la même `cle`, comme une carte `document`. Un email de clôture ou de reconquête `faite` ne fait
-  plus jamais revenir le deal par ces familles (la requête les garde 12 mois), sauf réponse du prospect : verdict
-  « clôture envoyée le JJ/MM, fermeture à décider par Lucie » ou « reconquête envoyée le JJ/MM ». Sauf une carte `faite` dont le contenu est un
+  boîte) revient avec la même `cle`, comme une carte `document`. Un email de pause datée (`:pause`, depuis le 13/11), de
+  clôture (`:cloture`, avant le 13/11) ou de reconquête `faite` ne fait plus jamais revenir le deal par les familles de
+  relance (la requête les garde 12 mois), sauf réponse du prospect : verdict « pause envoyée le JJ/MM, fermeture à
+  décider par Lucie », « clôture envoyée le JJ/MM, fermeture à décider par Lucie » ou « reconquête envoyée le JJ/MM ».
+  Après une pause datée, le deal revient au mois annoncé, fermé ou non, par la carte de reconquête (étape 3,
+  « Reconquête »). Sauf une carte `faite` dont le contenu est un
   `document` (plan d'action, plan d'étude ; calculs jusqu'au 27/10 inclus, `preparation->>'type' = 'document'`) : le
   Google Doc n'a préparé aucun email. Si l'email au prospect n'est pas parti (étape 5, trois boîtes), le deal reste
   candidat sans attendre de fait nouveau, et la carte est cet email (même `cle`) ; elle reprend le message au prospect
@@ -135,13 +146,18 @@ order by r.computed_at desc;
   neuve, avec la relecture de l'étape 6, même si le calcul précédent date de quelques minutes : ses textes peuvent
   venir de règles plus anciennes. Le 05/11 à 18:57, les 10 cartes de 18:26 ont été reprises telles quelles, avec les
   dates et les doubles questions que la relecture devait retirer, et `resume` disait la relecture faite.
+  Une carte `ouverte` d'un calcul antérieur, remplacée sur le même deal par une carte d'une autre `cle` dans un calcul
+  plus récent, n'est plus candidate : la plus récente fait foi, même si l'ancienne a été modifiée (le 13/11, les cartes
+  du 12/11 de The Bradery, Tikamoon, Wopilo et Circle Sportswear, `:relance-etude`, `:relance-point` et
+  `:relance-rdv`, encore ouvertes avec « Je me permets de remonter mon message… », remplacées par leurs cartes
+  `:statuer`).
 - **Envoi à vérifier** (`statut = 'ouverte'` et `preparation->>'envoi' = 'lance'`, ou `preparation->>'erreur'` parmi
   `envoi_incertain`, `erreur_envoi`, `envoye_non_enregistre`) : l'email a pu partir. La même action (sa `cle`) ne se
   repropose pas tant que la carte n'est pas tranchée (« Marquer comme envoyé » sur la page, section « Envois à
   vérifier ») ; la base refuserait d'ailleurs « Envoyer » (garde du 06/11). Regarde les envoyés de la boîte : si
   l'email est parti, le deal suit la règle de `faite` ; dis la carte en attente dans `resume`.
 - Un email parti (`preparation->>'envoye' = 'true'`) il y a moins de 3 jours : pas de nouvelle carte de la même `cle`,
-  la base refuserait « Envoyer » ; une relance suit son délai habituel.
+  la base refuserait « Envoyer » ; une relance suit la cadence de l'étape 3.
 - Ignore les lignes de test (`cle` qui commence par `test:`).
 
 Les cartes du dernier calcul, encore ouvertes, dont Yacin a modifié le texte (à la main ou sur consigne ; pas
@@ -203,8 +219,8 @@ on conflict (gmail_message_id) where gmail_message_id is not null do nothing;
 ```
 `situation` : celle de la carte, parmi `relance_silence`, `demo_manquee`, `recap`, `infos`, `reponse_question`,
 `mauvais_contact`, `go_meta`, `offre`, `references`, `etude_de_cas`, `facture`, `conversation_retombe`, `prise_rdv`,
-`onboarding`, `autre` (situations de `docs/STYLE-EMAILS.md`) ; `contexte` : ce qui précédait l'email, en une phrase,
-sans citer le prospect.
+`onboarding`, `statuer`, `pause`, `accuser_reception`, `autre` (situations de `docs/STYLE-EMAILS.md` ; `statuer`, `pause`
+et `accuser_reception` depuis le 13/11) ; `contexte` : ce qui précédait l'email, en une phrase, sans citer le prospect.
 Pas encore parti → rien (le calcul suivant réessaie, 30 jours au plus).
 
 Puis lis les leçons des 90 derniers jours, en deux lectures. D'abord les emails validés puis envoyés (les modèles de
@@ -334,7 +350,7 @@ ligne dans `resume`.
   « Oublie ma remarque du JJ/MM » (ou une remarque contraire) l'annule :
   `update public."SalesCopyLecon" set annulee_le = now() where type = 'slack' and cle = 'slack:<ts de la remarque>';`.
 - **Une question** (« pourquoi Hindbag n'est pas dans le top ? ») : la réponse en quelques mots dans la notification
-  (« Hindbag : relance partie le 06/11, moins de 7 jours »), sans montant, ni coordonnées, ni détail du deal au-delà :
+  (« <Deal> : relance partie le JJ/MM, touche suivante le JJ/MM », la date de la cadence de l'étape 3), sans montant, ni coordonnées, ni détail du deal au-delà :
   le canal est public.
 
 **Trace** : `slack_lu_ts` (étape 7) = l'heure de début notée plus haut (`null` si le canal n'a pas pu être lu) ;
@@ -368,7 +384,10 @@ les nouvelles en une ligne.
     - une réponse automatique (absence), une réponse d'agenda (« Accepté : »), un email lemwarmup ;
     - du démarchage (règle COLD INBOUND de `crm-sync`) ;
     - un « plus tard », un « je reviens vers toi » ou un refus « pour le moment » (Social Desk et Lunettes Pour Tous
-      le 10/11) : règles habituelles.
+      le 10/11) : règles habituelles ;
+    - un renvoi vers un collègue (« voyez avec Claire », `redirect`, 13/11) : sur un deal ouvert, `/sales-ops` le range
+      (« Écrire à … ») ; sans deal, pas de carte, la ligne Slack « renvoi vers <Prénom Nom> (<Société>) : à traiter à la
+      main dans la boîte de <prénom> ».
   - **Personne n'a encore répondu** : `isYourTurn` = true dans Lemlist si le contact y figure, **et** aucun message de
     Gang4 après le sien dans les trois boîtes (une étape de séquence Lemlist partie après coup ne compte pas comme une
     réponse), **et** aucun appel Allo noté ni rendez-vous calé depuis.
@@ -496,7 +515,8 @@ order by a.statut_change_at;
 **Mauvais objectif** (`motif = 'mauvais_objectif'`) : le texte dit ce qu'il faut faire à la place.
 1. Rédige le nouvel objectif d'après le texte. Next step : verbe en tête, 160 caractères au plus (verbes de
    `crm-sync` R5). Date : seulement si le texte en donne une ; « dans 2 semaines » compte depuis le jour du geste,
-   un samedi ou un dimanche passe au lundi, 90 jours au plus. Date vide dans Attio et aucune date dans le texte →
+   un samedi ou un dimanche passe au lundi, 90 jours au plus (12 mois pour une date donnée par le prospect, comme
+   `crm-sync`). Date vide dans Attio et aucune date dans le texte →
    aujourd'hui, écrite dans le même `update-record`. Balle : seulement si le nouvel objectif l'impose (une relance
    datée → `Prospect` ; une action de Gang4 aujourd'hui → `Gang4`). Un texte qui dit que la marque passe en
    onboarding (go donné, connexion Meta reçue, onboarding en cours) n'appelle pas d'action sales : next step, date et
@@ -527,7 +547,8 @@ créas ? », Balle `Prospect`, relance le 06/11 ; pas de carte avant le 06/11.
   geste de Lucie ;
 - il dit que le deal a changé (« déjà fait par téléphone », « il a répondu », « rendez-vous pris ») →
   corrige Attio d'après la grille de `crm-sync` R5, le fait daté du jour du geste (une relance faite par téléphone :
-  Balle `Prospect`, jour du geste + 7 j, « Relancer <prénom nom> — relance n/3 ») : `update-record` (next step, date,
+  Balle `Prospect`, jour du geste + le délai de la touche suivante, « Relancer <prénom nom> — relance n/3 », cadence de
+  `crm-sync` R3-sortant) : `update-record` (next step, date,
   Balle), puis `create-note` sur le deal, titre « Correction depuis Sales Actions - auto » :
   ```
   Correction sur décision de <Prénom> (page Sales Actions), « Pas pertinent » du JJ/MM : « <texte> ».
@@ -592,7 +613,10 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   autre signal). L'étape 5 vérifie qu'aucun envoi de Gang4 ni aucun rendez-vous calé n'a déjà pris la main. Attio dit déjà que Gang4 doit agir, et
   `next_step_description` dit quoi : chacun est candidat d'office, et chacun reçoit un verdict, retenu ou écarté avec
   sa raison (étape 9 et `resume`). Un next step « Vérifier que … est parti » ou « Vérifier l'envoi … » se classe comme
-  la promesse qu'il nomme, jamais comme une relance (étape 5, « Next step d'Attio »). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
+  la promesse qu'il nomme, jamais comme une relance (étape 5, « Next step d'Attio »). Un next step « Clôturer ? » suit la
+  famille « Prospect silencieux » ci-dessous (après la pause datée, un refus au téléphone ou un geste de Lucie : pas de
+  carte, la fermeture est à décider par Lucie ; après la pause datée, jusqu'au mois annoncé seulement : ce mois-là, la
+  carte de reconquête, « Reconquête »). Le 22/10, un calcul sans ce passage a rendu 3 cartes pour un top 10 demandé et
   oublié Goodvest (Aurélie Briche-Heinry absente à la démo du 22/09, à recaler), Hindbag et Circle Sportswear
   (relances).
 - **Argent qui attend** : go donné et Meta connecté sans abonnement avec un signal récent, facture
@@ -616,7 +640,12 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   - **Intérêt entrant frais** (10/11) : un prospect a écrit depuis moins de 72 heures une demande de rendez-vous, de
     créneau, de tarifs, d'exemples ou d'informations, ou une réponse classée « interested », et personne chez Gang4
     ne lui a encore répondu (étape 2, « Réponses récentes », avec ses exclusions). Un « plus tard », un « je reviens
-    vers toi » ou un refus « pour le moment » n'en est pas un.
+    vers toi » ou un refus « pour le moment » n'en est pas un : `/sales-ops` pose l'accusé de réception (Balle Gang4,
+    « Accuser réception à … »), une carte courte sans question (étape 6, « Accusé de réception ») ; un « on doit valider
+    en interne » n'en reçoit pas (Balle Prospect jusqu'à sa date, puis l'email « statuer », « Prospect silencieux »). Un « oui, on en
+    parle » en réponse à un email « statuer » en est un (13/11) : la carte « Répondre » part le jour même, avec la phrase
+    du calendrier ; ce que l'email « statuer » avait offert devient une promesse de Gang4, que la carte tient ou que
+    `avant_envoi` prépare.
   - Il passe **en tête du classement** (étape 4), juste après les entrées d'office : la vitesse de réponse décide du
     rendez-vous.
   - **Une demande pour une période à venir** (« début décembre ») se traite aujourd'hui : l'email propose des
@@ -632,42 +661,96 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
   - Plusieurs intérêts frais se classent entre eux au score.
 - **Rendez-vous** : démo refusée, annulée ou manquée à recaler ; rendez-vous à fort enjeu dans les 48 h
   à préparer.
-- **Conversation chaude qui retombe** : intérêt clair, puis plus rien depuis 10 jours ou plus.
+- **Conversation chaude qui retombe** : intérêt clair, puis plus rien depuis 10 jours ou plus. Quand le dernier message
+  est un email de Gang4 resté sans réponse, c'est la cadence (« Prospect silencieux » : touche 1, email « statuer »,
+  pause datée), pas cette famille (13/11).
 - **Prospect silencieux** (Yacin, 07/11 : « go pour les prospects silencieux, avec tes conditions ; clôturer ou appel si
-  pertinent ») : deal ouvert, Balle `Prospect`, `prochaine_action_le` aujourd'hui, passée ou vide (la relance datée est
-  due), et aucun message du prospect depuis le dernier envoi de Gang4. Aussi, quelle que soit la Balle, un deal dont le
-  next step est un « Clôturer ? — N j sans réponse » posé pour silence par `/sales-ops` (grille R10, dès 3 envois sans
-  réponse) ou un « Appeler <prénom> » posé par `/sales-check` C4 (la relance hors email qui manque) : la séquence
-  ci-dessous continue jusqu'à la clôture. Le 06/11, 24 deals Balle Prospect avaient une relance due, dont 15 jamais
-  proposés (Elmut : démo du 17/09, aucun email depuis ; Terravita : le CEO demandait un créneau le 20/10 ; Orus : créneau
-  demandé le 16/09). Écarté (verdict avec la raison) : un refus net ou un contact `Replied - Not Interested` dans Attio
-  (Baïja, Avril) ; un snooze ; une relance de Gang4, par n'importe quel canal, il y a moins de 7 jours ; une date de
-  reprise fixée par le prospect et encore à venir ; un échange récent hors email (Slack Connect, LinkedIn, appel décroché :
-  BPM et Reverso sont actifs sur Slack) ; un rendez-vous calé ; un « Clôturer ? » posé par refus au téléphone ou par
-  geste de Lucie (Bloon Paris, Alltricks : verdict « clôture à décider par Lucie »).
-  Les relances se comptent comme `crm-sync` (`outbound_count_since_last_inbound`) : chaque message de Gang4 au
-  prospect depuis son dernier message, réponse directe comprise (emails, appels, séquence Lemlist, LinkedIn). L'action :
-  - 0 ou 1 relance : **l'email de relance** (situation `relance_silence`, ou ce que le dernier échange appelle : la
-    décision attendue pour Ops Clean) ;
-  - 2 relances ou plus et aucun appel encore, plus de 10 jours de silence, le numéro sûr du bon interlocuteur (étape 6,
-    « Carte appel ») et un intérêt déjà montré (réponse positive, démo tenue ou manquée, appel noté « interested ») :
-    **la carte appel** (Terravita au 07/11 : la réponse de Samuel le 20/10 et sa relance du 22/10 font 2) ; sans numéro
-    sûr ou sans intérêt montré, l'email de relance, 3 au plus ;
-  - la clôture seulement quand les conditions de `/sales-check` C4 sont réunies (une seule définition) : dernier signal du
-    prospect à plus de 60 jours (appel décroché avec résumé compris), au moins 3 relances sans réponse depuis, dont une au
-    moins hors email (l'appel ; sans numéro, LinkedIn ou le remplaçant d'une réponse d'absence), la dernière il y a 7 jours
-    ou plus, et aucune promesse de Gang4 en attente : **l'email de clôture** (famille « Clôture », priorité basse) ;
-  - entre les deux (3 relances faites, appel compris, mais moins de 60 jours) : pas de carte, verdict « attend la clôture
-    (C4 le JJ/MM) » ; jamais une 4e relance ni un 2e appel.
-- **Clôture** (07/11, priorité basse, étape 4) : un dernier email court, « je ferme le dossier de mon côté, sauf si… »,
-  pour un deal ouvert qui remplit C4 (ci-dessus). ProspectTouch ne voit pas les appels : lis les notes « Allo Outbound
-  Call » (étape 2) avant de conclure au silence (le 20/10, trois « Clôturer ? » avaient été posés à tort sur des appels
-  non lus : Flotte, Maju, Biocyte). Un « Clôturer ? » posé pour silence (Hapik) y entre s'il remplit C4 ; jamais après un
-  refus net, une décision de l'équipe (geste de Lucie) ni une promesse de Gang4 non tenue (elle passe avant : étape 4).
-  Un email de clôture déjà parti (carte `faite` en `:cloture`, ou vu dans le fil) n'est jamais refait ; le soir,
-  `/sales-ops` pose « Clôturer ? » et Lucie décide de fermer.
+  pertinent » ; cadence du 13/11 ci-dessous) : deal ouvert, Balle `Prospect`, `prochaine_action_le` aujourd'hui, passée
+  ou vide (la relance datée est due), et aucun message du prospect depuis le dernier envoi de Gang4. Aussi :
+  - quelle que soit la Balle, un deal dont le next step est un « Clôturer ? — N j sans réponse » posé pour silence par
+    `/sales-ops` avant le 13/11 (sans pause datée), ou la touche qui manque posée par `/sales-check` C4 (« Relancer
+    <prénom> : statuer », « Appeler <prénom> »…) : la cadence continue jusqu'à la pause datée. Un « Appeler <prénom> »
+    posé par C4 jusqu'au 13/11 (ancienne règle) suit la cadence : dans un deal à l'arrêt, l'email « statuer » d'abord, l'appel ensuite
+    (Hindbag : call du 10/09, relance du 06/11 restée sans réponse, carte appel au top du 13/11 ; l'email « statuer »
+    vient d'abord, à partir du 16/11) ;
+  - un deal Balle `Prospect` dont le prospect a écrit en dernier pour annoncer une décision interne (`crm-sync`
+    `R3-later`, « Relancer <prénom nom> : attend <décision> »), une fois la date passée, même si le prospect a écrit en
+    dernier. La carte est l'email « statuer » de type « décision attendue » (« Est-ce que c'est tranché de votre côté :
+    … ? », règle 3 ter) : il ouvre la cadence et tient lieu de touche 1 ; la suite est celle d'un deal à l'arrêt
+    (l'appel, puis la pause datée). Social Desk, 10/11 : « on doit encore valider le lancement du test avec les clients
+    concernés ».
+  Le 06/11, 24 deals Balle Prospect avaient une relance due, dont 15 jamais proposés (Elmut : démo du 17/09, aucun
+  email depuis ; Terravita : le CEO demandait un créneau le 20/10 ; Orus : créneau demandé le 16/09). Écarté (verdict
+  avec la raison) : un refus net ou un contact `Replied - Not Interested` dans Attio (Baïja, Avril) ; un snooze ; une
+  touche suivante pas encore due (cadence ci-dessous ; verdict « touche n le JJ/MM ») ; une date de reprise fixée par le
+  prospect et encore à venir ; un échange récent hors email (Slack Connect, LinkedIn, appel décroché : BPM et Reverso
+  sont actifs sur Slack) ; un rendez-vous calé ; un « Clôturer ? » posé après la pause datée, jusqu'au mois annoncé
+  (verdict « pause envoyée le JJ/MM, fermeture à décider par Lucie, retour en <mois> » ; ce mois-là, la carte de
+  reconquête, « Reconquête » ci-dessous, que le deal soit fermé ou non), par refus au téléphone ou par geste de Lucie
+  (Bloon Paris, Alltricks : verdict « clôture à décider par Lucie »).
+  **La cadence** (13/11, Yacin : « oui ok pour la différence deal chaud et Deal à l'arrêt ») part de **l'email resté
+  sans réponse** : le premier email de Gang4 depuis le dernier signal du prospect (message écrit, appel décroché avec
+  échange, rendez-vous tenu au sens de l'étape 5). Exception : un email de Gang4 suivi de plus de 30 jours sans aucun
+  message (souvent la réponse ou le récap du jour du signal) clôt l'échange ; la relance qui suit ce silence (règle 3)
+  ouvre la cadence et devient l'email resté sans réponse. C'est le cas de l'email du 05/11 pour Tikamoon (récap du
+  04/09), Circle Sportswear (réponse de Samuel du 28/07), Wopilo (réponse du 22/09) ; pour The Bradery, c'est le
+  premier email après le call du 24/09. Après l'email resté sans réponse viennent les touches 1 à 3, chacune comptée
+  depuis la touche précédente : des emails, et l'appel de la touche 2 d'un deal à l'arrêt (plusieurs appels le même jour
+  font une touche). Une étape de séquence Lemlist, un message LinkedIn ou un autre appel ne remplacent ni l'email
+  « statuer » ni la pause datée. Ne sont ni des touches ni l'email resté sans réponse : l'accusé de réception d'un « plus
+  tard » (étape 6) et l'email de pause datée, qui n'ouvrent jamais la cadence. `crm-sync` compte de la même façon dans
+  son « relance n/3 », sans les appels.
+  - **Deal chaud** : le prospect a écrit, ou un rendez-vous ou un appel a eu lieu, moins de 14 jours avant l'email
+    resté sans réponse.
+    1. Touche 1, 5 jours ouvrés après : l'email court qui nomme l'étape attendue (règle 3 bis de « Relis chaque
+       email »).
+    2. Touche 2, 7 jours après : l'email « statuer » (règle 3 ter).
+    3. Touche 3, 14 jours après : l'email de pause datée (étape 6).
+  - **Deal à l'arrêt** : tous les autres.
+    1. Touche 1, 10 à 14 jours après : l'email « statuer » (règle 3 ter).
+    2. Touche 2, 5 à 7 jours ouvrés après : **la carte appel** (étape 6, « Carte appel »), avec la même question et un
+       message vocal court, seulement avec le numéro sûr du bon interlocuteur et un intérêt déjà montré (réponse
+       positive, démo tenue ou manquée, appel noté « interested ») ; sinon on passe à la touche 3. Depuis le 13/11,
+       l'appel vient après l'email « statuer » ; jusque-là, il venait dès 2 relances.
+    3. Touche 3, 14 jours après la touche précédente (l'appel, ou l'email « statuer » sans appel) : l'email de pause
+       datée.
+  - **Au plus 3 touches** après l'email resté sans réponse, jamais de 4e ni de 2e appel. Un deal qui comptait déjà,
+    avant le 13/11, 3 emails de Gang4 ou plus depuis le dernier signal du prospect (email resté sans réponse compris),
+    sans pause datée, reçoit la pause datée comme dernière touche, à la place de l'email de clôture (exception
+    transitoire aux 3 touches).
+  - **Une cadence jamais commencée** : si aucune touche n'est partie 30 jours après l'email resté sans réponse, la
+    carte est une relance après un silence (règle 3), qui ouvre une nouvelle cadence (limite de 30 jours de la règle
+    3 bis du 12/11, gardée : une touche 1 de deal chaud en retard de 7 semaines ne se fait pas en 15 à 50 mots).
+  - **Ce qui passe avant** : une date de retour donnée par le prospect (`crm-sync` R3-date ; le deal revient à cette
+    date). Pas de trêve pendant la semaine du Black Friday (Yacin, 13/11 : « non pour rien pendant la semaine du Black
+    Friday ») : les touches partent à leur date, pause datée comprise. Une réponse d'absence ne compte ni comme signal
+    ni comme touche : la touche suivante attend le premier jour ouvré après la date de retour qu'elle donne (sans date
+    de retour, elle part à sa date) ; une absence longue ou sans date qui nomme un remplaçant donne la carte « mauvais
+    contact » adressée au remplaçant (« Écrire à <remplaçant> (indiqué dans la réponse d'absence du JJ/MM) »).
+  - **Au mois dit, une reprise, pas une 4e touche** : après un accusé de réception (« reviens vers moi en mars », « pas
+    prioritaire »), le deal revient à la date de `crm-sync` (R3-date ou R3-later). L'email est une reprise selon la
+    règle 3 : il part de sa phrase (« Tu m'avais dit de revenir vers toi en mars ») et du point resté ouvert, porte un
+    rappel seulement si aucun email de Gang4 des 30 derniers jours n'en avait, et finit par sa demande. Cette reprise
+    ouvre une nouvelle cadence, avec sa propre pause datée.
+  - **Après la pause datée**, sans réponse 7 jours : `/sales-ops` pose « Clôturer ? » pour Lucie (`crm-sync` R10), avec
+    la condition de retour prévue ; plus de carte de relance (C4 de `/sales-check`). Le deal revient au mois annoncé,
+    fermé ou non, par la carte de reconquête (« Reconquête », « Un mois »).
+  - **Exemple** : The Bradery, Tikamoon, Wopilo et Circle Sportswear sont à l'arrêt (l'email du 05/11 suivait 6 à 14
+    semaines de silence). Touche 1 : l'email « statuer » (brouillons validés par Yacin le 13/11, règle 3 ter). Touche 2 :
+    l'appel (Wopilo n'a pas de numéro dans Attio : pas d'appel, la pause vient 14 jours après l'email « statuer »).
+    Touche 3 : la pause datée.
+- **Pause datée** (13/11, remplace la « Clôture » du 07/11 ; priorité basse, étape 4) : la touche 3 de la cadence,
+  l'email de l'étape 6, pour un deal ouvert dont la touche précédente est restée sans réponse 14 jours. ProspectTouch ne
+  voit pas les appels : lis les notes « Allo Outbound Call » (étape 2) avant de conclure au silence (le 20/10, trois
+  « Clôturer ? » avaient été posés à tort sur des appels non lus : Flotte, Maju, Biocyte). Jamais après un refus net,
+  une décision de l'équipe (geste de Lucie) ni une promesse de Gang4 non tenue (elle passe avant : étape 4 ; une offre
+  conditionnelle de l'email « statuer » n'en est pas une, règle 3 ter). Une pause ou une clôture déjà partie (carte
+  `faite` en `:pause` ou `:cloture`, ou vue dans le fil) n'est jamais refaite dans la même cadence ; une nouvelle
+  cadence, ouverte après une réponse du prospect (la reprise qui suit un accusé de réception), a sa propre pause. 7 jours
+  après, `/sales-ops` pose « Clôturer ? » et Lucie décide de fermer.
 - **Reconquête** (07/11, revue le 10/11, priorité basse, étape 4) : un ancien client ou un deal `Deal Lost` (candidats
-  de l'étape 2). `condition_de_retour` (Attio) se lit en premier, par son début : majuscules, accents et espaces
+  de l'étape 2), et, depuis le 13/11, un deal resté ouvert après sa pause datée, arrivé au mois annoncé (« Un mois »
+  ci-dessous). `condition_de_retour` (Attio) se lit en premier, par son début : majuscules, accents et espaces
   avant les deux-points ne comptent pas, et une valeur sans préfixe connu se lit comme « Quand : ».
   - **« Jamais : … »** : le deal ne remonte jamais. Verdict « jamais : <raison> ». Les Petits Culottés : exclusivité
     avec La Marque en Moins (Yacin, 10/11). Alltricks : décision de Samuel. Les litiges et les refus nets sont aussi
@@ -678,10 +761,22 @@ dans Attio : ni stage, ni création, ni autre deal que celui de la carte.
     remplir les places restantes, jusqu'à ce que sa carte soit traitée sur la page.
   - **« Quand : <condition> »** : candidat seulement le jour où la condition est vraie, quelle que soit la date.
     - Une offre de Gang4 est lancée quand `docs/FUNNEL.md` §7 la dit sortie : point 48 pour l'offre vidéo, point 49
-      pour le whitelisting média, l'offre TikTok, et les autres offres attendues.
-    - L'email annonce ce qui a changé.
-    - Tant que la condition n'est pas vraie : verdict « attend : <condition> », sans carte. Une condition absente de
-      §7 (points 48 et 49) reste « attend », même si un email, une note ou Slack en parle : une ligne dans `resume`.
+      pour le whitelisting média, l'offre TikTok, et les autres offres attendues. L'email annonce ce qui a changé.
+    - **Un mois** (13/11) : « Quand : mars 2027 (pause annoncée par Gang4 le 03/12) », posé à la fermeture qui suit une
+      pause datée, ou « Quand : septembre 2027 (retour demandé le JJ/MM) », pour un prospect qui a donné ce mois. La
+      condition est vraie à partir du premier jour ouvré de ce mois. Gang4 a annoncé ou promis de revenir ce mois-là :
+      il passe en tête des reconquêtes, qui restent en fin de classement (règle de Yacin du 07/11, étape 4). L'email
+      reprend ce qui avait été convenu (la pause annoncée, ou le mois qu'il avait donné) et le point resté ouvert, avec
+      ses mots, sans rappel si un email de Gang4 des 30 derniers jours en avait un.
+    - **Un deal resté ouvert après sa pause datée** (Lucie ne l'a pas fermé) n'a pas de `condition_de_retour` : le mois
+      se lit dans son next step (« Clôturer ? — pause du JJ/MM sans réponse, retour en <mois AAAA> », `crm-sync` R10), à
+      défaut dans l'objectif de sa carte `:pause` faite (« … la pause jusqu'en <mois AAAA> »). Il est écarté jusqu'au
+      premier jour ouvré de ce mois (étape 3, « Prospect silencieux »), puis candidat comme un « Quand : <mois> » :
+      même rang, même email, `cle` en `:reconquete`. Un seul email : sans réponse, « Clôturer ? » reste et Lucie
+      décide (`crm-sync`, « Cadence des relances » : cet email ne rouvre pas la cadence).
+    - Tant que la condition n'est pas vraie : verdict « attend : <condition> », sans carte. Une condition qui n'est ni un
+      mois ni une offre de §7 (points 48 et 49) reste « attend », même si un email, une note ou Slack en parle : une ligne
+      dans `resume`.
   - **Vide** : la règle de base s'applique.
     - Fenêtre : 3 à 12 mois après `date_de_perte` (étape 2), ou après la fin de l'abonnement pour un ancien client.
     - Raison **écrite** réversible : une pause, le timing, le budget, « pas prioritaire pour le moment ». Un temps fort
@@ -741,10 +836,12 @@ snooze arrivé à son jour, objectif corrigé arrivé à échéance : étape 3).
 et reconquête moins prioritaires que les relances et les prospects silencieux ») : d'abord les entrées d'office,
 puis les **intérêts entrants frais** (étape 3, « Prospect qui attend Gang4 » : demande d'un prospect de moins de
 72 h restée sans réponse de Gang4, avec les exclusions de l'étape 2 ; Yacin, 10/11 : Lapsa et Les 2 Marmottes
-devaient sortir n°1 et n°2), puis, au score et ensemble, les reconquêtes « Décision de Yacin » et
-toutes les autres familles de l'étape 3 classées ensemble au score, prospects silencieux compris (relance ou appel) ;
-la clôture et la reconquête seulement pour remplir les places qui restent, jamais devant une relance ou un appel
-candidat. Moins de `N` candidats sérieux → moins de cartes.
+devaient sortir n°1 et n°2), puis, au score et ensemble, les reconquêtes « Décision de Yacin » et toutes les autres
+familles de l'étape 3, prospects silencieux compris (touche 1, email « statuer » ou appel) ; la pause datée (qui
+remplace la clôture depuis le 13/11) et la reconquête seulement pour remplir les places qui restent, jamais devant une
+relance ou un appel candidat, les reconquêtes « Quand : <mois> » arrivées à leur mois (deal resté ouvert après sa pause
+compris) en tête d'entre elles. Moins de `N`
+candidats sérieux → moins de cartes.
 Classe sur des dossiers relus, pas sur le seul next step d'Attio : pour les `N + 3` premiers candidats d'après Attio
 (8 pour un top 5, 13 pour un top 10, pas plus), lis une fois le dernier échange avec la marque dans chaque boîte
 (outils de Lucie et de Yacin : `q` = `{<domaine> "<nom de la marque>" <adresse de chaque contact du deal hors de ce
@@ -769,17 +866,24 @@ dans les dossiers relus. Sont aussi des promesses non tenues : un brouillon de G
 livrable, et une promesse liée à un fait de Gang4 une fois ce fait arrivé (« je te tiens au courant dès qu'on lance ces
 marchés », marché ouvert depuis). Un deal à relancer dont le dernier rendez-vous tenu a laissé une promesse de Gang4
 non tenue (étapes suivantes du compte rendu Claap, à défaut des notes Gemini) est un livrable promis, pas une relance.
+Cette règle vaut pour la première relance. Après un email de Gang4 resté sans réponse, l'email « statuer » (règle 3 ter)
+peut offrir ce livrable en échange d'un oui (« Si c'est un sujet, je t'envoie les suggestions de créateurs dont on avait
+parlé, pour que tu puisses te projeter ») au lieu de l'envoyer d'office : la promesse devient une offre conditionnelle,
+qui n'est plus en attente et ne bloque ni la pause datée ni « Clôturer ? » ; elle redevient due si le prospect dit oui
+(The Bradery et Circle Sportswear, brouillons validés par Yacin le 13/11).
 Le 05/11, le top 10 gardait Hindbag et Circle Sportswear comme relances et laissait dehors Alltricks (proposition
 promise au rendez-vous du 21/01 avec l'équipe acquisition, brouillons des 31/03 et 28/05 jamais partis) et Ultra Premium
 Direct (test promis dès l'ouverture des Pays-Bas le 23/03, marché ouvert depuis juin, la marque jamais prévenue).
 Un livrable que Gang4 a proposé avant que le prospect reporte ou décline (« on se recontacte à la rentrée » :
 présentation, créas) ne part pas dans la relance : elle reste courte, avec un rappel chiffré de Gang4 (première
-relance seulement : la relance d'un email de Gang4 resté sans réponse n'en a pas, règle 3 bis de « Relis chaque
-email »), et le livrable se repropose au call. Des documents que le prospect a lui-même demandés (études de cas) partent, eux, après la
+relance seulement : les touches qui suivent un email de Gang4 resté sans réponse n'en ont pas, règles 3 bis et 3 ter de
+« Relis chaque email »), et le livrable se repropose au call ou, dans l'email « statuer », en échange d'un oui. Des documents que le prospect a lui-même demandés (études de cas) partent, eux, après la
 demande de créneau, en une ligne « D'ailleurs… » (Wopilo, étape 6). Le 05/11, la
 relance de Circle Sportswear (présentation et 2 à 3 visuels promis à la démo du 08/07, Martin a reporté puis décliné le
 01/09) était préparée avec la présentation et des créas ; Yacin l'a envoyée courte, sans elles (« j'aurais plus fait
-un email de relance court sans envoyer la présentation et les quelques créas préparés »).
+un email de relance court sans envoyer la présentation et les quelques créas préparés »). Le 13/11, il a validé pour
+Circle Sportswear l'email « statuer » qui offre ces visuels en échange d'un oui (« Si c'en est un, je te prépare
+quelques visuels à vos couleurs pour que tu puisses te projeter ») : le livrable est reproposé, jamais envoyé d'office.
 
 ## Étape 5 — Vérifier à date
 Juste avant d'écrire, relis pour chaque deal retenu les emails des dernières heures dans les boîtes de Samuel,
@@ -951,8 +1055,9 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
     ou les lignes en « > »), sans signature ni liens de suivi, 1 500 caractères au plus ;
   - pas les réactions Gmail (« ✅ … a réagi »), les invitations ou réponses d'agenda, les réponses automatiques
     (absence) ni les emails qui rebondissent.
-  La page le montre replié, sous l'email. Absent pour un nouveau fil. C'est aussi ce que tu relis pour écrire la relance
-  (règle 3 bis de « Relis chaque email »).
+  La page le montre au-dessus de l'email, du plus ancien au plus récent (Yacin, 12/11 ; admin PR
+  SamuelGang4/admin-user-hop#311). Absent pour un nouveau fil. C'est aussi ce que tu relis pour écrire la relance
+  (règles 3 bis et 3 ter de « Relis chaque email »).
 - `pieces_jointes` : les documents à `fichier` de `SalesDocument` que « Envoyer » joint à l'email (`id`, `nom` et
   `fichier` recopiés de la table), deux au plus d'habitude (règle ci-dessous), jamais plus de 5 ni plus de 15 Mo en
   tout. Vérifie-le toi-même avec la requête de l'étape 2 : chaque document a un `fichier` et une `taille_octets` (un
@@ -971,13 +1076,15 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
 - **Écris comme Gang4**, forme et fond, en suivant `docs/STYLE-EMAILS.md` :
   1. Repère la situation de la carte (relance après un silence, démo manquée à recaler, récap, informations à
      demander, question du prospect, mauvais contact qui renvoie vers quelqu'un d'autre, go à concrétiser,
-     facture, conversation qui retombe, offre promise, références clients, étude de cas à envoyer) et suis ce que
-     le guide dit d'y écrire. Un point décliné à recaler : l'email dit ce que le point devait apporter, d'après le
+     facture, conversation qui retombe, offre promise, références clients, étude de cas à envoyer ; depuis le 13/11,
+     email « statuer », pause datée, accusé de réception) et suis ce que le guide dit d'y écrire. Un point décliné à
+     recaler : l'email dit ce que le point devait apporter, d'après le
      compte rendu, sans date ni personne ajoutée : Tikamoon, 05/11, « On a finalement annulé le point qu'on devait faire
      pour parler des Partnership Ads en masse et des UGC gratuits en illimité que je t'avais présentés. Est-ce que tu
      aurais 10/15 minutes pour qu'on en reparle ? » (version de Yacin, « Est-ce que » depuis le 09/11). Quand Gang4 a
-     déjà envoyé ce recalage et que le prospect n'a pas répondu, la carte est la relance de cet email (règle 3 bis) :
-     elle ne redit pas ce que le point devait apporter (Tikamoon, 12/11). Une démo manquée à
+     déjà envoyé ce recalage et que le prospect n'a pas répondu, la carte suit la cadence de l'étape 3 : la touche 1
+     légère d'un deal chaud (règle 3 bis), l'email « statuer » d'un deal à l'arrêt (règle 3 ter). Elle ne redit pas ce
+     que le point devait apporter (Tikamoon, 12/11 ; son email « statuer » validé le 13/11). Une démo manquée à
      recaler : l'email dit ce qu'elle devait montrer, d'après l'envoi qui l'a fait réserver (séquence Lemlist, boîte de
      Lucie) et les créas de démo de la marque en base, avec leur nombre (« les 20 UGC qu'on a préparés pour
      Goodvest ») :
@@ -1010,10 +1117,13 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
      modèles, tu n'en écris pas (la table ne reçoit de la routine que les leçons `envoi`).
   4. Applique les leçons de l'étape 1 et les « Corrections de Yacin » de `docs/STYLE-EMAILS.md` (le 05/11 : aucune
      personne ajoutée au créneau demandé, pas de date pour en mettre, relance courte et chaleureuse avec un rappel de ce
-     qu'est Gang4, sauf la relance d'un email de Gang4 resté sans réponse : règle 3 bis).
+     qu'est Gang4, sauf les touches qui suivent un email de Gang4 resté sans réponse : règles 3 bis et 3 ter ; le 13/11,
+     un ton jamais sec, règle 3 ter).
 - Le style de l'expéditeur dans le fil : « Hello <Prénom>, », tutoiement si le fil tutoie, phrases
   courtes, signature « Samuel » ou « Lucie ». De 80 à 150 mots (moins pour une simple relance ou pour l'email
-  qui accompagne une pièce jointe promise), une seule demande claire (un créneau, un accès, une réponse). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
+  qui accompagne une pièce jointe promise ; 40 à 80 pour l'email « statuer », hors salutation, signature et ligne
+  d'apport), une seule demande claire (un créneau, un
+  accès, une réponse, une position). S'il faut un lien d'agenda, prends celui du type de rendez-vous dans la liste des pages de
   réservation de `docs/FUNNEL.md` (étape 3), jamais le dernier lien envoyé : démo Partnership Ad pour une démo,
   onboarding pour un onboarding. Un call de reprise (relance après une démo, un point décliné ou reporté) prend la
   page Partnership Ad, `https://calendar.app.google/rDKuiVpzooGZxc2H8`, avec « Je te laisse mon calendrier ici pour
@@ -1022,7 +1132,8 @@ jour (« Objectif corrigé par Yacin le 23/10 : … »).
   call partage le calendrier, depuis n'importe quelle boîte, Lucie et Yacin comprises, et jamais une liste de
   créneaux : « Je te laisse mon calendrier ici pour que tu puisses choisir le créneau qui t'arrange : https://calendar.app.google/E7YWEsEBaDkiGoWQ6 »
   (au vouvoiement : « Je vous laisse mon calendrier ici pour que vous puissiez choisir le créneau qui vous arrange :
-  … »). Ce lien court mène à la même page Partnership Ad. L'onboarding garde sa page. Sans page du bon type dans la
+  … »). Ce lien court mène à la même page Partnership Ad. Seule exception (13/11) : l'email « statuer » ne porte pas de
+  lien d'agenda (règle 3 ter) ; un « oui » ouvre le jour même une carte « Répondre » qui envoie cette phrase. L'onboarding garde sa page. Sans page du bon type dans la
   liste, l'email demande ses disponibilités, sans lien. Le 27/10, l'email d'onboarding de
   Gourmandiz portait le lien de démo : une réservation aurait créé une deuxième « Démo Gang4 » et faussé le funnel
   (un onboarding n'est pas une démo ; un call de reprise, lui, en est une suite).
@@ -1132,10 +1243,12 @@ l'envoi.
   n'en montre aucun. Le 27/10 au soir, la carte Emily's Pillow disait
   « créer la marque » puis « lancer son batch » : une marque arrêtée au Business client n'a pas de profil test, et son
   batch ne part pas.
-- **Appel** (next step « Appeler » ou « Rappeler », rappel convenu au téléphone, relance hors email demandée par
-  `/sales-check` C4) → **la carte appel** (« Carte appel », plus bas) quand on a le numéro sûr de l'interlocuteur ;
-  sinon l'email qui propose un créneau d'appel. Une carte encore ouverte en email sur la même action garde sa `cle`
-  d'origine (même action, autre canal).
+- **Appel** (next step « Appeler » ou « Rappeler », rappel convenu au téléphone, touche 2 d'un deal à l'arrêt, ou
+  touche qui manque demandée par `/sales-check` C4 ; un « Appeler » de C4 posé jusqu'au 13/11 suit la cadence de
+  l'étape 3, l'email « statuer » d'abord dans un deal à l'arrêt) → **la carte appel** (« Carte appel », plus bas) quand on a le
+  numéro sûr de l'interlocuteur ; sinon l'email qui propose un créneau d'appel, sauf pour la touche 2 d'un deal à
+  l'arrêt : sans numéro sûr, pas d'appel, la pause datée vient 14 jours après l'email « statuer » (étape 3). Une carte
+  encore ouverte en email sur la même action garde sa `cle` d'origine (même action, autre canal).
 
 Chiffres d'une référence client, point de départ (pubs des créas Gang4 contre les autres pubs de la marque, sur la
 période des pubs Gang4, 90 jours au plus ; filtre sur `insight_date`, `date_start` est du texte ; `spend` est dans la
@@ -1169,14 +1282,25 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
    « en avril » n'apportaient rien.
 2. **Une seule question, la demande, en fin d'email** : pas de « Est-ce que vous avez pu en discuter ? », « Tu as eu
    le temps d'y jeter un œil ? » ni « si c'est toujours d'actualité ? » avant le créneau ; le contexte se dit en
-   affirmant (« Tu m'avais dit vouloir lancer un test avec votre nouvelle agence. »).
+   affirmant (« Tu m'avais dit vouloir lancer un test avec votre nouvelle agence. »). Exception, l'email « statuer »
+   (13/11, règle 3 ter) : la question à issues est la demande (« … début 2027, plus tard, ou plus du tout ? ») ; après
+   elle viennent seulement une phrase qui facilite la réponse (« Dis-moi le mois et je reviens vers toi à ce
+   moment-là. ») et l'apport éventuel en une ligne (« D'ailleurs… », ou une offre conditionnelle « Si c'en est un, … »).
 3. **Relance après un silence de plus de deux semaines** : le silence se compte depuis le **dernier message du fil**,
    qui que soit son auteur ; un appel, un rendez-vous ou un message par un autre canal depuis comptent aussi
    (`historique`). Ne comptent pas comme messages, ici, en 3 bis et dans `fil` : une réponse automatique (absence),
-   une invitation ou une réponse d'agenda, une réaction Gmail, un email qui rebondit. Tant que le dernier message est un
-   email de Gang4 de moins de 30 jours, c'est la règle 3 bis, quel que soit le silence ; la règle 3 vaut au-delà, ou
-   quand le prospect a écrit en dernier. Jamais de rappel si un email de Gang4 à ce contact en contenait déjà un dans
-   les 30 derniers jours, toutes boîtes et séquences Lemlist confondues. Sinon, un rappel de
+   une invitation ou une réponse d'agenda, une réaction Gmail, un email qui rebondit. Quand le dernier message est un
+   email de Gang4 resté sans réponse, c'est la cadence de l'étape 3 : touche 1 légère d'un deal chaud (règle 3 bis),
+   email « statuer » (règle 3 ter), pause datée (étape 6). Tant que la cadence n'est pas finie (touches 1 à 3), c'est
+   elle qui s'applique, même après un appel de Gang4 sans réponse : un tel appel est une touche, pas un signal. La
+   règle 3 vaut quand le prospect a écrit en dernier, ou après un rendez-vous tenu, un appel décroché avec échange ou un
+   message par un autre canal : c'est l'email qui ouvre la cadence. Elle vaut aussi quand l'email de Gang4 resté sans
+   réponse a plus de 30 jours sans qu'aucune touche l'ait suivi (étape 3 : la relance qui suit ce silence ouvre la
+   cadence ; le 05/11 pour Tikamoon, Wopilo et Circle Sportswear, après un récap ou une réponse de Gang4 restés sans
+   suite ; pour The Bradery, après le call du 24/09), et pour la reprise au mois dit, après un accusé de réception
+   (étape 3, « Au mois dit ») : un accusé de réception et une pause datée n'ouvrent jamais la cadence. Jamais de rappel
+   si un email de Gang4 à ce contact en contenait déjà un dans les 30 derniers jours, toutes boîtes et séquences
+   Lemlist confondues. Sinon, un rappel de
    Gang4 en une ou deux phrases, **sur l'offre
    dont il est question avec ce prospect** (Yacin, 06/11, Magimix et Biocyte : « parle pas de Partnership Ads mais de
    Social Proof ») et **qui met les chiffres en avant** (Yacin, 06/11 : « met bien en avant les chiffres qu'on a… Recopie
@@ -1197,46 +1321,145 @@ encore une date, 3 posaient deux questions et 3 relances n'avaient pas le rappel
    les ads, les testeuses, une réservation « Démo Gang4 - Social Proof », un contact venu d'une marque cliente du Social
    Proof (Florence Sequero, des Petits Prodiges, pour Biocyte), ou le prospect qui en parle ; dans le doute, lis le
    premier email de Gang4 du fil et le premier échange (étape 7, `historique`).
-3 bis. **Relance d'un email de Gang4 resté sans réponse** (12/11, Yacin sur The Bradery, Tikamoon, Wopilo, Circle
-   Sportswear : « on refait un "Petit rappel de Gang4" alors qu'on l'a fait dans l'email d'il y a 7 jours » ; « trop
-   générique et ne prend pas en compte le mail précédent + le fait que c'est une relance qui ne doit pas être lourde »).
-   Le cas : la carte est une relance (prospect silencieux, conversation qui retombe, recalage déjà envoyé resté sans
-   réponse), le dernier message du fil est un email de Gang4 de moins de 30 jours, et rien ne s'est passé depuis : ni
-   rendez-vous (tenu, manqué ou décliné), ni appel, ni message par un autre canal. Une carte qui tient une promesse de
-   Gang4 (livrable, récap, offre : étape 4), l'email de clôture (étape 3) ou une carte qui suit un fait arrivé depuis
-   cet email suit sa situation, même si Gang4 a écrit en dernier.
-   - **Relis d'abord l'email à remonter**, tel qu'il est parti (fil Gmail de la boîte), pas tel que la carte l'avait
-     préparé : le dernier email de Gang4 qui porte un contenu (document, offre, question, point à reprendre). Si le
-     dernier email du fil est lui-même une relance légère, c'est celui d'avant. Ils vont dans `fil`.
-   - **L'email est une relance légère**, 15 à 50 mots hors salutation, signature et phrase du calendrier, en réponse
-     dans le même fil. La réponse ne cite pas l'email précédent (le prospect ne le voit pas toujours) : la remontée dit
-     seule de quoi il s'agit. Elle dit ce que contenait l'email, et quand, avec des mots justes : « Je me permets de
-     remonter mon message de la semaine dernière avec l'étude de cas Little Cigogne / Plumaïa » (« il y a quinze
-     jours », « mon dernier message » selon sa date). S'il n'est pas parti de la boîte de la carte : « le message de
-     <Prénom> », pas « mon message ».
-   - **La demande est celle de l'email remonté** (l'objectif de la carte), en une phrase : le plus souvent un créneau,
-     avec la phrase du calendrier (étape 6) ; sinon l'avis, l'accès, la décision ou le règlement attendu, sans lien
-     d'agenda. Elle peut tenir dans la phrase qui remonte l'email (« … pour qu'on reprenne notre point. ») ; sinon, une
-     seule question (règle 5 bis).
-   - **La relance d'une relance légère** ne redit jamais « je me permets de remonter » : jamais deux de suite dans un
-     fil. Une autre tournure ou une question fermée (oui ou non), ou bien la carte appel ou la clôture si l'étape 3 les
-     permet.
+3 bis. **Touche 1 d'un deal chaud : l'email court qui nomme l'étape attendue** (12/11, Yacin sur The Bradery,
+   Tikamoon, Wopilo, Circle Sportswear : « on refait un "Petit rappel de Gang4" alors qu'on l'a fait dans l'email d'il y
+   a 7 jours » ; « trop générique et ne prend pas en compte le mail précédent + le fait que c'est une relance qui ne doit
+   pas être lourde » ; réduite le 13/11 à la touche 1 d'un deal chaud, étape 3). Le cas : la carte est la touche 1 d'un
+   deal chaud (prospect silencieux, conversation qui retombe, recalage déjà envoyé resté sans réponse), l'email resté
+   sans réponse a moins de 30 jours (au-delà, sans touche partie, c'est la règle 3 : limite du 12/11 gardée), et rien ne
+   s'est passé depuis : ni rendez-vous (tenu, manqué ou décliné), ni appel, ni message par un autre canal. Une carte qui tient une promesse de Gang4 (livrable, récap, offre : étape 4), l'email « statuer » (règle 3 ter),
+   la pause datée (étape 6) ou une carte qui suit un fait arrivé depuis cet email suit sa situation, même si Gang4 a
+   écrit en dernier.
+   - **Relis d'abord l'email resté sans réponse**, tel qu'il est parti (fil Gmail de la boîte), pas tel que la carte
+     l'avait préparé. Il va dans `fil`.
+   - **L'email est court**, 15 à 50 mots hors salutation, signature et phrase du calendrier, en réponse dans le même fil.
+     Il nomme l'étape attendue, avec les mots de l'email resté sans réponse ou du dernier échange : « Je reviens vers
+     toi pour <l'étape attendue : ton retour sur l'offre, le lancement du test, l'accès> ». La réponse ne cite pas
+     l'email précédent (le prospect ne le voit pas toujours) : la phrase dit seule de quoi il s'agit. S'il n'est pas
+     parti de la boîte de la carte : « le message de <Prénom> », pas « mon message ». Jamais « je me permets de
+     remonter » (doctrine du 13/11), ni une formule qui pourrait suivre n'importe quel email (« au cas où il serait
+     passé sous la pile »).
+   - **La demande est celle de l'email resté sans réponse** (l'objectif de la carte), en une phrase : le plus souvent un
+     créneau, avec la phrase du calendrier (étape 6) ; sinon l'avis, l'accès, la décision ou le règlement attendu, sans
+     lien d'agenda. Elle peut tenir dans la phrase qui nomme l'étape (« … pour qu'on cale le lancement du test. ») ;
+     sinon, une seule question (règle 5 bis).
+   - **La touche suivante** est l'email « statuer » (règle 3 ter), 7 jours après : jamais deux relances légères de suite.
    - **Jamais** :
      - le rappel de Gang4 ;
      - l'argumentaire ou l'offre réexpliqués ;
      - une phrase de l'email précédent répétée, sauf la phrase du calendrier et « Est-ce que tu aurais 15 minutes … ? »,
        qui se reprennent telles quelles ;
-     - une pièce jointe (`pieces_jointes` vide) : ni le document de l'email remonté, que le prospect a déjà, ni un
-       nouveau document, sauf un élément nouveau et vérifiable qui change la donne (rare : une étude de cas de son
+     - une pièce jointe (`pieces_jointes` vide) : ni le document de l'email resté sans réponse, que le prospect a déjà,
+       ni un nouveau document, sauf un élément nouveau et vérifiable qui change la donne (rare : une étude de cas de son
        secteur sortie depuis). Un document que le prospect a demandé et qui n'est jamais parti relève du livrable promis
        (étape 4), pas de cette règle.
-   - **Tikamoon, 12/11** : l'email du 05/11 (« On a finalement annulé le point… ») a été suivi d'une carte qui
-     redisait le point à reprendre, ajoutait le rappel de Gang4 et les références. La bonne relance : « Je me permets
-     de remonter mon message de la semaine dernière pour qu'on reprenne notre point. » puis le calendrier.
-   - **Circle Sportswear, 12/11** : « Je me permets de remonter mon message de la semaine dernière, au cas où il serait
-     passé sous la pile » ne dit pas ce que contenait l'email et pourrait suivre n'importe lequel. La bonne relance :
-     « Je me permets de remonter mon message de la semaine dernière sur les Partnership Ads en masse. Est-ce que tu
-     aurais 15 minutes pour qu'on en parle ? » puis le calendrier.
+   - **Tikamoon et Circle Sportswear, 12/11** : la carte Tikamoon redisait le point à reprendre, avec le rappel de Gang4
+     et les références ; la carte Circle Sportswear remontait l'email « au cas où il serait passé sous la pile », une
+     formule qui pourrait suivre n'importe lequel. Leurs versions corrigées du 12/11 commençaient par « Je me permets de
+     remonter mon message de la semaine dernière… », que la doctrine du 13/11 écarte aussi. Ces deux deals étaient à
+     l'arrêt (l'email du 05/11 suivait des semaines de silence) : leur touche 1 est l'email « statuer » (règle 3 ter).
+3 ter. **L'email « statuer »** (13/11, doctrine validée par Yacin : « oui totalement aligné sur la manière de faire / la
+   doctrine » ; touche 2 d'un deal chaud, touche 1 d'un deal à l'arrêt, étape 3 ; situation `statuer`, `cle` en
+   `:statuer`). Le prospect a déjà laissé passer un email, souvent un créneau : on lui demande où il en est.
+   1. **Une position, pas un créneau.** L'objectif (`quoi_faire`) est « Obtenir la position de <Prénom Nom> sur
+      <sujet> » : un « non » ou un « en mars » est une réussite. Pas de lien d'agenda (exception à la règle du calendrier
+      du 10/11, étape 6) : un « oui » ouvre le jour même une carte « Répondre » qui envoie la phrase du calendrier
+      (étape 3, intérêt entrant frais).
+   2. **On part de ses mots.** La première phrase reprend le point resté ouvert, tiré du compte rendu (Claap, à défaut
+      les notes Gemini) ou du fil : la décision qu'il devait prendre, la priorité passée devant, la personne qui décide,
+      ce qui avait retenu son attention. Jamais « je me permets de remonter », ni rappel de Gang4, ni argumentaire, ni
+      document déjà envoyé.
+   3. **Une seule question, avec 2 ou 3 issues dans son vocabulaire** : l'hypothèse la plus probable en premier, toujours
+      un « plus tard » (le prospect dit quand) et une sortie (« plus du tout », « plus vraiment d'actualité »). Pas de
+      liste numérotée, pas de reproche, pas d'humour de rupture. Cette question est la demande (exception à la règle 2) :
+      après elle, seulement une phrase qui facilite la réponse (« Et si ce n'est pas le bon moment, pas de souci,
+      dis-le-moi simplement. », « Dis-moi le mois et je reviens vers toi à ce moment-là. ») et l'apport éventuel.
+   4. **Un apport seulement s'il est vrai, nouveau et lié à son enjeu.** Trois tests : il est vérifiable, avec sa
+      source ; il répond à un enjeu que le prospect a exprimé ; il n'a jamais été envoyé (contrôle du fil et des
+      `pieces_jointes` des cartes passées du deal, étape 1). Il tient en une ligne « D'ailleurs… », ou en une offre
+      conditionnelle après la question ; la pièce jointe est alors permise (`SalesDocument`, étape 6 ; un chiffre de
+      `chiffres_cles` au plus, mot pour mot avec sa période et son périmètre ; le brouillon Tikamoon a été validé tel
+      quel par Yacin, sans la période, ce qui n'en fait pas une règle). Souvent, c'est ce que Gang4 avait proposé et qui avait retenu son attention (suggestions de
+      créateurs, visuels à ses couleurs), offert en échange d'un oui, « pour que tu puisses te projeter ». Une offre conditionnelle n'est pas une promesse en
+      attente : elle ne bloque ni la pause datée ni « Clôturer ? », et ne devient due qu'après un oui (étape 4). Sans
+      apport vrai, pas d'apport : la question suffit.
+   5. **40 à 80 mots** hors salutation, signature et ligne d'apport (« D'ailleurs… » ou offre conditionnelle), dans le fil (« Re: <objet du fil> », `gmail_thread_id`), aux mêmes destinataires que l'email
+      resté sans réponse (À et Cc), « Hello <Prénom>, », « notre call » ou « notre échange », la signature de la boîte.
+      **Le ton n'est jamais sec** (Yacin, 13/11, sur les brouillons : Tikamoon « oui a 100 % sur le fond mais peut être
+      trop sec » ; The Bradery « même chose oui sur le fond mais moins sec ») :
+      - « Un mot me suffit, même si ce n'est pas nous. » : « très sec » ; plutôt « Et si ce n'est pas le bon moment, pas
+        de souci, dis-le-moi simplement. » ;
+      - « Où en êtes-vous : » : « sec » ; plutôt « Je voulais savoir comment tu vois les choses aujourd'hui : … » ;
+      - « … que je te dois depuis notre premier échange » : « pas pertinent » ; jamais « que je te dois », « promesse non
+        tenue » ni « depuis notre premier échange » pour un livrable. On parle de « ce qui avait retenu ton attention »,
+        de « ce qui semblait important pour toi », et l'offre se fait « pour que tu puisses te projeter » ;
+      - « l'export pèse lourd chez vous » : plutôt « l'international est un vrai sujet chez vous ».
+   **Quatre types**, selon ce que disent le compte rendu et le fil :
+   - **La décision attendue** : ils nomment une décision ou un arbitrage côté prospect (arbitrage budgétaire, point de
+     décision, validation), passé depuis sans nouvelles. On demande si c'est tranché, avec les vraies issues. Modèles :
+     Tikamoon, Circle Sportswear.
+   - **La priorité passée devant** : un intérêt net, puis une autre priorité (un lancement, des rendez-vous déclinés).
+     Il n'a pas à se justifier ; on lui demande quand reprendre. Modèle : Wopilo.
+   - **Le bon moment ou le bon interlocuteur** : le sujet relève d'abord d'une autre équipe ou d'un autre format. On
+     demande si c'est encore un sujet, quand, ou pour qui ; on n'écrit jamais à l'autre personne par-dessus lui. Modèle :
+     The Bradery.
+   - **Le statut simple** : rien d'utile dans le compte rendu. « Hello <Prénom>, Je voulais savoir comment tu vois les
+     choses aujourd'hui pour <sujet, avec ses mots> : est-ce que c'est toujours un sujet, plutôt plus tard (dis-moi quel
+     mois), ou plus vraiment d'actualité ? Et si ce n'est pas le bon moment, pas de souci, dis-le-moi simplement.
+     <Signature> »
+   **Les quatre brouillons validés par Yacin le 13/11**, texte exact (Wopilo et Circle Sportswear : « c'est pas mal » ;
+   Tikamoon et The Bradery adoucis après ses retours) :
+   - Tikamoon (décision attendue ; pièce jointe : l'étude de cas Perifit, jamais envoyée à Vincent ; l'export pèse 40 à
+     50 % de ses investissements social ads, notes Gemini du 04/09) :
+     > Hello Vincent,
+     >
+     > Lors de notre dernier call, tu m'avais dit que la décision se jouerait aux arbitrages d'octobre : une ressource
+     > interne pour l'influence, ou une solution externe.
+     >
+     > Est-ce que c'est tranché de votre côté : vous internalisez, vous passez par un prestataire (nous ou un autre), ou
+     > c'est repoussé à 2027 ? Et si ce n'est pas le bon moment, pas de souci, dis-le-moi simplement.
+     >
+     > D'ailleurs, comme l'international est un vrai sujet chez vous, je te joins l'étude de cas Perifit : −24 % de CPA
+     > en Europe hors France.
+     >
+     > Samuel
+   - The Bradery (bon moment ; le statique après la vidéo, Claap du 24/09 ; les suggestions de profils promises par
+     Gang4 le 03/09, notes Gemini, offertes en échange d'un oui) :
+     > Hello Julien,
+     >
+     > Lors de notre dernier call, tu m'avais dit que vous alliez d'abord tester l'UGC en vidéo, et que le statique
+     > pourrait venir en parallèle dans un second temps.
+     >
+     > Je voulais savoir comment tu vois les choses aujourd'hui : est-ce que le statique pourrait trouver sa place chez
+     > vous début 2027, plutôt plus tard, ou est-ce que ce n'est plus vraiment d'actualité ?
+     >
+     > Si c'est un sujet, je t'envoie les suggestions de créateurs dont on avait parlé, pour que tu puisses te projeter.
+     >
+     > Samuel
+   - Wopilo (priorité passée devant ; emails de Sami du 11/09 et du 22/09 ; Valentine Azzariti en copie, comme l'email
+     du 05/11) :
+     > Hello Sami,
+     >
+     > En septembre, tu m'écrivais que Wopilo voulait accélérer sur les Partnership Ads pour le Q4, puis un lancement
+     > produit est passé devant.
+     >
+     > Est-ce que c'est un sujet à reprendre après le Black Friday, pour vos soldes de janvier par exemple, plus tard en
+     > 2027, ou plus du tout pour l'instant ?
+     >
+     > Dis-moi le mois et je reviens vers toi à ce moment-là.
+     >
+     > Samuel
+   - Circle Sportswear (décision attendue ; le point de décision du 29/07 décliné, notes Gemini du 08/07 ; les visuels
+     « on brand » proposés à l'échange, offerts en échange d'un oui) :
+     > Hello Martin,
+     >
+     > Après notre call de juillet, on devait se revoir pour décider d'avancer ou non, et ce point n'a pas pu se faire.
+     >
+     > Est-ce que les Partnership Ads sont un sujet pour Circle début 2027, plus tard, ou plus du tout ?
+     >
+     > Si c'en est un, je te prépare quelques visuels à vos couleurs pour que tu puisses te projeter.
+     >
+     > Samuel
 4. **Les chiffres tels que le prospect les a entendus** : un nombre déjà annoncé (« les 20 UGC ») ne se contredit pas
    avec le compte en base (16 validées pour Flotte le 05/11) ; s'ils diffèrent, l'email n'en cite aucun.
 5. **Les mots du prospect** : « déployer Gang4 » reste « déployer », pas « tester » (Biocyte).
@@ -1253,12 +1476,12 @@ le texte que tu écris.
 
 **Carte appel** (07/11, Yacin : « quand un deal reste sans réponse, qu'on a un numéro… » ; « garder le principe de
 l'historique, l'objectif, un script de 3-4 lignes, un message vocal court ; pour l'instant pas d'email de suivi »).
-- **Quand** : un prospect silencieux à 2 relances sans réponse ou plus et sans appel encore (étape 3 : plus de 10
-  jours, intérêt déjà montré, pas d'appel depuis 14 jours), un next step « Appeler » ou « Rappeler » (rappel convenu,
-  relance hors email de C4), un engagement pris au téléphone et resté sans suite (Vinci, Maju : intéressés au
+- **Quand** : la touche 2 d'un deal à l'arrêt, 5 à 7 jours ouvrés après l'email « statuer » resté sans réponse (étape 3,
+  cadence du 13/11 : intérêt déjà montré, numéro sûr), un next step « Appeler » ou « Rappeler » (rappel convenu,
+  touche qui manque de C4 ; un « Appeler » de C4 posé jusqu'au 13/11 attend l'email « statuer », étape 3), un engagement pris au téléphone et resté sans suite (Vinci, Maju : intéressés au
   téléphone, jamais rappelés), un numéro donné pour être appelé (Dream Machine Technology, numéro donné le 02/10,
   jamais appelé). Jamais un appel à froid, jamais un prospect qui a refusé ou marqué `do_not_call` dans Allo, et un
-  seul appel par séquence de relances (ensuite : la clôture quand C4 est rempli).
+  seul appel par séquence de relances (ensuite : la pause datée, 14 jours après).
 - **Le numéro** : celui de l'interlocuteur du deal, celui qui a échangé avec Gang4, jamais un standard ou un collègue
   par défaut. Lu dans Attio (personnes du deal, `phone_numbers`), à défaut dans Allo ou dans une signature d'email
   récente ; écrit en E.164 (`+33612345678`). Sans numéro sûr, pas de carte appel : la relance reste un email.
@@ -1280,7 +1503,9 @@ l'historique, l'objectif, un script de 3-4 lignes, un message vocal court ; pour
 - **Le script** (`corps`) : 3 à 4 lignes courtes, à dire à l'oral, au tutoiement ou au vouvoiement déjà employé : qui
   appelle et de la part de Gang4, la raison de l'appel liée au dernier échange (notre échange, la question restée ouverte,
   les créas envoyées), une seule question ou demande à la fin, celle de l'objectif (un créneau, une décision, une
-  réponse). Pas de rappel de Gang4 en plusieurs phrases : une demi-phrase suffit si le prospect a pu oublier.
+  réponse). Pas de rappel de Gang4 en plusieurs phrases : une demi-phrase suffit si le prospect a pu oublier. Après un
+  email « statuer », la même question, avec ses issues, et l'objectif de cette carte (règle 3 ter) ; le message vocal
+  la pose aussi, sans demander de rappel.
 - **Le message vocal** (`objet`, 300 caractères au plus, compte-les : au-delà, la page ne peut plus modifier la carte) :
   2 à 3 phrases : prénom de qui appelle, Gang4, la raison en une phrase, et une fin sans engagement (« bonne journée »).
   Pas de numéro dicté, pas de promesse d'email ni de rappel daté (rien ne le programmerait).
@@ -1293,12 +1518,30 @@ l'historique, l'objectif, un script de 3-4 lignes, un message vocal court ; pour
   `appel`.
 - **Après** : la page a « Appeler » (fiche Allo) et « Marquer comme appelé » (statut `faite`, `preparation.type =
   'appel'`). Au calcul suivant, le résultat se lit dans la note Attio « Allo Outbound Call » (étape 2) : décroché avec un
-  accord → le deal suit ce qui a été dit ; messagerie ou pas de réponse → le deal revient 5 jours ouvrés après l'appel
-  pour l'étape suivante de l'étape 3 : la clôture si C4 est rempli, sinon « attend la clôture (C4 le JJ/MM) ».
+  accord → le deal suit ce qui a été dit ; messagerie ou pas de réponse → l'appel compte comme une touche : touche 2
+  d'un deal à l'arrêt, le deal revient 14 jours après pour la pause datée (étape 3) ; hors cadence, il revient 5 jours
+  ouvrés après pour la touche suivante de l'étape 3.
 
-**Email de clôture** (famille « Clôture », 07/11) : 50 à 80 mots, chaleureux, sans reproche : le dernier échange en une
-phrase, « je ferme le dossier de mon côté », la porte ouverte (« si le sujet revient, réponds simplement à cet email »).
-Aucune question qui force une réponse. Situation `cloture`.
+**Email de pause datée** (famille « Pause datée », 13/11 ; remplace l'email de clôture du 07/11) : la touche 3 de la
+cadence (étape 3). Le point resté ouvert en une phrase, avec ses mots, puis : « Je mets le sujet en pause de mon côté et
+je reviens vers toi en <mois>. Si c'est plus tôt, ou plus du tout, dis-le-moi. » Le mois : le temps fort ou le timing
+connu du prospect (compte rendu, fil : les soldes de janvier pour Wopilo), sinon dans 3 mois. Chaleureux, sans reproche,
+jamais sec (règle 3 ter), sans rappel de Gang4 (même après un appel sans réponse : c'est une touche de la cadence, pas
+la règle 3), sans pièce jointe ni lien d'agenda, 30 à 60 mots, dans le fil, aux mêmes destinataires.
+Situation `pause`, `cle` en `:pause`, objectif « Annoncer à <Prénom Nom> la pause jusqu'en <mois AAAA> ». Sans réponse
+7 jours, `/sales-ops` pose « Clôturer ? » pour Lucie, avec le mois prévu ; à la fermeture, `condition_de_retour` =
+« Quand : <mois AAAA> (pause annoncée par Gang4 le JJ/MM) » (`crm-sync`, « Deal Lost »), et le deal remonte ce mois-là
+(étape 3, « Reconquête »).
+
+**Accusé de réception** (13/11) : après un « reviens vers moi en <mois> » ou un « pas prioritaire », `/sales-ops` pose
+Balle Gang4, aujourd'hui, « Accuser réception à <Prénom> (…) » (`crm-sync`, « Réponses qui statuent »). L'email est
+court et sans question : « Je note, je reviens vers toi en <mois>. Bonne fin d'année » (ou « Bonne journée »), dans le
+fil, aux mêmes destinataires. Le mois : celui qu'il a donné, sinon le mois qui tombe 3 mois après sa réponse (la date
+que `/sales-ops` posera une fois l'accusé parti). Pas d'accusé de réception pour « on doit valider en interne » : le
+prospect a annoncé son retour, et la carte suivante est l'email « statuer » à la date de `/sales-ops` (étape 3).
+L'accusé n'est pas une touche et n'ouvre pas la cadence. Situation `accuser_reception`, `cle` en `:accuser-reception`,
+objectif « Confirmer à <Prénom Nom> le retour en <mois AAAA> ». Un « oui, on en parle » n'est pas un accusé de réception : c'est la carte « Répondre » avec la phrase du
+calendrier (étape 3).
 
 **Email de reconquête** (famille « Reconquête », 07/11) : la raison du départ ou de la perte, avec ses mots (« vous
 mettiez les campagnes en pause au printemps »), ce qui a changé depuis, vérifiable (une offre lancée, un temps fort qui
@@ -1333,7 +1576,8 @@ returning run_id;
 - `rang` : de 1 à `N`, sans trou (la base refuse au-delà de 10).
 - `contenu` d'une carte appel (07/11) : `{"type": "appel", "boite": "<samuel|lucie|yacin>", "contact": "<prénom nom>",
   "role": "<rôle>", "telephone": "<+33…>", "allo_contact_id": "<con-…|null>", "objet": "<message vocal>", "corps":
-  "<script>"}` ; `cle` en `deal:<deal_id>:appel` (`:cloture` et `:reconquete` pour ces emails).
+  "<script>"}` ; `cle` en `deal:<deal_id>:appel` (`:statuer`, `:pause`, `:accuser-reception` et `:reconquete` pour ces
+  emails, depuis le 13/11 ; `:cloture` avant).
 - `contenu_initial` et `modifications` : `null` pour une carte neuve ; pour une carte que Yacin a modifiée ou une
   carte snoozée qui revient, ceux de l'étape 1, tels quels (étape 6), sauf un contenu `document` (devenu un email).
 - `titre` : verbe en tête, 80 caractères au plus.
@@ -1354,7 +1598,9 @@ returning run_id;
   Lui Bien » plutôt que « Relancer Benjamin pour caler le lancement du test »). C'est ce que la demande unique de
   l'email doit obtenir : un créneau dans l'objectif est un créneau demandé dans l'email, et l'email ne demande rien que
   l'objectif ne vise. Le 27/10 au soir, Emily's Pillow visait « un créneau » sans en demander, et The Bradery « ouvrir
-  le premier test » sans le demander.
+  le premier test » sans le demander. Une carte « statuer » vise « Obtenir la position de <Prénom Nom> sur <sujet> »
+  (règle 3 ter) : le 12/11, les 4 cartes de The Bradery, Tikamoon, Wopilo et Circle Sportswear visaient toutes
+  « Obtenir 10/15 minutes », un créneau que le prospect avait déjà laissé passer.
 - `avant_envoi` : ce que Gang4 doit encore faire avant d'envoyer l'email (étapes 5 et 6), affiché en section « Avant
   l'envoi » sous « Objectif » ; plusieurs gestes séparés par « ; », chacun avec « ⏳ » puis un verbe en tête et sa page
   de l'admin quand il s'y fait (jamais de « ; » dans un geste : la page coupe dessus ; une énumération dans un geste se
@@ -1449,7 +1695,8 @@ returning run_id;
     Meta » ; « 130 k€ dépensés sur Meta en août »).
 - `cle` : stable d'un calcul à l'autre, `deal:<deal_id>:<verbe>`. Pour un intérêt entrant frais (étape 3) :
   `deal:<deal_id>:reponse-<AAAAMMJJ du message du prospect>`, qui ne rencontre ni les relances ni une réponse plus
-  ancienne.
+  ancienne. Depuis le 13/11, l'email « statuer » finit par `:statuer` (règle 3 ter), la pause datée par `:pause` et
+  l'accusé de réception par `:accuser-reception` (étape 6).
 - Mets des apostrophes droites et entoure les textes de `$t$…$t$`, le JSON de `$j$…$j$`.
 
 Sans aucune carte, insère le calcul seul (`insert into public."SalesFocusRun" … returning id`) : il porte le

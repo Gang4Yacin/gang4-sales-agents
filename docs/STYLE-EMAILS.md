@@ -46,13 +46,17 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   de la même boîte à un premier contact.
 - **Ton** : phrases courtes, direct et chaleureux, sans formule creuse ni superlatif.
 - **Longueur** : de 80 à 150 mots, moins pour une simple relance ou pour l'email qui accompagne une pièce jointe
-  promise (étude de cas « ci-jointe »).
+  promise (étude de cas « ci-jointe ») ; 40 à 80 mots pour l'email « statuer » (13/11), hors salutation, signature et
+  ligne d'apport (« D'ailleurs… » ou offre conditionnelle).
 - **Demande** : une seule, claire, en fin d'email (un créneau, un accès, une réponse ; des documents promis il y a des
   mois et envoyés avec une demande de créneau viennent après elle, en une ligne « D'ailleurs… », Wopilo, 05/11), jamais
   au conditionnel d'une
   autre question : une question suivie de « Si oui, tu aurais 15 minutes … ? » ne demande plus rien si la réponse est
   non (Tikamoon, 27/10). C'est l'objectif de la carte, ni plus ni moins (pour une simple réponse à une question du
-  prospect, l'objectif est qu'il ait sa réponse).
+  prospect, l'objectif est qu'il ait sa réponse). Exception, l'email « statuer » (13/11) : la question à issues est la
+  demande (« … début 2027, plus tard, ou plus du tout ? ») ; après elle viennent seulement une phrase qui facilite la
+  réponse (« Dis-moi le mois et je reviens vers toi à ce moment-là. ») et l'apport éventuel en une ligne (« D'ailleurs… »,
+  ou une offre conditionnelle « Si c'en est un, … »).
 - **Lien d'agenda** : celui du type de rendez-vous demandé (démo ou onboarding), pris dans la liste des pages de
   réservation de `docs/FUNNEL.md` (étape 3), jamais seulement le dernier envoyé. Un call de reprise (relance après une
   démo, un point décliné ou reporté) prend la page Partnership Ad, avec « Je te laisse mon calendrier ici pour trouver
@@ -61,7 +65,8 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
   créneaux : « Je te laisse mon calendrier ici pour que tu puisses choisir le créneau qui t'arrange : https://calendar.app.google/E7YWEsEBaDkiGoWQ6 » ; au
   vouvoiement, « Je vous laisse mon calendrier ici pour que vous puissiez choisir le créneau qui vous arrange : … ».
   Pour une période demandée par le prospect, la phrase la reprend (« … qui vous arrange début décembre »). L'onboarding
-  garde sa page ; sans page du bon type, demander ses disponibilités, sans lien.
+  garde sa page ; sans page du bon type, demander ses disponibilités, sans lien. Jamais de lien d'agenda dans l'email
+  « statuer » (13/11) : un « oui » reçoit le jour même une réponse avec la phrase du calendrier.
 - **Signature** : le prénom, comme dans les fils (« Samuel », « Lucie »).
 - **Jamais d'invention** : un chiffre, un prix, une remise, un délai, une date, une durée de rendez-vous (reprise des
   envois de la même boîte : Samuel propose « 15 minutes », Yacin « 10/15 minutes »), un client, une fonctionnalité ou une promesse vient d'un
@@ -85,8 +90,9 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 
 | Situation | Ce que dit l'email | La demande |
 |---|---|---|
-| **Relance d'un email de Gang4 resté sans réponse** (moins de 30 jours et rien depuis, ni rendez-vous, ni appel, ni autre canal, ni promesse de Gang4 en attente ; 12/11) | 15 à 50 mots hors salutation, signature et phrase du calendrier, dans le même fil. L'email remonte le précédent en disant ce qu'il contenait (« Je me permets de remonter mon message de la semaine dernière avec l'étude de cas … ») : la réponse ne le cite pas. Ni rappel de Gang4, ni argumentaire, ni phrase répétée de l'email précédent (sauf la phrase du calendrier et « Est-ce que tu aurais 15 minutes … ? »), ni pièce jointe (sauf un élément nouveau et vérifiable). Jamais deux « je me permets de remonter » de suite. | Celle de l'email remonté (le plus souvent le créneau, avec le lien d'agenda). |
-| **Relance après un silence** (plus de deux semaines depuis le dernier message du fil, qui que soit son auteur ; s'il vient de Gang4 et date de moins de 30 jours, c'est la ligne au-dessus) | Le dernier échange en une phrase (quoi ; une date seulement si elle aide, « lors de notre échange » suffit souvent). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
+| **Touche 1 d'un deal chaud** (12/11, réduite le 13/11 : le prospect a écrit, ou un rendez-vous ou un appel a eu lieu, moins de 14 jours avant l'email de Gang4 resté sans réponse ; 5 jours ouvrés après lui, rien depuis, ni promesse de Gang4 en attente ; au-delà de 30 jours sans touche partie, c'est la relance après un silence) | 15 à 50 mots hors salutation, signature et phrase du calendrier, dans le même fil. L'email nomme l'étape attendue, avec les mots de l'email resté sans réponse (« Je reviens vers toi pour <ton retour sur l'offre> ») : la réponse ne le cite pas. Jamais « je me permets de remonter », ni une formule qui pourrait suivre n'importe quel email (« au cas où il serait passé sous la pile »). Ni rappel de Gang4, ni argumentaire, ni phrase répétée de l'email précédent (sauf la phrase du calendrier et « Est-ce que tu aurais 15 minutes … ? »), ni pièce jointe (sauf un élément nouveau et vérifiable). La touche suivante est l'email « statuer ». | Celle de l'email resté sans réponse (le plus souvent le créneau, avec le lien d'agenda). |
+| **Statuer** (13/11 : touche 2 d'un deal chaud, touche 1 d'un deal à l'arrêt ; `/sales-focus` règle 3 ter) | 40 à 80 mots hors salutation, signature et ligne d'apport, dans le fil, aux mêmes destinataires. La première phrase reprend le point resté ouvert avec ses mots (la décision attendue, la priorité passée devant, le bon moment ou le bon interlocuteur ; à défaut, son statut). Puis une seule question à 2 ou 3 issues dans son vocabulaire, l'hypothèse la plus probable en premier, toujours un « plus tard » et une sortie (« plus du tout », « plus vraiment d'actualité »). Un apport seulement s'il est vrai, nouveau et lié à son enjeu, en une ligne « D'ailleurs… » ou en une offre conditionnelle (« Si c'en est un, je te prépare … pour que tu puisses te projeter »). Ni « je me permets de remonter », ni rappel, ni argumentaire, ni document déjà envoyé, ni liste numérotée, ni reproche, ni humour de rupture ; un ton jamais sec (Corrections de Yacin, 13/11). | Sa position, pas un créneau : un « non » ou un « en mars » est une réussite. Pas de lien d'agenda. |
+| **Relance après un silence** (plus de deux semaines depuis le dernier message du fil, qui que soit son auteur ; s'il vient de Gang4 et reste sans réponse, c'est la cadence des lignes au-dessus et de la pause datée, sauf après plus de 30 jours sans touche : cette ligne, qui ouvre la cadence ; aussi la reprise au mois dit après un accusé de réception, qui part de sa phrase) | Le dernier échange en une phrase (quoi ; une date seulement si elle aide, « lors de notre échange » suffit souvent). Un élément nouveau seulement s'il est vérifiable (une fonctionnalité annoncée dans un compte rendu, un temps fort comme Black Friday). Jamais de reproche sur le silence. | Un créneau ou un oui / non. |
 | **Démo manquée, refusée ou annulée** | Le constater simplement, avec des excuses si c'est Gang4 qui l'a manquée. Ce que la démo devait montrer, en une phrase, d'après l'envoi qui l'a fait réserver (Lemlist ou email) et les créas de démo de la marque en base (Pimpant avait réservé pour voir les UGC préparés pour elle) ; pour un point de suivi décliné, ce qu'il devait apporter, d'après le compte rendu (Claap, à défaut les notes Gemini). | Recaler, avec le lien d'agenda. |
 | **Récap après une démo ou un appel** | Merci en une phrase. Ce qui a été dit, tel que dans le compte rendu : besoins, prochaines étapes, qui fait quoi. | La prochaine étape, datée si elle l'a été. |
 | **Gang4 a besoin d'informations** (accès, marques visées, éléments pour lancer) | Pourquoi on en a besoin, en une phrase. | La liste courte de ce qu'il faut, ou un court appel pour le faire ensemble. |
@@ -97,8 +103,9 @@ Pour qu'un email serve de modèle, il suffit de lui mettre le libellé « Modèl
 | **Références clients demandées** | Deux ou trois marques clientes du même secteur ou de la même taille, avec un résultat chiffré quand on l'a. Jamais leurs coordonnées : une mise en relation que l'équipe organise. | L'étape suivante (l'accès, le test). |
 | **Étude de cas à envoyer** | La demande du prospect avec ses mots (« comme promis, les cas chiffrés par verticale »), puis ce qui est joint, nommé, avec ce qui en fait un exemple proche s'il l'est vraiment (« l'étude de cas Little Cigogne / Plumaïa, une box de mode par abonnement, ci-jointe ») ; sinon le document pour ce qu'il est, sans parler de proximité. Au plus un chiffre de l'étude, mot pour mot avec sa période. Ce que l'étude ne couvre pas se dit simplement (« je reviens vers toi pour les autres verticales »). « Envoyer » joint le document à l'email ; une présentation promise part dans le même email, en lien. | Un retour, ou un créneau. |
 | **Facture ouverte** | Factuel et neutre : facture, montant et date tels qu'en base, lien de paiement s'il existe. | Le règlement, ou la question qui le bloque. |
-| **Conversation chaude qui retombe** (intérêt clair, puis rien depuis 10 jours ou plus) | L'intérêt exprimé, avec ses mots à lui, puis l'étape suivante concrète. | Un créneau. |
-| **Clôture** (07/11 : conditions de `/sales-check` C4 : plus de 60 jours sans signal, 3 relances sans réponse dont une hors email, la dernière il y a 7 jours ou plus) | 50 à 80 mots, sans reproche : le dernier échange en une phrase, « je ferme le dossier de mon côté ». | Aucune : la porte ouverte (« si le sujet revient, réponds simplement à cet email »). |
+| **Conversation chaude qui retombe** (intérêt clair, puis rien depuis 10 jours ou plus ; quand le dernier message est un email de Gang4 resté sans réponse, c'est la cadence : touche 1, statuer, pause datée) | L'intérêt exprimé, avec ses mots à lui, puis l'étape suivante concrète. | Un créneau. |
+| **Pause datée** (13/11, remplace la clôture du 07/11 : touche 3, 14 jours après la touche précédente restée sans réponse) | Court et chaleureux, sans reproche, dans le fil : le point resté ouvert en une phrase, puis « Je mets le sujet en pause de mon côté et je reviens vers toi en <mois>. Si c'est plus tôt, ou plus du tout, dis-le-moi. » Le mois : son temps fort ou son timing connu (compte rendu), sinon dans 3 mois. Ni rappel de Gang4, ni pièce jointe, ni lien d'agenda. | Aucune question : la porte ouverte jusqu'au mois annoncé. |
+| **Accusé de réception** (13/11 : après un « reviens vers moi en <mois> » ou un « pas prioritaire » ; pas pour « on doit valider en interne ») | Court, sans question : « Je note, je reviens vers toi en <mois>. Bonne fin d'année » (ou « Bonne journée »). Le mois : celui qu'il a donné, sinon 3 mois après sa réponse. Ce n'est pas une relance : au mois dit, la reprise part de sa phrase. | Aucune. |
 | **Reconquête** (07/11 : ancien client ou deal perdu, 3 à 12 mois, raison réversible écrite) | La raison du départ avec ses mots, puis ce qui a changé depuis, vérifiable (offre lancée, temps fort qui arrive). Jamais de remise inventée. | Un court call, ou un test sur le temps fort. |
 
 **Carte appel** (07/11) : pas un email, mais le même ton. Le script tient en 3 à 4 lignes dites à l'oral (qui appelle,
@@ -124,17 +131,35 @@ calculs ou d'une lecture de `SalesCopyLecon`.
 - **« Est-ce que tu aurais 15 minutes … ? », jamais « Quand est-ce que tu aurais … ? »** (09/11 : « ça fait moins
   brutal ») ; au vouvoiement, « Est-ce que vous auriez … ? ».
 - **Relance après un silence ou un report : courte et chaleureuse** (05/11, Circle Sportswear, Tikamoon). Un rappel de
-  Gang4 en une ou deux phrases, puis le créneau, pour la première relance ; la relance d'une relance n'en a pas (ligne
-  suivante).
+  Gang4 en une ou deux phrases, puis le créneau, pour la première relance ; les touches qui suivent n'en ont pas (lignes
+  suivantes).
 - **La relance d'une relance est légère** (12/11, Yacin : « on refait un "Petit rappel de Gang4" alors qu'on l'a fait
   dans l'email d'il y a 7 jours » ; « trop générique et ne prend pas en compte le mail précédent + le fait que c'est une
-  relance qui ne doit pas être lourde »). Quand Gang4 a écrit en dernier, il y a moins de 30 jours, sans réponse ni
-  autre échange depuis, on remonte cet email en deux phrases, plus celle du calendrier : ce qu'il contenait, puis la
-  demande. Jamais de rappel de Gang4 dans la relance d'une relance. Par exemple : « Je me permets de remonter mon
-  message de la semaine dernière avec l'étude de cas Little Cigogne / Plumaïa. Est-ce que tu aurais 15 minutes pour
-  qu'on en parle ? Je te laisse mon calendrier ici pour que tu puisses choisir le créneau qui t'arrange : <lien> ».
-  « Je me permets de remonter mon message, au cas où il serait passé sous la pile » ne dit pas ce que contenait l'email :
-  trop générique (Circle Sportswear, 12/11).
+  relance qui ne doit pas être lourde » ; précisé le 13/11). Jamais de rappel de Gang4 dans une touche qui suit un email
+  de Gang4 resté sans réponse. Pour la touche 1 d'un deal chaud : deux phrases, plus celle du calendrier, l'étape
+  attendue puis la demande. Jamais « je me permets de remonter » (doctrine du 13/11), ni « au cas où il serait passé sous
+  la pile », qui ne dit pas ce que contenait l'email et pourrait suivre n'importe lequel (Circle Sportswear, 12/11). Pour
+  un deal à l'arrêt, la touche 1 est l'email « statuer » (ligne suivante).
+- **La seconde relance demande une position, pas un créneau** (13/11, Yacin : « oui totalement aligné sur la manière
+  de faire / la doctrine »). Situation « Statuer » du tableau : ses mots d'abord, une seule question à issues avec un
+  « plus tard » et une sortie, un apport seulement s'il est vrai, nouveau et lié à son enjeu, pas de lien d'agenda. Les
+  quatre brouillons validés (Tikamoon, The Bradery, Wopilo, Circle Sportswear) sont dans `/sales-focus`, règle 3 ter.
+  La cadence dépend du deal (Yacin : « oui ok pour la différence deal chaud et Deal à l'arrêt (non pour rien pendant la
+  semaine du Black Friday) ») : au plus 3 touches après l'email resté sans réponse, la dernière étant la pause datée.
+- **Jamais sec** (13/11, Yacin sur les brouillons : Tikamoon « oui a 100 % sur le fond mais peut être trop sec » ; The
+  Bradery « même chose oui sur le fond mais moins sec ») :
+  - « Un mot me suffit, même si ce n'est pas nous. » : « très sec » ; plutôt « Et si ce n'est pas le bon moment, pas de
+    souci, dis-le-moi simplement. » ;
+  - « Où en êtes-vous : » : « sec » ; plutôt « Je voulais savoir comment tu vois les choses aujourd'hui : … » ;
+  - « le statique a sa place chez vous début 2027, c'est encore trop tôt, ou ce n'est plus un sujet ? » : « oui sur le
+    côté court mais moins sec » ; devenu « est-ce que le statique pourrait trouver sa place chez vous début 2027, plutôt
+    plus tard, ou est-ce que ce n'est plus vraiment d'actualité ? » ;
+  - « l'export pèse lourd chez vous » : plutôt « l'international est un vrai sujet chez vous ».
+- **Un livrable s'offre, il ne se doit pas** (13/11, Yacin sur The Bradery : « "que je te dois depuis notre premier
+  échange." : pas pertinent mais "pour que tu puisses te projeter". On en parle pas de "promesses non tenues" mais de "ce
+  qui avait retenu ton attention / ce qui semblait important pour toi" »). Jamais « que je te dois », « promesse non
+  tenue » ni « depuis notre premier échange » : « Si c'est un sujet, je t'envoie les suggestions de créateurs dont on
+  avait parlé, pour que tu puisses te projeter. »
 - **Le rappel met les chiffres en avant** (06/11 : « met bien en avant les chiffres qu'on a… Recopie pas mot pour mot
   mais c'est une idée ») : la tournure varie, les faits non, et rien ne s'y ajoute. Partnership Ads (par défaut) :
   scaler les Partnership Ads en un clic, des centaines de créas diffusées depuis des centaines de profils, plus de 100
@@ -151,7 +176,7 @@ calculs ou d'une lecture de `SalesCopyLecon`.
   30 k€ à 300 k€ par mois sur Meta. » Un temps fort proche peut s'ajouter en une ligne
   (« Avec le Black Friday qui approche, ça peut être le moment idéal pour tester. », Biocyte, 06/11). Pas de livrables que
   Gang4 avait proposés il y a des mois (présentation, créas) quand le prospect a reporté ou décliné depuis : ils se
-  reproposent au call. Des documents qu'il a lui-même demandés (études de cas) partent après la demande de créneau,
+  reproposent au call, ou, dans l'email « statuer », en échange d'un oui (13/11). Des documents qu'il a lui-même demandés (études de cas) partent après la demande de créneau,
   en une ligne « D'ailleurs… » (ligne suivante).
 - **Le rendez-vous d'abord, les documents ensuite** (05/11, Wopilo) : la demande de créneau, puis « D'ailleurs, tu
   m'avais demandé des études de cas à l'époque : voici celles de … ci-jointes ».

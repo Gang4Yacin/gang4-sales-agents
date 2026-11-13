@@ -55,8 +55,9 @@ Tu crées un `create_deal` **UNIQUEMENT** si au moins un de ces signaux est pré
    - *Exemples légitimes : Biocyte (Florence Sequero nous contacte), MB Heritage (« curieux de voir
      les UGCs »), Primal Supplements (« Yes, vas-y envoie »), Orus, GeoRide, Invoxia, Dougs, Beem
      (questions en réponse à une séquence, restées sans deal en septembre).*
-   - Hors deal : `reply_kind = negative` (refus explicite), `unknown` (extrait illisible), OOO,
-     désinscription.
+   - Hors deal : `reply_kind = negative` (refus explicite), `redirect` (« c'est X qui gère » : un renvoi vers un
+     collègue n'exprime pas d'intérêt ; sur un deal existant, ligne « redirect » des « Réponses qui statuent »),
+     `unknown` (extrait illisible), OOO, désinscription.
 
 2 bis. **Appel Allo où le prospect demande une suite** (signal frais, `calls[]` de `meeting-expert`) :
    - un appel décroché (`outcome = conversation`) où le prospect montre de l'intérêt pour l'offre ou
@@ -258,10 +259,16 @@ company existe déjà avec `description`+`icp` → ne re-cherche pas.
 - `create_deal` **seulement** si la RÈGLE DE CRÉATION DE DEAL est satisfaite (démo planifiée OU
   réponse entrante non négative) et qu'aucun deal ouvert n'existe pour cette company (deal `Deal Lost`
   existant → réouverture, section Stages).
-- `reply_kind = negative` sur un deal ouvert → `update_stage → Deal Lost` avec `lost_reason` selon le
-  texte (T12) : budget → `No budget at the moment` ; « pas le moment », « pas prioritaire » → `Not the
-  right time` ; « pas intéressé », « déjà un prestataire », « ne correspond pas » → `Not the right
-  offer`.
+- `reply_kind = negative` sur un deal ouvert → `update_stage → Deal Lost` avec `lost_reason` selon la raison
+  écrite du refus (T12) : « on ne donne pas suite, faute de budget » → `No budget at the moment` ; un refus
+  explicite dont la raison écrite est le timing, sans « pour l'instant », « pour le moment » ni date → `Not the
+  right time` ; « on internalise », « on a choisi une autre solution », « déjà un prestataire », « pas
+  intéressé », « ne correspond pas », « plus du tout » en réponse à un email « statuer », refus sans raison → `Not
+  the right offer` ; `condition_de_retour` s'il en donne une (section Stages). Depuis le 13/11, « pas le moment »,
+  « pas prioritaire », « pas de budget » ou un refus « pour le moment » (« on ne donne pas suite pour le moment »)
+  sont des `later` (`email-expert`), jamais des `negative` : le deal reste ouvert (« Réponses qui statuent », sous
+  la grille).
+- `reply_kind = later` ou `redirect` sur un deal ouvert → « Réponses qui statuent », sous la grille.
 
 **Meeting B2B** :
 - `upsert_monthly_note` sur le deal (section `### Demos`, avec summary transcript si dispo).
@@ -315,13 +322,14 @@ company existe déjà avec `description`+`icp` → ne re-cherche pas.
   <prénom nom> par email (appel sans réponse le JJ/MM) », Balle `Gang4`, J+1. Les autres next steps qui
   demandent un appel ne changent pas : ils peuvent porter une promesse ou une décision de Yacin (Maju :
   « Appeler Julien : caler l'intro et le test avec Sarah… »). Un appel sans réponse n'est pas un signal du
-  prospect : il n'entre pas dans `outbound_count_since_last_inbound`, ne repousse pas le calcul R10 et ne
+  prospect : il n'entre pas dans le `n` du « relance n/3 » (« Cadence des relances »), ne repousse pas le calcul R10 et ne
   pose jamais « Clôturer ? » (Samuel rappelle en rafale : 4 appels en 4 min au même contact le 31/08).
 
 **Balle, date et next step (R2 à R5, R7, R10, T6, T9)** — sur chaque deal ouvert touché par un signal
 frais, et sur chaque deal créé, écris **ensemble** `balle_dans_le_camp` (`Gang4` · `Prospect` · `RDV
-calé`), `prochaine_action_le` (AAAA-MM-JJ, jamais vide, jamais à plus de 90 j) et
-`next_step_description` (≤ 160 caractères, verbe en tête : Répondre · Relancer · Envoyer · Caler un RDV · Confirmer · Re-caler · Obtenir l'accès BM · Activer l'abonnement (jamais pendant la phase
+calé`), `prochaine_action_le` (AAAA-MM-JJ, jamais vide, jamais à plus de 90 j, sauf une date donnée par le
+prospect : 12 mois au plus, 13/11) et
+`next_step_description` (≤ 160 caractères, verbe en tête : Répondre · Proposer un créneau · Accuser réception · Écrire à · Relancer · Envoyer · Caler un RDV · Confirmer · Re-caler · Obtenir l'accès BM · Activer l'abonnement (jamais pendant la phase
 d'onboarding, R6 en 4b) · Identifier · Clôturer ? ; « Démo du JJ/MM … » et « RDV du JJ/MM : … » (R4, R6)
 font exception au verbe en tête ; le détail va
 dans la note mensuelle). « Aujourd'hui » = date du run, heure de Paris. « J+n » = jours calendaires ;
@@ -329,9 +337,9 @@ une date qui tombe un samedi ou un dimanche passe au lundi.
 
 | Dernier signal du deal dans la fenêtre | Balle | Date | Next step |
 |---|---|---|---|
-| Message entrant du prospect, sans réponse de Gang4 après (R3, T6) | Gang4 | aujourd'hui (toujours, même si une date plus lointaine est en place) | « Répondre à <prénom nom> (message du JJ/MM) » ; réponse positive → « Proposer un créneau démo à <prénom nom> (réponse du JJ/MM) » |
-| Notre message est le dernier, sans réponse (R3) | Prospect | envoi + 7 j | « Relancer <prénom nom> — relance n/3 » (n = `outbound_count_since_last_inbound`) |
-| Date donnée dans un message (`date_mentioned`, R3) | qui doit revenir | cette date | ce qui a été promis, ou « Relancer <prénom nom> (retour annoncé le JJ/MM) » ; jamais pour une demande de rendez-vous du prospect sur une période à venir (« un rendez-vous début décembre ») : c'est R3, Gang4, aujourd'hui, « Proposer un créneau <période> à <prénom nom> » (10/11, Les 2 Marmottes) |
+| Message entrant du prospect, sans réponse de Gang4 après (R3, T6) | Gang4 | aujourd'hui (toujours, même si une date plus lointaine est en place) | « Répondre à <prénom nom> (message du JJ/MM) » ; réponse positive → « Proposer un créneau à <prénom nom> (réponse du JJ/MM) » (« créneau démo » si aucune démo n'a été tenue) ; `later` et `redirect` : « Réponses qui statuent », sous la grille |
+| Notre message est le dernier, sans réponse (R3) | Prospect | la touche suivante de la cadence (« Cadence des relances », sous la grille) | « Relancer <prénom nom> — relance n/3 » (n : le numéro de la touche à venir, 3 au plus, calculé comme dans « Cadence des relances », jamais lu tel quel dans `outbound_count_since_last_inbound`) ; email de pause datée (signal `pause_announced`) : ligne R10 ; accusé de réception d'un `later` : « Réponses qui statuent », jamais cette ligne |
+| Date donnée dans un message (`date_mentioned`, R3) | qui doit revenir | cette date (le premier jour ouvré du mois pour un mois : « en mars », écrit le 18/11/2026, `date_mentioned` 2027-03-01 → le lundi 01/03/2027), 12 mois au plus | ce qui a été promis, ou « Relancer <prénom nom> (retour annoncé le JJ/MM) » ; un `later` daté (« reviens vers moi en mars ») suit d'abord l'accusé de réception (« Réponses qui statuent ») ; jamais pour une demande de rendez-vous du prospect sur une période à venir (« un rendez-vous début décembre ») : c'est R3, Gang4, aujourd'hui, « Proposer un créneau <période> à <prénom nom> » (10/11, Les 2 Marmottes). Une date donnée par le prospect passe avant la cadence. |
 | Événement futur avec un externe du deal (R4, prime sur les lignes email et appel) | RDV calé | date de l'événement | « Démo du JJ/MM avec <prénom nom> » ou « RDV du JJ/MM : <objet> » |
 | Rendez-vous d'onboarding (titre qui contient « Onboarding ») d'un deal ouvert dont la marque a donné son go (`Meta Connected`, ou verdict `meta_no_sub` / `customer_no_meta` de la requête §4b) (R6 ; prime sur R4, T9 et R3-sortant : un email de Gang4 après l'onboarding ne pose ni « relance n/3 » ni R10 pendant la phase d'onboarding de §4b) | à venir : RDV calé ; passé, tenu ou sans preuve : Prospect, ou Gang4 si une promesse de Gang4 faite au prospect n'est pas faite ; annulé ou manqué : Gang4 | à venir : sa date ; passé : onboarding + 14 j, J+1 pour une promesse ; annulé ou manqué : J+2 | « RDV du JJ/MM : onboarding avec <prénom nom> » ; passé : « Relancer <prénom nom> : upload des créas et abonnement (onboarding du JJ/MM) » ou « Envoyer à <prénom nom> <promesse> (promis le JJ/MM) » ; annulé ou manqué : « Re-caler l'onboarding avec <prénom nom> » ; jamais « Envoyer le récap / la proposition », « Confirmer la tenue » ni le lien d'abonnement pendant la phase d'onboarding |
 | Démo tenue avec compte rendu → `Qualified` (R2, T9) | Gang4 | J+1 | « Envoyer le récap / la proposition à <prénom nom> » |
@@ -341,14 +349,88 @@ une date qui tombe un samedi ou un dimanche passe au lundi.
 | Appel décroché avec un rappel convenu ou demandé (`callback_date`, R3-appel) | Gang4 | cette date | « Rappeler <prénom nom> (convenu le JJ/MM) » ; avec une promesse aussi, la promesse d'abord, à J+1 |
 | Appel décroché où le prospect pose une question ou demande quelque chose, sans promesse notée (R3-appel) | Gang4 | aujourd'hui | « Répondre à <prénom nom> (appel du JJ/MM) : <sa demande> » |
 | Appel entrant du prospect, manqué (`missed_inbound`, R3-appel) | Gang4 | aujourd'hui | « Rappeler <prénom nom> (appel entrant du JJ/MM) » ; décroché : lignes ci-dessus |
-| 3e relance sans réponse (`outbound_count_since_last_inbound ≥ 3`, R10) | Gang4 | aujourd'hui | « Clôturer ? — N j sans réponse » (la fermeture reste un geste de Lucie) |
+| Email de pause datée de Gang4 (touche 3, signal `pause_announced` d'`email-expert`, 13/11 ; R10) | Prospect | envoi + 7 j | « Clôturer ? si pas de réponse — pause annoncée le JJ/MM, retour en <mois AAAA> » ; à cette date, sans signal du prospect, §4d.3 passe la Balle à Gang4 : « Clôturer ? — pause du JJ/MM sans réponse, retour en <mois AAAA> » (la fermeture reste un geste de Lucie) |
+
+**Cadence des relances (R3-sortant)** (Yacin, 13/11 : « oui ok pour la différence deal chaud et Deal à l'arrêt (non
+pour rien pendant la semaine du Black Friday) » ; elle remplace le délai unique de 7 jours). Le détail des touches est
+dans `.claude/commands/sales-focus.md`, étape 3 ; ici, la date à écrire après chaque message de Gang4 resté sans
+réponse.
+- **L'email resté sans réponse** est le premier email de Gang4 au prospect depuis son dernier signal : message écrit,
+  appel décroché avec échange, rendez-vous tenu (un no-show ou un rendez-vous annulé n'en est pas un ; hors de la
+  fenêtre, `ProspectTouch` entrant et rendez-vous passés, puis le compte rendu ou la note de démo du deal). Exception :
+  un email de Gang4 suivi de plus de 30 jours sans aucun message (souvent la réponse ou le récap du jour du signal) clôt
+  l'échange ; la relance qui suit ce silence ouvre la cadence et devient l'email resté sans réponse. Tikamoon (récap du
+  04/09), Circle Sportswear (réponse de Samuel du 28/07) et Wopilo (réponse du 22/09) : la cadence part de l'email du
+  05/11. Ne sont jamais ni une touche ni l'email resté sans réponse : l'accusé de réception d'un `later` (« Réponses
+  qui statuent ») et l'email de pause datée (ligne R10).
+- **`n`**, le numéro de la touche à venir : le nombre d'emails de Gang4 au prospect envoyés depuis l'email resté sans
+  réponse, celui-ci compris, toutes boîtes et tous fils confondus (`ProspectTouch` sortant des domaines du deal, plus
+  les fils des sources de la fenêtre). `outbound_count_since_last_inbound` d'`email-expert` compte fil par fil depuis
+  le dernier email entrant, sans voir les rendez-vous ni les autres fils : un point de départ, jamais la valeur de `n`.
+  Les appels n'entrent pas dans `n` (règle `no_answer`). The Bradery : le call du 24/09 à 18:00 est le dernier signal
+  (la réponse de Samuel à 12:50, avant le call, ne compte pas) ; l'email du 05/11 a `n` = 1, alors qu'Attio portait
+  « relance 2/3 », compté par fil.
+- **Deal chaud** : ce signal date de moins de 14 jours avant l'email resté sans réponse. Après l'email (`n` = 1) →
+  envoi + 5 jours ouvrés (du lundi au vendredi) ; après la touche 1 (`n` = 2) → envoi + 7 j ; après la touche 2,
+  l'email « statuer » (`n` = 3) → envoi + 14 j.
+- **Deal à l'arrêt** : tous les autres. Après l'email (`n` = 1) → envoi + 10 j (la touche peut partir jusqu'à 14 j) ;
+  après la touche 1, l'email « statuer » (`n` = 2) → envoi + 5 jours ouvrés si un numéro de l'interlocuteur est dans
+  Attio (l'appel, touche 2), sinon envoi + 14 j (la pause datée). `n` n'y atteint jamais 3 : l'appel n'est pas compté
+  et la pause porte `pause_announced` (R10). L'appel sans réponse ne change rien ici (règle `no_answer`). Après
+  l'email « statuer » de The Bradery : « relance 2/3 », 5 jours ouvrés après (Julien a un numéro) ; de Wopilo :
+  « relance 2/3 », 14 jours après (aucun numéro dans Attio).
+- **Nouvelle cadence** : après un accusé de réception, le premier email de Gang4 une fois la date de `R3-date` ou de
+  `R3-later` arrivée (la reprise, règle 3 de `/sales-focus`) ouvre une nouvelle cadence : `n` = 1. Après un `later`
+  de motif `interne`, le premier email de Gang4 une fois la date passée est l'email « statuer » (« décision
+  attendue ») : il ouvre la cadence et tient lieu de touche 1, donc `n` = 2, comme un deal à l'arrêt après l'email
+  « statuer ». Un email de Gang4 sur un deal dont le next step est « Clôturer ? — pause du JJ/MM sans réponse… » (la
+  reconquête au mois annoncé, `/sales-focus` étape 3) ne rouvre pas la cadence : Balle, date et next step restent, la
+  fermeture est à décider par Lucie.
+- **L'email de pause datée** (touche 3) → ligne R10. Au plus 3 touches après l'email resté sans réponse : jamais de
+  4e. Un deal qui comptait déjà, avant le 13/11, 3 emails de Gang4 ou plus depuis le dernier signal du prospect
+  (email resté sans réponse compris), sans pause datée, reçoit la pause comme dernière touche, à la place de l'email
+  de clôture (exception transitoire aux 3 touches).
+- Pas de trêve pendant la semaine du Black Friday (Yacin, 13/11 : « non pour rien pendant la semaine du Black
+  Friday ») : les touches partent à leur date, pause datée comprise. Une date donnée par le prospect passe avant
+  (R3-date). Une réponse d'absence ne compte pas (§3) : rien ne change ici, le Sales Focus attend sa date de retour
+  (sans date de retour, la touche part à sa date) ; une absence longue ou sans date de retour qui nomme un remplaçant
+  se range comme un `redirect` (« Réponses qui statuent »).
+
+**Réponses qui statuent** (13/11 ; réponses à l'email « statuer » ou à toute relance, selon le `reply_kind` et le
+`motif` d'`email-expert`). Elles remplacent la ligne « Message entrant » pour ces cas :
+
+| Réponse | Stage | Balle | Date | Next step |
+|---|---|---|---|---|
+| « On en parle » (`positive`) | inchangé | Gang4 | aujourd'hui | « Proposer un créneau à <prénom nom> (réponse du JJ/MM) » |
+| « Reviens en <mois> » (`later` avec `date_mentioned`), avant l'accusé de réception | inchangé | Gang4 | aujourd'hui | « Accuser réception à <prénom nom> (retour demandé en <mois>) » |
+| Le même, une fois l'accusé de réception parti (R3-date) | `Nurturing` si une démo a été tenue (définition plus bas, jamais sans démo), sinon inchangé | qui doit revenir (Gang4 pour « reviens vers moi », Prospect pour « je reviens vers toi ») | le premier jour ouvré du mois dit, ou la date dite ; 12 mois au plus | « Relancer <prénom nom> (retour demandé le JJ/MM : <motif>) », JJ/MM étant le jour de sa réponse et le motif en mots (« le timing », « pas prioritaire », « le budget ») |
+| « Pas prioritaire », « pas de budget », « pas maintenant », sans date (`later` sans date, motif `pas_prio`, `budget` ou `timing`) | inchangé (jamais `Nurturing` : le workflow n8n Nurturing ajoute les contacts du deal à une séquence LinkedIn, `docs/FUNNEL.md` §1 étape 6) | Gang4 | aujourd'hui ; une fois l'accusé de réception parti : le jour de sa réponse + 90 j (`R3-later`) | « Accuser réception à <prénom nom> (<motif>) » ; puis « Relancer <prénom nom> (<motif> le JJ/MM) » |
+| « On doit valider en interne » (`later`, motif `interne`) | inchangé | Prospect | la date qu'il donne, sinon le jour de sa réponse + 14 j (`R3-later`) | « Relancer <prénom nom> : attend <décision> » ; pas d'accusé de réception (il a annoncé son retour) ; à cette date, le Sales Focus envoie l'email « statuer » de type « décision attendue » (Social Desk, 10/11 : « on doit encore valider le lancement du test avec les clients concernés ») |
+| « C'est X qui gère » (`redirect`) | inchangé | Gang4 | aujourd'hui | « Écrire à <prénom nom de X> (recommandé par <prénom nom> le JJ/MM) » ; X créé (`create_person`, avec l'email et le rôle de `redirect_to` s'ils sont donnés) et rattaché au deal (`link_person_to_deal`) |
+| Refus explicite (`negative`, motif `refus`) | `Deal Lost`, `lost_reason` selon la raison écrite (T12), `condition_de_retour` s'il en donne une | — | — | — |
+| Réponse hostile ou « arrêtez » (`negative`, motif `arret`) | `Deal Lost`, `condition_de_retour` « Jamais : demande d'arrêt » | — | — | — |
+| Réponse d'absence | ne compte pas (§3, `ooo_noise`) : rien ne change ; la touche suivante attend sa date de retour (Sales Focus) ; absence longue ou sans date de retour qui nomme un remplaçant : comme un `redirect`, « Écrire à <prénom nom du remplaçant> (indiqué dans la réponse d'absence du JJ/MM) » | | | |
+
+L'accusé de réception est tout message de Gang4 au prospect postérieur à sa réponse `later` (datée ou non, hors motif
+`interne`), dans le même run (Samuel répond à 11:00 au « pas prioritaire » de 10:00 : la ligne « Accuser réception »
+ne s'écrit pas) ou dans un run suivant (next step « Accuser réception à … » en place). La ligne d'après s'écrit alors
+directement, avec le mois ou le motif de sa réponse (hors de la fenêtre, `reply_kind = none` : lis-les dans le next
+step en place), et jamais la ligne R3-sortant : l'accusé n'est pas une touche et n'ouvre pas la cadence. Après un
+`redirect`, le merci à la personne qui a renvoyé n'est pas une touche ; la cadence vers X part du premier email à X. La
+réponse du prospect passe aussi dans la note mensuelle, avec son motif.
+
+Un **appel décroché qui statue** (`prospect_reply_kind` `later`, `redirect` ou `negative` de `meeting-expert`, avec
+`prospect_motif`, `redirect_to` et `callback_date`) suit ce tableau comme un email, sans accusé de réception (la
+réponse a été donnée de vive voix : la ligne d'après s'écrit directement), sauf qu'un appel ne ferme jamais : un refus
+au téléphone donne « Clôturer ? — refus au téléphone » (plus haut), et un rappel convenu garde sa ligne
+(`callback_date`, R3-appel).
 
 **R5 — garde-fous** : ces trois champs ne s'écrivent que sur signal frais, à la création d'un deal, ou
 par les sections 4b à 4d ; hors de ces cas, ils appartiennent à Lucie. Lis les valeurs en place avant
 d'écrire : identiques → skip ; date en place **postérieure** à la date calculée avec la même Balle →
 skip (Lucie a repoussé exprès), sauf message entrant (R3) ou appel décroché (lignes R3-appel, refus au téléphone). Ne touche jamais aux trois champs d'un deal
 fermé ni d'une agence. Trace en `update_next_step` avec
-`payload = {"next_step": "...", "balle": "...", "date": "AAAA-MM-JJ", "rule": "R3-entrant | R3-sortant | R3-date | R3-appel | R3-appel-refus | R4 | T9-cr | T9-sans-cr | T9-annulee | R10 | R2 | R6 | hygiene", "before": {"next_step": "...", "balle": "...", "date": "..."}}`.
+`payload = {"next_step": "...", "balle": "...", "date": "AAAA-MM-JJ", "rule": "R3-entrant | R3-sortant | R3-date | R3-later | R3-appel | R3-appel-refus | R4 | T9-cr | T9-sans-cr | T9-annulee | R10 | R2 | R6 | hygiene", "before": {"next_step": "...", "balle": "...", "date": "..."}}`.
 
 > **Note (ne pas créer de note orpheline)** : `upsert_monthly_note` est autorisé seulement si la cible
 > a un deal (existant ou créé ce run) OU est une company **déjà engagée** dans Attio. Une company
@@ -560,27 +642,31 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
    main) → remplis **seulement les champs vides** : la grille de la section 4 si un signal de la fenêtre
    le concerne, sinon `Prospect identified` → Gang4, aujourd'hui, « Proposer un créneau démo à <prénom
    nom> » ; autre stage → Gang4, aujourd'hui, « Définir la prochaine action ». `rule = "hygiene"`.
-3. **Silence long (R10)** : pour les deals ouverts hors `Nurturing` (dont la date de reprise fait foi)
-   et hors Balle `RDV calé` à venir, calcule le dernier signal du prospect par domaine :
+3. **Silence après la pause datée (R10)** (13/11 : « Clôturer ? » seulement après l'email de pause datée resté sans
+   réponse 7 jours ; un long silence seul ne le pose plus, ni l'email « statuer » : le Sales Focus fait les touches qui
+   manquent, `.claude/commands/sales-focus.md` étape 3). Pour chaque deal ouvert, `Nurturing` compris, dont le next
+   step en place commence par « Clôturer ? si pas de réponse — pause annoncée le » (ligne R10 de la grille) et dont la
+   date est aujourd'hui ou passée, calcule le dernier signal du prospect par domaine :
    ```sql
    select lower(split_part(prospect_email, '@', 2)) as domain,
           max(greatest(case when direction = 'inbound' then occurred_at end,
                        case when channel_kind = 'meeting' and meeting_start_at <= now() then meeting_start_at end)) as last_signal
    from public."ProspectTouch"
-   where lower(split_part(prospect_email, '@', 2)) = any (array['<domaines des companies des deals ouverts>'])
+   where lower(split_part(prospect_email, '@', 2)) = any (array['<domaines des companies de ces deals>'])
    group by 1;
    ```
-   Dernier signal à plus de 60 jours (ou aucun signal et deal créé il y a plus de 60 jours), next step
-   qui ne commence pas déjà par « Clôturer ? » → Balle `Gang4`, date aujourd'hui, « Clôturer ? — N j sans
-   réponse », `rule = "R10"`. Jamais de passage automatique en `Deal Lost` sur silence.
+   Aucun signal postérieur à la pause → Balle `Gang4`, date aujourd'hui, « Clôturer ? — pause du JJ/MM sans réponse,
+   retour en <mois AAAA> », `rule = "R10"`. Jamais de passage automatique en `Deal Lost` sur silence. Le next step et la
+   date en place font foi : un humain qui les a changés depuis la pause (Snooze, « Objectif corrigé », décision de
+   Yacin) arrête ce calcul.
    **Appels Allo** (`ProspectTouch` ne les contient pas) : pour chaque deal retenu par ce calcul, avant
    d'écrire, `search-notes-by-metadata` sur le deal, sa société et ses contacts (`limit: 100`), garde les
-   notes « Allo … » postérieures au dernier signal calculé et lis-les (`get-note-body`) :
+   notes « Allo … » postérieures à la pause et lis-les (`get-note-body`) :
    - un appel décroché dont le compte rendu (« ## Résumé », ou « ## Détails » seul, quelle que soit la
      durée) rapporte un échange avec le prospect (intérêt, question, demande d'envoi ou de rappel,
      rendez-vous, refus ; Meltonic, 08/09, 46 s, « ## Détails » seul : Alexis Vanbesselaere demande qu'on
-     le rappelle), ou un appel entrant du prospect, est un signal du prospect : il remplace le dernier
-     signal calculé ; à moins de 60 jours, pas de « Clôturer ? » ;
+     le rappelle), ou un appel entrant du prospect, est un signal du prospect : pas de « Clôturer ? », et la ligne
+     « appel » de la grille s'applique ;
    - si ce compte rendu contient une promesse de Gang4 (section « ## Conclusion… » quel que soit son
      intitulé, ou puce « Prochaine étape » des « ## Détails » : envoyer, rappeler) sans envoi de Gang4
      après (`ProspectTouch` sortant), pas de « Clôturer ? » : Balle `Gang4`, aujourd'hui, « Envoyer à
@@ -589,17 +675,16 @@ sur `deals` (tous stages, 50 par page) pour leurs deals, la liste `agencies` une
      lien d'enregistrement ou dit messagerie, standard, « aucune discussion de fond », « trop bref »,
      quelle que soit la durée) n'est pas un signal du prospect et ne change rien au calcul.
    Exceptions, vérifiées seulement pour les deals retenus par ce calcul :
-   - le dernier `update_next_step` `applied` du deal vient d'un run `sales-check` de moins de 30 jours
+   - le dernier `update_next_step` `applied` du deal vient d'un run `sales-check` postérieur à la pause
      (`sales.applied_actions` joint à `sales.run_log`, `agent = 'sales-check'`) : le contrôle hebdo a relu
      le dossier entier (appels Allo, promesses de Gang4) et c'est lui qui pose « Clôturer ? » ;
-   - le deal a été rouvert, corrigé ou créé sur décision de Yacin il y a moins de 60 jours : une note du deal
-     (`search-notes-by-metadata` sur le deal) contient « décision de Yacin », « à la demande de Yacin » ou
-     « go de Yacin » (par exemple « Revue de la fermeture du deal - auto » ou « Création du deal - auto » du
-     23/10 : Maju, Flotte, Alltricks, Magimix, Célims, Biocyte ; Poppins, fusionné le 11/11 en un deal `Deal Lost`) ;
-   - une note « Objectif corrigé - auto » ou « Correction depuis Sales Actions - auto » de moins de 60 jours, ou
-     une note « Snooze - auto » dont le jour de snooze n'est pas passé (elles contiennent « (page Sales Actions) »,
-     quel que soit le prénom qu'elles citent) : c'est une décision humaine prise sur la page `/admin/sales-actions`
-     (depuis le 23/10). « Snooze annulé - auto » remet l'état d'avant le snooze et n'est pas une décision.
+   - une note postérieure à la pause qui contient « décision de Yacin », « à la demande de Yacin » ou « go de Yacin »,
+     ou une note « Objectif corrigé - auto », « Correction depuis Sales Actions - auto » ou « Snooze - auto » dont le
+     jour de snooze n'est pas passé (elles contiennent « (page Sales Actions) », quel que soit le prénom qu'elles
+     citent) : c'est une décision humaine. « Snooze annulé - auto » remet l'état d'avant le snooze et n'est pas une
+     décision.
+   Un deal qui portait, avant le 13/11, un « Clôturer ? — N j sans réponse » posé pour silence sans pause datée le garde
+   tel quel : `/sales-check` C4 le remplace par la touche qui manque.
 4. **Tâches automatiques Attio** : `list-tasks` (`is_completed = false`, 10 par page, `offset` jusqu'au
    bout) :
    - « Add Next Step Task for … » (échéance figée au 29/04/2025) → `update-task` `is_completed = true` :
@@ -788,15 +873,18 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
   réconciliation produit (verdict `meta_no_sub`, section 4b), jamais par le nom de la marque.
 - **`Nurturing`** : **après une démo tenue**, intérêt validé mais décision repoussée, **avec une date de
   reprise** dans `prochaine_action_le`. État post-Qualified, jamais avant. **N'applique JAMAIS Nurturing
-  sans démo tenue.**
+  sans démo tenue.** Depuis le 13/11, `/sales-ops` y passe un deal sur un `later` qui donne une date de retour, une
+  fois l'accusé de réception parti (« Réponses qui statuent ») ; jamais sur un `later` sans date (« pas prioritaire »,
+  « pas de budget ») ni sur un silence : le workflow n8n Nurturing ajoute les contacts du deal à une séquence LinkedIn
+  (`docs/FUNNEL.md` §1, étape 6).
 - **`Deal Won`** : au moins un abonnement actif sur l'organisation, quel que soit le produit, ou une
   facture Stripe payée dans les 45 derniers jours (verdict `won`, section 4b). `update_stage → Deal Won`
   et `update_company_status → Customer` vont **toujours** ensemble (2 actions séparées dans l'audit
   log). Sort du périmètre sales.
 - **`Deal Lost`** : sur **refus explicite** du prospect (`reply_kind = negative`), avec `lost_reason`
-  (T12). Sur silence (3e relance sans réponse ou 60 j sans signal), tu n'écris que le next step
-  « Clôturer ? — N j sans réponse » (R10) : la fermeture reste un geste de Lucie. Tout `update_stage →
-  Deal Lost` porte un `lost_reason` ; inclure les dates dans `reasoning`.
+  (T12). Sur silence (l'email de pause datée resté sans réponse 7 jours, 13/11), tu n'écris que le next step
+  « Clôturer ? — pause du JJ/MM sans réponse, retour en <mois AAAA> » (R10) : la fermeture reste un geste de Lucie.
+  Tout `update_stage → Deal Lost` porte un `lost_reason` ; inclure les dates dans `reasoning`.
   - **Champs de reconquête** (10/11) : tout `update_stage → Deal Lost` écrit aussi `date_de_perte`, la date du dernier
     signal écrit du prospect avant la perte (son message de refus, un appel décroché, la démo tenue ; jamais un envoi
     de Gang4 ni une réponse automatique).
@@ -804,17 +892,22 @@ Ordre : `Prospect identified` → `Demo scheduled` → `Qualified` → `Meta Con
     - « Jamais : <raison> » pour un refus net de toute l'offre, un litige de paiement, une décision de Yacin, une
       exclusivité ou un hors cible ;
     - « Quand : <condition> » quand la perte tient à une offre que Gang4 n'a pas encore (whitelisting média, TikTok,
-      offre vidéo, `docs/FUNNEL.md` §7 points 48 et 49).
-  - Une raison réversible (budget, timing, pause) laisse `condition_de_retour` vide : le Sales Focus applique sa fenêtre
-    de 3 à 12 mois (`.claude/commands/sales-focus.md`, étape 3 « Reconquête »).
+      offre vidéo, `docs/FUNNEL.md` §7 points 48 et 49) ;
+    - « Quand : <mois AAAA> (pause annoncée par Gang4 le JJ/MM) » pour un deal fermé après la pause datée (13/11 : le
+      next step « Clôturer ? » de R10 porte le mois), et « Quand : <mois AAAA> (retour demandé le JJ/MM) » pour un refus
+      qui donne un mois de retour. Le Sales Focus fait remonter le deal ce mois-là.
+  - Une raison réversible (budget, timing, pause) sans mois donné laisse `condition_de_retour` vide : le Sales Focus
+    applique sa fenêtre de 3 à 12 mois (`.claude/commands/sales-focus.md`, étape 3 « Reconquête »).
   - « Décision de Yacin (JJ/MM) : <angle> » note une relance voulue par Yacin, avec son angle : ne la réécris jamais.
     Une décision de ne plus relancer s'écrit « Jamais : décision de Yacin du JJ/MM ». Un `condition_de_retour` déjà
     rempli ne se corrige que sur un fait qui le contredit.
   - Un `Deal Lost` sans `date_de_perte` (fermé à la main) se complète au `/sales-check` hebdomadaire, pas ici : le run
     ne revoit pas les deals fermés sans signal frais.
-  - Le `lost_reason` suit les mots du prospect : « No more contact » est réservé au silence. « Pas pour le moment » ou
-    « pas prioritaire » donnent Not the right time, un budget donne No budget at the moment, un refus de l'offre donne
-    Not the right offer. Le 10/11, Oh My Cream portait « No more contact » pour une raison de budget écrite.
+  - Le `lost_reason` suit les mots du prospect : « No more contact » est réservé au silence. Quand le deal est fermé
+    (refus explicite, ou geste de Lucie), « pas pour le moment » ou « pas prioritaire » donnent Not the right time, un
+    budget donne No budget at the moment, un refus de l'offre donne Not the right offer ; sans refus explicite, ces
+    mots ne ferment jamais le deal (`later`, 13/11). Le 10/11, Oh My Cream portait « No more contact » pour une raison
+    de budget écrite.
 
 **Règles** :
 - Avant un `update_stage`, lis le stage actuel : transition cohérente (vers l'avant, sauf `Deal Lost`
