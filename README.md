@@ -1,5 +1,7 @@
 # Gang4 — Sales Agents
 
+> **Déménagé le 18/11/2026** dans [`SamuelGang4/admin-user-hop`](https://github.com/SamuelGang4/admin-user-hop) : dossier `sales/` (docs, scripts, migrations), skills `.claude/skills/sales-ops`, `sales-focus`, `sales-check` et sous-agents dans `.claude/agents/`. Les routines passent sur le compte Claude de Lucie. Ce repo n'est plus modifié ; il sera archivé une semaine après la bascule.
+
 Agent **Sales Ops** + sous-agents spécialisés pour **tenir le CRM Attio à jour** automatiquement.
 
 Conçu pour tourner **dans Claude Code** en utilisant les MCP connectés à la session (Attio, Supabase,
